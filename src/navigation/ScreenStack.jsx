@@ -1,0 +1,52 @@
+import { useRef } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { useNavigation } from './NavigationContext.jsx';
+import { SPRING_STANDARD, DURATION_REDUCED } from '../motion.js';
+import MyOrders from '../screens/MyOrders.jsx';
+import OrderDetails from '../screens/OrderDetails.jsx';
+import ReturnReplaceFlow from '../screens/ReturnReplace/ReturnReplaceFlow.jsx';
+import PaymentDetails from '../screens/PaymentDetails.jsx';
+import './ScreenStack.css';
+
+const SCREENS = {
+  myOrders: MyOrders,
+  orderDetails: OrderDetails,
+  returnReplace: ReturnReplaceFlow,
+  paymentDetails: PaymentDetails,
+};
+
+// Spatial consistency: a pushed screen slides in from the right while the one
+// behind it recedes left and dims; going back reverses the exact same path —
+// never a different route in than out.
+export default function ScreenStack() {
+  const { stack, current } = useNavigation();
+  const reduceMotion = useReducedMotion();
+  const prevDepthRef = useRef(stack.length);
+  const direction = stack.length >= prevDepthRef.current ? 1 : -1; // 1 = push, -1 = pop
+  prevDepthRef.current = stack.length;
+
+  const CurrentScreen = SCREENS[current.screen];
+  const screenKey = `${stack.length}-${current.screen}`;
+
+  const enterX = direction > 0 ? '100%' : '-30%';
+  const enterOpacity = direction > 0 ? 1 : 0.6;
+  const exitX = direction > 0 ? '-30%' : '100%';
+  const exitOpacity = direction > 0 ? 0.6 : 1;
+
+  return (
+    <div className="screen-stack">
+      <AnimatePresence initial={false} mode="popLayout">
+        <motion.div
+          key={screenKey}
+          className="screen-stack__layer"
+          initial={reduceMotion ? { opacity: 0 } : { x: enterX, opacity: enterOpacity }}
+          animate={reduceMotion ? { opacity: 1 } : { x: 0, opacity: 1 }}
+          exit={reduceMotion ? { opacity: 0 } : { x: exitX, opacity: exitOpacity }}
+          transition={reduceMotion ? DURATION_REDUCED : SPRING_STANDARD}
+        >
+          <CurrentScreen params={current.params} />
+        </motion.div>
+      </AnimatePresence>
+    </div>
+  );
+}

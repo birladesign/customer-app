@@ -1,0 +1,8 @@
+.phone-frame {
+  max-width: 430px;
+  height: 100dvh;
+  margin: 0 auto;
+  background: var(--color-bg-app);
+  overflow: hidden;
+  position: relative;
+}

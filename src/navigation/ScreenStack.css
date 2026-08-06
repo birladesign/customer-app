@@ -1,0 +1,11 @@
+.screen-stack {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+}
+
+.screen-stack__layer {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+}

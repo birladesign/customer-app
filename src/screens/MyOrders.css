@@ -1,0 +1,124 @@
+.my-orders {
+  height: 100%;
+  overflow-y: auto;
+  background: var(--color-bg-app);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Chrome (header + search + tabs) is a single translucent material that content
+   scrolls underneath — not an opaque bar consuming a fixed strip. */
+.my-orders__chrome {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+}
+
+.my-orders__chrome-edge {
+  height: 12px;
+  margin-top: -12px;
+  background: linear-gradient(to bottom, rgba(26, 43, 88, 0.05), transparent);
+  pointer-events: none;
+}
+
+.my-orders__topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+}
+
+.my-orders__topbar h1 {
+  margin: 0;
+  font-size: var(--text-heading-size);
+  letter-spacing: var(--text-heading-tracking);
+  line-height: var(--text-heading-leading);
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.my-orders__icon-btn {
+  border: none;
+  background: rgba(26, 43, 88, 0.06);
+  border-radius: var(--radius-full);
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-primary);
+  transition: transform 0.1s ease-out;
+}
+
+.my-orders__help-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: none;
+  background: rgba(26, 43, 88, 0.06);
+  border-radius: var(--radius-full);
+  padding: var(--space-2) var(--space-3);
+  font-family: inherit;
+  font-size: var(--text-body-size);
+  letter-spacing: var(--text-body-tracking);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  transition: transform 0.1s ease-out;
+}
+
+.my-orders__icon-btn:active,
+.my-orders__help-btn:active {
+  transform: scale(0.92);
+}
+
+.my-orders__list {
+  flex: 1;
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.my-orders__cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.my-orders__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: var(--space-6) var(--space-4);
+  color: var(--color-text-muted);
+}
+
+.my-orders__empty-icon {
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-3);
+}
+
+.my-orders__empty-title {
+  margin: 0 0 var(--space-1);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.my-orders__empty-body {
+  margin: 0;
+  font-size: var(--text-caption-size);
+  letter-spacing: var(--text-caption-tracking);
+  line-height: var(--text-caption-leading);
+  max-width: 260px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .my-orders__icon-btn:active,
+  .my-orders__help-btn:active {
+    transform: none;
+  }
+}
