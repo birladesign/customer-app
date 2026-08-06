@@ -50,7 +50,10 @@
 }
 
 .timeline__timestamp {
-  margin: 2px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: var(--space-1) 0 0;
   font-size: var(--text-caption-size);
   letter-spacing: var(--text-caption-tracking);
   color: var(--color-text-muted);
@@ -63,9 +66,13 @@
   color: var(--color-text-muted);
 }
 
-.timeline__step--done .timeline__dot,
+.timeline__step--done .timeline__dot {
+  background: var(--color-accent-cyan);
+  color: var(--color-navy-900);
+}
+
 .timeline__step--done .timeline__line {
-  background: var(--color-success);
+  background: var(--color-accent-cyan);
 }
 
 .timeline__step--done .timeline__label {

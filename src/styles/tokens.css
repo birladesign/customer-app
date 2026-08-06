@@ -15,8 +15,16 @@
   --color-action-red-tint: #fee2e2;
   --color-info-blue: #1d4ed8;
   --color-success: #059669;
+  --color-success-tint: #e9f7ef;
+  --color-info-blue-tint: #dbeafe;
   --color-disabled-bg: #ececef;
   --color-disabled-text: #999999;
+
+  /* Accent cyan — a softer, tinted register distinct from the saturated
+     --color-info-blue; used for "helpful surface" moments (warranty callout,
+     need-help card, completed-timeline dots) rather than status/severity. */
+  --color-accent-cyan: #c1ecfb;
+  --color-accent-cyan-wash: rgba(193, 236, 251, 0.35);
 
   /* Radius */
   --radius-xs: 4px;

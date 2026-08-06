@@ -2,8 +2,17 @@ import { createContext, useCallback, useContext, useMemo, useState } from 'react
 
 const NavigationContext = createContext(null);
 
-// The stack always starts on My Orders — it's the app's only true root;
-// there's nothing above it to go back to.
+// Home/Orders/Support/Profile are peer tab roots — switching tabs resets the
+// stack to that tab's single root entry, it never pushes. Screens reached by
+// drilling in (orderDetails/returnReplace/paymentDetails) are pushed on top
+// of whichever tab root is currently active and hide the tab bar (see
+// BottomTabBar, which checks depth === 1) while they're showing.
+const ROOT_SCREEN_BY_TAB = { home: 'home', orders: 'myOrders', support: 'support', profile: 'profile' };
+const TAB_BY_ROOT_SCREEN = Object.fromEntries(Object.entries(ROOT_SCREEN_BY_TAB).map(([tab, screen]) => [screen, tab]));
+
+// Home is the app's true root — nothing above it to go back to. Temporarily
+// pinned to myOrders until Home.jsx/BottomTabBar land (see task list); flip
+// back to 'home' once ScreenStack registers it.
 const INITIAL_STACK = [{ screen: 'myOrders', params: {} }];
 
 export function NavigationProvider({ children }) {
@@ -23,8 +32,17 @@ export function NavigationProvider({ children }) {
     setStack((s) => [...s.slice(0, -1), { screen, params }]);
   }, []);
 
+  // A tab switch is a hard reset to that tab's root, not a push — no per-tab
+  // history is kept (this app already accepts deep state resetting on
+  // navigation elsewhere, e.g. Return & Replace's wizard step).
+  const switchTab = useCallback((tabKey) => {
+    const screen = ROOT_SCREEN_BY_TAB[tabKey];
+    if (screen) setStack([{ screen, params: {} }]);
+  }, []);
+
   const current = stack[stack.length - 1];
   const previous = stack.length > 1 ? stack[stack.length - 2] : null;
+  const activeTab = TAB_BY_ROOT_SCREEN[stack[0].screen] ?? null;
 
   const value = useMemo(
     () => ({
@@ -33,11 +51,13 @@ export function NavigationProvider({ children }) {
       previous,
       depth: stack.length,
       canGoBack: stack.length > 1,
+      activeTab,
       navigate,
       goBack,
       replace,
+      switchTab,
     }),
-    [stack, current, previous, navigate, goBack, replace]
+    [stack, current, previous, activeTab, navigate, goBack, replace, switchTab]
   );
 
   return <NavigationContext.Provider value={value}>{children}</NavigationContext.Provider>;

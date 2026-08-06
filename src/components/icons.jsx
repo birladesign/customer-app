@@ -161,6 +161,55 @@ export function CloseIcon(props) {
   );
 }
 
+export function HouseIcon(props) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" strokeWidth="2" {...base} {...props}>
+      <path d="M3 10.5 12 3l9 7.5" />
+      <path d="M5.5 9.5V20a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1V9.5" />
+      <path d="M9.5 21v-6h5v6" />
+    </svg>
+  );
+}
+
+export function HeadsetIcon(props) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" strokeWidth="2" {...base} {...props}>
+      <path d="M4 13v-1a8 8 0 0 1 16 0v1" />
+      <rect x="3" y="13" width="4" height="6" rx="1.5" />
+      <rect x="17" y="13" width="4" height="6" rx="1.5" />
+      <path d="M19 19v1a2 2 0 0 1-2 2h-3" />
+    </svg>
+  );
+}
+
+export function UserIcon(props) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" strokeWidth="2" {...base} {...props}>
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 21v-1a8 8 0 0 1 16 0v1" />
+    </svg>
+  );
+}
+
+export function WrenchIcon(props) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" strokeWidth="2" {...base} {...props}>
+      <path d="M14.7 6.3a4 4 0 1 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.6 2.6-2-2Z" />
+    </svg>
+  );
+}
+
+export function TruckIcon(props) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" strokeWidth="2" {...base} {...props}>
+      <rect x="1" y="6" width="13" height="11" rx="1" />
+      <path d="M14 10h4l3 3v4h-7Z" />
+      <circle cx="6" cy="19" r="1.6" />
+      <circle cx="17" cy="19" r="1.6" />
+    </svg>
+  );
+}
+
 export function PackageIcon(props) {
   return (
     <svg width="15" height="15" viewBox="0 0 24 24" strokeWidth="2" {...base} {...props}>
@@ -196,6 +245,24 @@ export function FileTextIcon(props) {
       <polyline points="14 3 14 8 19 8" />
       <line x1="8.5" y1="13" x2="15.5" y2="13" />
       <line x1="8.5" y1="17" x2="13" y2="17" />
+    </svg>
+  );
+}
+
+export function ClockIcon(props) {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" strokeWidth="2" {...base} {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <polyline points="12 7 12 12 15.5 14" />
+    </svg>
+  );
+}
+
+export function ExternalLinkIcon(props) {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" strokeWidth="2" {...base} {...props}>
+      <path d="M7 17 17 7" />
+      <path d="M9 7h8v8" />
     </svg>
   );
 }

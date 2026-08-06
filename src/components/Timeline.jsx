@@ -1,4 +1,4 @@
-import { CheckIcon } from './icons.jsx';
+import { CheckIcon, ClockIcon } from './icons.jsx';
 import './Timeline.css';
 
 // Full-page, timestamped, vertical sibling of Tracker's compact horizontal
@@ -18,8 +18,13 @@ export default function Timeline({ steps, currentIndex }) {
             </div>
             <div className="timeline__content">
               <p className="timeline__label">{step.label}</p>
-              {step.timestamp && <p className="timeline__timestamp">{step.timestamp}</p>}
               {step.description && <p className="timeline__description">{step.description}</p>}
+              {step.timestamp && (
+                <p className="timeline__timestamp">
+                  <ClockIcon />
+                  {step.timestamp}
+                </p>
+              )}
             </div>
           </div>
         );

@@ -34,9 +34,9 @@ const INTENT_ICON = {
 // yet), which in turn reads clearly more present than a *disabled* row. Weight
 // + color move together as a set, per Apple's typography hierarchy guidance —
 // size alone doesn't carry it here since every row is the same font size.
-export default function IntentList({ order }) {
+export default function IntentList({ order, excludeKeys = [] }) {
   const { navigate } = useNavigation();
-  const intents = getOrderIntents(order);
+  const intents = getOrderIntents(order).filter((intent) => !excludeKeys.includes(intent.key));
 
   return (
     <div className="intent-list">
