@@ -7,7 +7,7 @@ import ProactiveCard from '../components/ProactiveCard.jsx';
 import TabBar from '../components/TabBar.jsx';
 import SearchAndFilterBar from '../components/SearchAndFilterBar.jsx';
 import FilterSheet from '../components/FilterSheet.jsx';
-import { ChevronLeftIcon, HelpCircleIcon, InboxIcon } from '../components/icons.jsx';
+import { HelpCircleIcon, InboxIcon } from '../components/icons.jsx';
 import './MyOrders.css';
 
 const TABS = [{ key: 'all', label: 'All' }, ...SECTIONS.map((s) => ({ key: s.tabKey, label: s.tabLabel }))];
@@ -78,9 +78,6 @@ export default function MyOrders() {
     <div className="my-orders">
       <div className="my-orders__chrome">
         <header className="my-orders__topbar">
-          <button className="my-orders__icon-btn" aria-label="Back">
-            <ChevronLeftIcon />
-          </button>
           <h1>My Orders</h1>
           <button className="my-orders__help-btn">
             <HelpCircleIcon />

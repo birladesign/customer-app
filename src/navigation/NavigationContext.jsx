@@ -10,10 +10,8 @@ const NavigationContext = createContext(null);
 const ROOT_SCREEN_BY_TAB = { home: 'home', orders: 'myOrders', support: 'support', profile: 'profile' };
 const TAB_BY_ROOT_SCREEN = Object.fromEntries(Object.entries(ROOT_SCREEN_BY_TAB).map(([tab, screen]) => [screen, tab]));
 
-// Home is the app's true root — nothing above it to go back to. Temporarily
-// pinned to myOrders until Home.jsx/BottomTabBar land (see task list); flip
-// back to 'home' once ScreenStack registers it.
-const INITIAL_STACK = [{ screen: 'myOrders', params: {} }];
+// Home is the app's true root — nothing above it to go back to.
+const INITIAL_STACK = [{ screen: 'home', params: {} }];
 
 export function NavigationProvider({ children }) {
   const [stack, setStack] = useState(INITIAL_STACK);

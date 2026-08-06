@@ -52,6 +52,12 @@
   font-weight: 500;
 }
 
+.tracker__date {
+  margin-top: 1px;
+  font-size: 9px;
+  color: var(--color-text-muted);
+}
+
 .tracker__step--done .tracker__dot,
 .tracker__step--done .tracker__line {
   background: var(--color-success);

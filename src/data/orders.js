@@ -248,6 +248,17 @@ export const ORDERS = [
       ],
       currentIndex: 2,
     },
+    // Home's featured order preview — the one demo order with a real
+    // installation step, so the dated tracker tells a coherent story.
+    homeTracker: {
+      steps: [
+        { label: 'Ordered', date: '28 Jul' },
+        { label: 'Delivered', date: '02 Aug' },
+        { label: 'Installation', date: '06 Aug' },
+        { label: 'Complete' },
+      ],
+      currentIndex: 2,
+    },
   },
   {
     id: 'TSC85611',

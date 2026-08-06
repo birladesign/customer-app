@@ -2,14 +2,20 @@ import { useRef } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useNavigation } from './NavigationContext.jsx';
 import { SPRING_STANDARD, DURATION_REDUCED } from '../motion.js';
+import Home from '../screens/Home.jsx';
 import MyOrders from '../screens/MyOrders.jsx';
+import Support from '../screens/Support.jsx';
+import Profile from '../screens/Profile.jsx';
 import OrderDetails from '../screens/OrderDetails.jsx';
 import ReturnReplaceFlow from '../screens/ReturnReplace/ReturnReplaceFlow.jsx';
 import PaymentDetails from '../screens/PaymentDetails.jsx';
 import './ScreenStack.css';
 
 const SCREENS = {
+  home: Home,
   myOrders: MyOrders,
+  support: Support,
+  profile: Profile,
   orderDetails: OrderDetails,
   returnReplace: ReturnReplaceFlow,
   paymentDetails: PaymentDetails,
