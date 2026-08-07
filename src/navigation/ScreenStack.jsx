@@ -6,6 +6,11 @@ import Home from '../screens/Home.jsx';
 import MyOrders from '../screens/MyOrders.jsx';
 import Support from '../screens/Support.jsx';
 import Profile from '../screens/Profile.jsx';
+import PersonalInformation from '../screens/Profile/PersonalInformation.jsx';
+import Addresses from '../screens/Profile/Addresses.jsx';
+import Notifications from '../screens/Profile/Notifications.jsx';
+import Invoices from '../screens/Profile/Invoices.jsx';
+import Requests from '../screens/Profile/Requests.jsx';
 import OrderDetails from '../screens/OrderDetails.jsx';
 import ReturnReplaceFlow from '../screens/ReturnReplace/ReturnReplaceFlow.jsx';
 import PaymentDetails from '../screens/PaymentDetails.jsx';
@@ -16,6 +21,11 @@ const SCREENS = {
   myOrders: MyOrders,
   support: Support,
   profile: Profile,
+  personalInformation: PersonalInformation,
+  addresses: Addresses,
+  notifications: Notifications,
+  invoices: Invoices,
+  requests: Requests,
   orderDetails: OrderDetails,
   returnReplace: ReturnReplaceFlow,
   paymentDetails: PaymentDetails,

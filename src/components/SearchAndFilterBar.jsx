@@ -1,14 +1,14 @@
 import { SearchIcon, FilterIcon } from './icons.jsx';
 import './SearchAndFilterBar.css';
 
-export default function SearchAndFilterBar({ query, onQueryChange, activeFilterCount, onOpenFilters }) {
+export default function SearchAndFilterBar({ query, onQueryChange, activeFilterCount, onOpenFilters, placeholder = 'Order ID or Product Name' }) {
   return (
     <div className="search-bar">
       <div className="search-bar__input-wrap">
         <SearchIcon className="search-bar__icon" aria-hidden="true" />
         <input
           className="search-bar__input"
-          placeholder="Order ID or Product Name"
+          placeholder={placeholder}
           value={query}
           onChange={(e) => onQueryChange(e.target.value)}
         />

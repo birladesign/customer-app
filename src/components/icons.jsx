@@ -267,6 +267,36 @@ export function ExternalLinkIcon(props) {
   );
 }
 
+export function MapPinIcon(props) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" strokeWidth="2" {...base} {...props}>
+      <path d="M12 21s7-6.5 7-11.5A7 7 0 0 0 5 9.5C5 14.5 12 21 12 21Z" />
+      <circle cx="12" cy="9.5" r="2.5" />
+    </svg>
+  );
+}
+
+export function CalendarIcon(props) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" strokeWidth="2" {...base} {...props}>
+      <rect x="3" y="5" width="18" height="16" rx="2" />
+      <line x1="3" y1="10" x2="21" y2="10" />
+      <line x1="8" y1="3" x2="8" y2="7" />
+      <line x1="16" y1="3" x2="16" y2="7" />
+    </svg>
+  );
+}
+
+export function LogoutIcon(props) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" strokeWidth="2" {...base} {...props}>
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <polyline points="16 17 21 12 16 7" />
+      <line x1="21" y1="12" x2="9" y2="12" />
+    </svg>
+  );
+}
+
 export function MoreIcon(props) {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" {...props}>

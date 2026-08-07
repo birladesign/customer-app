@@ -1,28 +1,16 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef } from 'react';
+import { useObjectUrlPreview } from '../hooks/useObjectUrlPreview.js';
 import { CheckIcon, CloseIcon } from './icons.jsx';
 import './PhotoUploadTile.css';
 
-// A real file input + object-URL preview — no mocked/fake upload UI.
+// Real file input + object-URL preview — no mocked/fake upload UI.
 export default function PhotoUploadTile({ onChange }) {
   const inputRef = useRef(null);
-  const [previewUrl, setPreviewUrl] = useState(null);
-
-  // Revoke the object URL when it's replaced or the component unmounts, so we
-  // don't leak memory across repeated selections.
-  useEffect(() => () => { if (previewUrl) URL.revokeObjectURL(previewUrl); }, [previewUrl]);
-
-  function handleFile(e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const url = URL.createObjectURL(file);
-    setPreviewUrl(url);
-    onChange?.(file);
-  }
+  const { previewUrl, handleFile, clear } = useObjectUrlPreview(onChange);
 
   function clearPhoto() {
-    setPreviewUrl(null);
+    clear();
     if (inputRef.current) inputRef.current.value = '';
-    onChange?.(null);
   }
 
   return (

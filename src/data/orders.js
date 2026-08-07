@@ -175,6 +175,7 @@ export const ORDERS = [
     badge: 'EXPRESS',
     status: { dot: 'blue', label: 'Out for Delivery' },
     product: 'Smart Hybrid Pillow (Set of 2)',
+    qty: 2,
     caption: 'Arriving today by 6 PM',
     // Already out for delivery — "Reschedule" doesn't apply once it's with the
     // courier, so this only offers Track (no default-paired reschedule action).
@@ -267,6 +268,7 @@ export const ORDERS = [
     image: imgChairOnyxOrthopedic,
     status: { dot: 'blue', label: 'Return Pickup Scheduled' },
     product: 'Onyx Orthopedic Office Chair',
+    color: 'Black',
     caption: 'Pickup 05 Aug 2026, 2 PM – 6 PM',
     tracker: { steps: ['Pickup Scheduled', 'Picked Up', 'Quality Check', 'Refund Initiated'], currentIndex: 0 },
     actions: [
@@ -322,6 +324,7 @@ export const ORDERS = [
     image: imgChairElitePremium,
     status: { dot: 'green', label: 'Delivered' },
     product: 'Elite Premium Office Chair',
+    color: 'Charcoal Grey',
     caption: 'Delivered on 15 May 2026',
     savings: 'You saved ₹12,345 on this item',
     rating: 0,
@@ -349,6 +352,7 @@ export const ORDERS = [
     image: imgMattressLuxeRoyale,
     status: { dot: 'green', label: 'Exchange Completed' },
     product: 'Smart Luxe Royale Mattress (Queen)',
+    color: 'Ivory White',
     caption: 'Completed on 11 Apr 2026',
     savings: 'You saved ₹12,345 on this item',
     actions: [{ label: 'Warranty', variant: 'secondary' }],

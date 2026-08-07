@@ -1,0 +1,206 @@
+.addresses {
+  height: 100%;
+  overflow-y: auto;
+  background: var(--color-bg-app);
+  display: flex;
+  flex-direction: column;
+}
+
+.addresses__topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+}
+
+.addresses__topbar h1 {
+  margin: 0;
+  font-size: var(--text-heading-size);
+  letter-spacing: var(--text-heading-tracking);
+  line-height: var(--text-heading-leading);
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.addresses__icon-btn {
+  border: none;
+  background: rgba(26, 43, 88, 0.06);
+  border-radius: var(--radius-full);
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-primary);
+  transition: transform 0.1s ease-out;
+}
+
+.addresses__icon-btn:active {
+  transform: scale(0.92);
+}
+
+.addresses__icon-btn-spacer {
+  width: 32px;
+  height: 32px;
+}
+
+.addresses__content {
+  flex: 1;
+  padding: var(--space-4);
+  padding-bottom: calc(var(--bottom-tab-bar-height) + var(--space-4));
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.addresses__add-btn {
+  width: 100%;
+  border: none;
+  border-radius: var(--radius-full);
+  padding: var(--space-3);
+  font-family: inherit;
+  font-size: var(--text-product-size);
+  font-weight: 700;
+  background: var(--color-action-red);
+  color: var(--color-text-inverse);
+  transition: transform 0.1s ease-out;
+}
+
+.addresses__add-btn:active {
+  transform: scale(0.98);
+}
+
+.addresses__empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: var(--space-2);
+  padding: var(--space-6) var(--space-4);
+}
+
+.addresses__empty-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-lg);
+  background: var(--color-accent-cyan-wash);
+  color: var(--color-navy-900);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: var(--space-2);
+}
+
+.addresses__empty-title {
+  margin: 0;
+  font-size: var(--text-heading-size);
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.addresses__empty-body {
+  margin: 0;
+  font-size: var(--text-body-size);
+  color: var(--color-text-muted);
+  max-width: 260px;
+}
+
+.addresses__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.addresses__section-heading {
+  margin: 0;
+  font-size: var(--text-product-size);
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.addresses__card {
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.addresses__card--default {
+  background: var(--color-accent-cyan-wash);
+  border-color: var(--color-navy-900);
+}
+
+.addresses__card-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.addresses__card-name {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: var(--text-product-size);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.addresses__badge {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--color-navy-900);
+  color: var(--color-text-inverse);
+  border-radius: var(--radius-full);
+  padding: 4px 8px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.addresses__delete-btn {
+  flex-shrink: 0;
+  border: none;
+  background: none;
+  color: var(--color-text-muted);
+  padding: 2px;
+  transition: transform 0.1s ease-out;
+}
+
+.addresses__delete-btn:active {
+  transform: scale(0.9);
+}
+
+.addresses__card-lines {
+  font-size: var(--text-body-size);
+  color: var(--color-text-primary);
+}
+
+.addresses__card-lines p {
+  margin: 0;
+}
+
+.addresses__card-phone {
+  margin: 0;
+  font-size: var(--text-body-size);
+  color: var(--color-text-primary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .addresses__icon-btn:active,
+  .addresses__add-btn:active,
+  .addresses__delete-btn:active {
+    transform: none;
+  }
+}

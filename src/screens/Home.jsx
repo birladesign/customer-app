@@ -10,14 +10,14 @@ import './Home.css';
 const QUICK_ACTION_ICON = { truck: TruckIcon, wrench: WrenchIcon, shield: ShieldIcon };
 
 export default function Home() {
-  const { switchTab } = useNavigation();
+  const { switchTab, navigate } = useNavigation();
   const featuredOrder = ORDERS.find((o) => o.homeTracker);
 
   return (
     <div className="home">
       <header className="home__topbar">
         <span className="home__logo">The Sleep Company</span>
-        <button className="home__bell-btn" aria-label="Notifications">
+        <button className="home__bell-btn" aria-label="Notifications" onClick={() => navigate('notifications')}>
           <BellIcon width="18" height="18" />
           <span className="home__bell-badge" />
         </button>

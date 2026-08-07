@@ -1,0 +1,55 @@
+.confirm-sheet__title {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-heading-size);
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.confirm-sheet__body {
+  margin: 0 0 var(--space-6);
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-leading);
+  color: var(--color-text-muted);
+}
+
+.confirm-sheet__footer {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.confirm-sheet__cancel,
+.confirm-sheet__confirm {
+  flex: 1;
+  border: none;
+  border-radius: var(--radius-full);
+  padding: var(--space-3);
+  font-size: var(--text-product-size);
+  font-weight: 600;
+  transition: transform 0.1s ease-out;
+}
+
+.confirm-sheet__cancel:active,
+.confirm-sheet__confirm:active {
+  transform: scale(0.97);
+}
+
+.confirm-sheet__cancel {
+  background: rgba(26, 43, 88, 0.06);
+  color: var(--color-text-primary);
+}
+
+.confirm-sheet__confirm {
+  background: var(--color-navy-900);
+  color: var(--color-text-inverse);
+}
+
+.confirm-sheet__confirm--danger {
+  background: var(--color-action-red);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .confirm-sheet__cancel:active,
+  .confirm-sheet__confirm:active {
+    transform: none;
+  }
+}
