@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
-import { SPRING_STANDARD } from '../motion.js';
+import { SPRING_STANDARD, DURATION_REDUCED } from '../motion.js';
 import { SECTIONS, ORDERS, PROACTIVE_PROMPT, parseOrderDate } from '../data/orders.js';
 import OrderCard from '../components/OrderCard.jsx';
 import ProactiveCard from '../components/ProactiveCard.jsx';
@@ -101,7 +101,7 @@ export default function MyOrders() {
         animate={
           filterOpen && !reduceMotion ? { scale: 0.97, opacity: 0.85 } : { scale: 1, opacity: 1 }
         }
-        transition={SPRING_STANDARD}
+        transition={reduceMotion ? DURATION_REDUCED : SPRING_STANDARD}
         style={{ transformOrigin: 'center top' }}
       >
         {activeTab === 'all' && !isFiltering && <ProactiveCard {...PROACTIVE_PROMPT} />}

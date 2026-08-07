@@ -25,6 +25,10 @@
   color: var(--color-navy-900);
 }
 
+.proactive-card__title-icon--success {
+  color: var(--color-success);
+}
+
 .proactive-card__body {
   margin: 0;
   font-size: var(--text-caption-size);
@@ -48,6 +52,11 @@
 
 .proactive-card__action:active {
   transform: scale(0.95);
+}
+
+.proactive-card__action--done {
+  background: var(--color-disabled-bg);
+  color: var(--color-disabled-text);
 }
 
 @media (prefers-reduced-motion: reduce) {
