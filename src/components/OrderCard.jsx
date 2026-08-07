@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { splitProductSpec } from '../data/orders.js';
 import Tracker from './Tracker.jsx';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
 import { SPRING_STANDARD, DURATION_REDUCED } from '../motion.js';
@@ -84,6 +85,7 @@ export default function OrderCard({ order }) {
   const { navigate } = useNavigation();
   const [trackerOpen, setTrackerOpen] = useState(false);
   const BannerIcon = banner ? BANNER_ICON[banner.icon] : null;
+  const { name: productName, spec } = splitProductSpec(product);
 
   function openDetails() {
     navigate('orderDetails', { orderId: order.id });
@@ -125,7 +127,14 @@ export default function OrderCard({ order }) {
               </span>
               {badge && <span className="order-card__pill-badge">{badge}</span>}
             </div>
-            <p className="order-card__product">{product}</p>
+            <p className="order-card__product">{productName}</p>
+            {(order.qty || spec) && (
+              <p className="order-card__variant">
+                {order.qty && <span>Qty: {order.qty}</span>}
+                {order.qty && spec && <span className="order-card__variant-dot" aria-hidden="true" />}
+                {spec && <span>{spec}</span>}
+              </p>
+            )}
             {caption && <p className="order-card__caption">{caption}</p>}
             {savings && (
               <p className="order-card__savings">

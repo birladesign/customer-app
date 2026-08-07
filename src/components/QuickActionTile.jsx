@@ -1,7 +1,7 @@
 import './QuickActionTile.css';
 
-// Peer tiles all read as equally prominent (dark navy) regardless of whether
-// a destination is wired yet — Repair/Warranty are present-but-inert (no
+// Peer tiles all read as equally prominent regardless of whether a
+// destination is wired yet — Repair/Warranty are present-but-inert (no
 // onClick), the same enabled-looking-but-unwired precedent already used for
 // several action buttons elsewhere (e.g. OrderCard's "Get Help").
 export default function QuickActionTile({ icon: Icon, label, onClick }) {

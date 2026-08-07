@@ -26,6 +26,25 @@
   color: var(--color-navy-900);
 }
 
+.home__topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.home__profile-btn {
+  border: none;
+  background: none;
+  padding: 0;
+  border-radius: var(--radius-full);
+  display: flex;
+  transition: transform 0.1s ease-out;
+}
+
+.home__profile-btn:active {
+  transform: scale(0.92);
+}
+
 .home__bell-btn {
   position: relative;
   border: none;
@@ -77,7 +96,7 @@
 
 .home__section-heading {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
 }
 
@@ -90,12 +109,13 @@
 
 .home__view-all {
   border: none;
-  background: none;
-  padding: 0;
+  background: rgba(26, 43, 88, 0.06);
+  border-radius: var(--radius-full);
+  padding: var(--space-2) var(--space-3);
   font-family: inherit;
   font-size: var(--text-body-size);
   font-weight: 600;
-  color: var(--color-info-blue);
+  color: var(--color-navy-900);
   transition: transform 0.1s ease-out;
 }
 
@@ -105,6 +125,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .home__bell-btn:active,
+  .home__profile-btn:active,
   .home__view-all:active {
     transform: none;
   }

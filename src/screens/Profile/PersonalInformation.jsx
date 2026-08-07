@@ -59,11 +59,14 @@ export default function PersonalInformation() {
             onChange={(e) => update('lastName', e.target.value)}
             placeholder="Last name"
           />
-          <input
-            className="personal-info__pill personal-info__pill--disabled"
-            value={form.phone}
-            disabled
-          />
+          <div className="personal-info__field-group">
+            <input
+              className="personal-info__pill personal-info__pill--disabled"
+              value={form.phone}
+              disabled
+            />
+            <p className="personal-info__helper">Registered number can't be changed</p>
+          </div>
           <input
             className="personal-info__pill"
             type="email"

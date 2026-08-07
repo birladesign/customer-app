@@ -31,6 +31,12 @@
   padding: var(--space-3) var(--space-4);
 }
 
+.my-orders__topbar-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
 .my-orders__topbar h1 {
   margin: 0;
   font-size: var(--text-heading-size);
@@ -38,6 +44,24 @@
   line-height: var(--text-heading-leading);
   font-weight: 700;
   color: var(--color-text-primary);
+}
+
+.my-orders__icon-btn {
+  flex-shrink: 0;
+  border: none;
+  background: rgba(26, 43, 88, 0.06);
+  border-radius: var(--radius-full);
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-primary);
+  transition: transform 0.1s ease-out;
+}
+
+.my-orders__icon-btn:active {
+  transform: scale(0.92);
 }
 
 .my-orders__help-btn {
@@ -104,7 +128,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .my-orders__help-btn:active {
+  .my-orders__help-btn:active,
+  .my-orders__icon-btn:active {
     transform: none;
   }
 }

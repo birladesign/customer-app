@@ -85,6 +85,18 @@
   color: var(--color-disabled-text);
 }
 
+.personal-info__field-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.personal-info__helper {
+  margin: 0 0 0 var(--space-4);
+  font-size: var(--text-caption-size);
+  color: var(--color-text-muted);
+}
+
 .personal-info__pill--dob {
   position: relative;
   display: flex;

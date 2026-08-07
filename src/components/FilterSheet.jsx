@@ -2,7 +2,7 @@ import BottomSheet from './BottomSheet.jsx';
 import { CloseIcon } from './icons.jsx';
 import './FilterSheet.css';
 
-const STATUS_CHIPS = ['All', 'Action', 'Active', 'Done', 'Closed', 'Returns'];
+const STATUS_CHIPS = ['All', 'Active', 'Done', 'Closed', 'Returns'];
 
 export default function FilterSheet({ open, selected, onSelect, onClear, onApply, onClose }) {
   return (

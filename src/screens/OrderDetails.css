@@ -156,7 +156,7 @@
   font-weight: 700;
   letter-spacing: var(--text-label-tracking);
   text-transform: uppercase;
-  color: var(--color-action-red);
+  color: var(--color-navy-900);
   transition: transform 0.1s ease-out;
 }
 

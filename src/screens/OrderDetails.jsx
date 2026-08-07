@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { ORDERS } from '../data/orders.js';
+import { ORDERS, splitProductSpec } from '../data/orders.js';
 import { getOrderIntents } from '../data/intents.js';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
 import { SPRING_STANDARD, DURATION_REDUCED } from '../motion.js';
@@ -31,12 +31,6 @@ const FEATURED_INTENT_KEYS = ['returnReplace', 'warranty', 'needHelp'];
 
 function formatRupees(amount) {
   return `₹${amount.toLocaleString('en-IN')}`;
-}
-
-// "Smart Ortho Pro Mattress (Queen)" -> name "Smart Ortho Pro Mattress", spec "Queen"
-function splitProductSpec(product) {
-  const match = product.match(/^(.*)\(([^)]+)\)\s*$/);
-  return match ? { name: match[1].trim(), spec: match[2].trim() } : { name: product, spec: null };
 }
 
 export default function OrderDetails({ params }) {
@@ -125,7 +119,7 @@ export default function OrderDetails({ params }) {
             onClick={() => setDetailsOpen((v) => !v)}
             aria-expanded={detailsOpen}
           >
-            <span>Order Details</span>
+            <span>Item &amp; Billing Info</span>
             <ChevronRightIcon
               className={`order-details__disclosure-chevron${detailsOpen ? ' order-details__disclosure-chevron--open' : ''}`}
             />

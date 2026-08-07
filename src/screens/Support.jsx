@@ -1,10 +1,16 @@
-import { HeadsetIcon } from '../components/icons.jsx';
+import { useNavigation } from '../navigation/NavigationContext.jsx';
+import { HeadsetIcon, HouseIcon } from '../components/icons.jsx';
 import './PlaceholderScreen.css';
 
 export default function Support() {
+  const { switchTab } = useNavigation();
+
   return (
     <div className="placeholder-screen">
       <header className="placeholder-screen__topbar">
+        <button className="placeholder-screen__icon-btn" onClick={() => switchTab('home')} aria-label="Home">
+          <HouseIcon width="18" height="18" />
+        </button>
         <h1>Support</h1>
       </header>
       <div className="placeholder-screen__body">

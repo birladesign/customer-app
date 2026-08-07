@@ -2,6 +2,7 @@ import { useRef } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useNavigation } from './NavigationContext.jsx';
 import { SPRING_STANDARD, DURATION_REDUCED } from '../motion.js';
+import LoginFlow from '../screens/Login/LoginFlow.jsx';
 import Home from '../screens/Home.jsx';
 import MyOrders from '../screens/MyOrders.jsx';
 import Support from '../screens/Support.jsx';
@@ -17,6 +18,7 @@ import PaymentDetails from '../screens/PaymentDetails.jsx';
 import './ScreenStack.css';
 
 const SCREENS = {
+  login: LoginFlow,
   home: Home,
   myOrders: MyOrders,
   support: Support,

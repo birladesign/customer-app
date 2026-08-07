@@ -43,6 +43,15 @@ export function parseOrderDate(dateStr) {
   return new Date(Number(year), MONTHS[mon], Number(day));
 }
 
+// "Smart Ortho Pro Mattress (Queen)" -> name "Smart Ortho Pro Mattress",
+// spec "Queen" — reused wherever a card/screen needs the variant separated
+// from the product title (My Orders cards, Order Details) rather than
+// inventing a parallel `variant` field on every order.
+export function splitProductSpec(product) {
+  const match = product.match(/^(.*)\(([^)]+)\)\s*$/);
+  return match ? { name: match[1].trim(), spec: match[2].trim() } : { name: product, spec: null };
+}
+
 export const PROACTIVE_PROMPT = {
   id: 'proactive-cod',
   title: 'Confirm Your Cash on Delivery Order',
@@ -450,6 +459,80 @@ export const ORDERS = [
         { label: 'Cancelled', timestamp: '16 Oct 2025, 10:00 AM', description: 'Cancelled as per your request' },
       ],
       currentIndex: 1,
+    },
+  },
+  // Three units of the same SKU shipped together — the one demo shipment
+  // with multiple line items, grouped under a shared shipment-level status
+  // by ShipmentCard (see MyOrders.jsx) instead of three separate cards each
+  // repeating "Delivered". Each still has a real id/timeline of its own so
+  // OrderDetails/ReturnReplace continue to work per line item, unchanged.
+  {
+    id: 'TSC93001',
+    shipmentId: 'SHP93001',
+    section: 'deliveredDone',
+    date: '20 Nov 2025',
+    image: imgBedElev8Adjustable,
+    status: { dot: 'green', label: 'Delivered' },
+    product: 'Recliner Bed with Italia Frame (King)',
+    qty: 1,
+    actions: [{ label: 'Warranty', variant: 'secondary' }],
+    amount: 54999,
+    address: DEMO_ADDRESS,
+    payment: { method: 'Credit Card', status: 'Paid' },
+    priceBreakup: { itemPrice: 54999, shipping: 0, discount: 0, tax: 0, total: 54999 },
+    timeline: {
+      steps: [
+        { label: 'Order Confirmed', timestamp: '15 Nov 2025, 11:00 AM' },
+        { label: 'Shipped', timestamp: '17 Nov 2025, 9:00 AM' },
+        { label: 'Delivered', timestamp: '20 Nov 2025, 2:00 PM' },
+      ],
+      currentIndex: 2,
+    },
+  },
+  {
+    id: 'TSC93002',
+    shipmentId: 'SHP93001',
+    section: 'deliveredDone',
+    date: '20 Nov 2025',
+    image: imgBedElev8Adjustable,
+    status: { dot: 'green', label: 'Delivered' },
+    product: 'Recliner Bed with Italia Frame (King)',
+    qty: 1,
+    actions: [{ label: 'Warranty', variant: 'secondary' }],
+    amount: 54999,
+    address: DEMO_ADDRESS,
+    payment: { method: 'Credit Card', status: 'Paid' },
+    priceBreakup: { itemPrice: 54999, shipping: 0, discount: 0, tax: 0, total: 54999 },
+    timeline: {
+      steps: [
+        { label: 'Order Confirmed', timestamp: '15 Nov 2025, 11:00 AM' },
+        { label: 'Shipped', timestamp: '17 Nov 2025, 9:00 AM' },
+        { label: 'Delivered', timestamp: '20 Nov 2025, 2:00 PM' },
+      ],
+      currentIndex: 2,
+    },
+  },
+  {
+    id: 'TSC93003',
+    shipmentId: 'SHP93001',
+    section: 'deliveredDone',
+    date: '20 Nov 2025',
+    image: imgBedElev8Adjustable,
+    status: { dot: 'green', label: 'Delivered' },
+    product: 'Recliner Bed with Italia Frame (King)',
+    qty: 1,
+    actions: [{ label: 'Warranty', variant: 'secondary' }],
+    amount: 54999,
+    address: DEMO_ADDRESS,
+    payment: { method: 'Credit Card', status: 'Paid' },
+    priceBreakup: { itemPrice: 54999, shipping: 0, discount: 0, tax: 0, total: 54999 },
+    timeline: {
+      steps: [
+        { label: 'Order Confirmed', timestamp: '15 Nov 2025, 11:00 AM' },
+        { label: 'Shipped', timestamp: '17 Nov 2025, 9:00 AM' },
+        { label: 'Delivered', timestamp: '20 Nov 2025, 2:00 PM' },
+      ],
+      currentIndex: 2,
     },
   },
 ];

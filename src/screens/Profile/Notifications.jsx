@@ -9,7 +9,17 @@ export default function Notifications() {
   const [items, setItems] = useState(NOTIFICATIONS);
 
   function markRead(id) {
-    setItems((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
+    // No backend in this prototype — mutate the shared NOTIFICATIONS objects
+    // in place (items was seeded from that same array, so its elements are
+    // the same references) so Home's unread badge sees the change too, next
+    // time it mounts.
+    setItems((prev) =>
+      prev.map((n) => {
+        if (n.id !== id) return n;
+        n.read = true;
+        return n;
+      })
+    );
   }
 
   return (

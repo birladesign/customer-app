@@ -1,0 +1,43 @@
+.floating-support-btn {
+  position: absolute;
+  right: var(--space-4);
+  bottom: var(--space-6);
+  z-index: 15;
+  width: 56px;
+  height: 56px;
+  border: none;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-inverse);
+  background: linear-gradient(155deg, #2c4070 0%, var(--color-navy-900) 55%, #0f1a34 100%);
+  box-shadow:
+    0 10px 22px rgba(26, 43, 88, 0.38),
+    inset 0 1px 1px rgba(255, 255, 255, 0.4),
+    inset 0 -3px 5px rgba(0, 0, 0, 0.28);
+  transition: transform 0.1s ease-out;
+}
+
+.floating-support-btn::before {
+  content: '';
+  position: absolute;
+  top: 6px;
+  left: 10px;
+  width: 22px;
+  height: 11px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.4);
+  filter: blur(1.5px);
+  pointer-events: none;
+}
+
+.floating-support-btn:active {
+  transform: scale(0.92);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .floating-support-btn:active {
+    transform: none;
+  }
+}

@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
 import { CURRENT_USER } from '../data/profile.js';
 import Avatar from '../components/Avatar.jsx';
+import ConfirmSheet from '../components/ConfirmSheet.jsx';
 import {
   UserIcon,
   MapPinIcon,
@@ -10,6 +12,7 @@ import {
   HeadsetIcon,
   ChevronRightIcon,
   LogoutIcon,
+  HouseIcon,
 } from '../components/icons.jsx';
 import './Profile.css';
 
@@ -24,11 +27,20 @@ const MENU = [
 ];
 
 export default function Profile() {
-  const { navigate, switchTab } = useNavigation();
+  const { navigate, switchTab, replace } = useNavigation();
+  const [confirmingLogout, setConfirmingLogout] = useState(false);
+
+  function handleLogout() {
+    setConfirmingLogout(false);
+    replace('login');
+  }
 
   return (
     <div className="profile">
       <header className="profile__topbar">
+        <button className="profile__icon-btn" onClick={() => switchTab('home')} aria-label="Home">
+          <HouseIcon width="18" height="18" />
+        </button>
         <h1>Profile</h1>
       </header>
 
@@ -63,11 +75,21 @@ export default function Profile() {
           </button>
         </div>
 
-        <button className="profile__logout">
+        <button className="profile__logout" onClick={() => setConfirmingLogout(true)}>
           <LogoutIcon width="16" height="16" />
           Logout
         </button>
       </main>
+
+      <ConfirmSheet
+        open={confirmingLogout}
+        title="Log out?"
+        body="You'll need to verify your phone number again next time you open the app."
+        confirmLabel="Logout"
+        danger
+        onConfirm={handleLogout}
+        onClose={() => setConfirmingLogout(false)}
+      />
     </div>
   );
 }

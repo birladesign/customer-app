@@ -10,8 +10,12 @@ const NavigationContext = createContext(null);
 const ROOT_SCREEN_BY_TAB = { home: 'home', orders: 'myOrders', support: 'support', profile: 'profile' };
 const TAB_BY_ROOT_SCREEN = Object.fromEntries(Object.entries(ROOT_SCREEN_BY_TAB).map(([tab, screen]) => [screen, tab]));
 
-// Home is the app's true root — nothing above it to go back to.
-const INITIAL_STACK = [{ screen: 'home', params: {} }];
+// Login is the app's true root when unauthenticated — nothing above it to go
+// back to. A successful login/onboarding replaces it with 'home' (see
+// LoginFlow), and Logout replaces 'home' back with 'login' the same way.
+// Neither is a tab root (see ROOT_SCREEN_BY_TAB above), so activeTab is null
+// while here and BottomTabBar stays hidden without any special-casing.
+const INITIAL_STACK = [{ screen: 'login', params: {} }];
 
 export function NavigationProvider({ children }) {
   const [stack, setStack] = useState(INITIAL_STACK);
