@@ -207,19 +207,6 @@
   transition: transform 0.1s ease-out;
 }
 
-.order-card__track-chevron {
-  transition: transform 0.2s var(--ease-standard);
-}
-
-.order-card__track-chevron--open {
-  transform: rotate(180deg);
-}
-
-.order-card__tracker-wrap {
-  border-top: 1px solid rgba(26, 43, 88, 0.08);
-  margin-top: var(--space-1);
-}
-
 /* Feedback lands on press, not on release — the moment lag appears, directness
    falls off a cliff. */
 .order-card__action:not(:disabled):active {

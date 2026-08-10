@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import './PromoCarousel.css';
 
 // Native scroll-snap, no drag physics — a promo banner is decorative and
-// non-blocking, unlike FilterSheet's real drag-dismiss gesture.
+// non-blocking, unlike a bottom sheet's real drag-dismiss gesture.
 export default function PromoCarousel({ banners }) {
   const trackRef = useRef(null);
   const [active, setActive] = useState(0);

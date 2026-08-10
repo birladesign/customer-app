@@ -1,29 +1,22 @@
 import { useMemo, useState } from 'react';
-import { motion, useReducedMotion } from 'motion/react';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
-import { SPRING_STANDARD, DURATION_REDUCED } from '../motion.js';
 import { SECTIONS, ORDERS, PROACTIVE_PROMPT, parseOrderDate } from '../data/orders.js';
 import OrderCard from '../components/OrderCard.jsx';
 import ProactiveCard from '../components/ProactiveCard.jsx';
 import TabBar from '../components/TabBar.jsx';
 import SearchAndFilterBar from '../components/SearchAndFilterBar.jsx';
-import FilterSheet from '../components/FilterSheet.jsx';
 import { HelpCircleIcon, InboxIcon, HouseIcon } from '../components/icons.jsx';
 import './MyOrders.css';
 
 const TABS = [
   { key: 'all', label: 'All' },
-  ...SECTIONS.filter((s) => s.tabKey === 'active').map((s) => ({ key: s.tabKey, label: s.tabLabel })),
+  ...SECTIONS.filter((s) => s.tabKey === 'active' || s.tabKey === 'closed').map((s) => ({ key: s.tabKey, label: s.tabLabel })),
 ];
 
 export default function MyOrders() {
   const { switchTab } = useNavigation();
-  const reduceMotion = useReducedMotion();
   const [activeTab, setActiveTab] = useState('all');
   const [query, setQuery] = useState('');
-  const [filterOpen, setFilterOpen] = useState(false);
-  const [pendingChip, setPendingChip] = useState('All');
-  const [appliedChip, setAppliedChip] = useState(null);
 
   const countsByTab = useMemo(() => {
     const counts = {};
@@ -33,7 +26,7 @@ export default function MyOrders() {
     return counts;
   }, []);
 
-  // Tabs/chips filter which orders are eligible, but never change the order
+  // Tabs filter which orders are eligible, but never change the order
   // they're shown in — the list is always sorted by date, most recent first.
   const filteredOrders = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -44,10 +37,6 @@ export default function MyOrders() {
       orders = orders.filter((o) => o.section === section.key);
     }
 
-    if (appliedChip === 'Returns') {
-      orders = orders.filter((o) => o.status.label.toLowerCase().includes('return'));
-    }
-
     if (q) {
       orders = orders.filter(
         (o) => o.id.toLowerCase().includes(q) || o.product.toLowerCase().includes(q)
@@ -55,29 +44,10 @@ export default function MyOrders() {
     }
 
     return [...orders].sort((a, b) => parseOrderDate(b.date) - parseOrderDate(a.date));
-  }, [activeTab, query, appliedChip]);
+  }, [activeTab, query]);
 
   const hasAnyResults = filteredOrders.length > 0;
-  const isFiltering = query.trim().length > 0 || activeTab !== 'all' || appliedChip;
-
-  function openFilters() {
-    setPendingChip(appliedChip ?? 'All');
-    setFilterOpen(true);
-  }
-
-  function applyFilters() {
-    setAppliedChip(pendingChip === 'All' ? null : pendingChip);
-    if (pendingChip === 'Active') {
-      setActiveTab('active');
-    } else if (pendingChip === 'All') {
-      setActiveTab('all');
-    }
-    setFilterOpen(false);
-  }
-
-  function clearFilters() {
-    setPendingChip('All');
-  }
+  const isFiltering = query.trim().length > 0 || activeTab !== 'all';
 
   return (
     <div className="my-orders">
@@ -95,25 +65,13 @@ export default function MyOrders() {
           </button>
         </header>
 
-        <SearchAndFilterBar
-          query={query}
-          onQueryChange={setQuery}
-          activeFilterCount={appliedChip ? 1 : 0}
-          onOpenFilters={openFilters}
-        />
+        <SearchAndFilterBar query={query} onQueryChange={setQuery} />
 
         <TabBar tabs={TABS} activeTab={activeTab} onChange={setActiveTab} countsByTab={countsByTab} />
         <div className="my-orders__chrome-edge" />
       </div>
 
-      <motion.main
-        className="my-orders__list"
-        animate={
-          filterOpen && !reduceMotion ? { scale: 0.97, opacity: 0.85 } : { scale: 1, opacity: 1 }
-        }
-        transition={reduceMotion ? DURATION_REDUCED : SPRING_STANDARD}
-        style={{ transformOrigin: 'center top' }}
-      >
+      <main className="my-orders__list">
         {activeTab === 'all' && !isFiltering && <ProactiveCard {...PROACTIVE_PROMPT} />}
 
         {hasAnyResults ? (
@@ -129,20 +87,11 @@ export default function MyOrders() {
             <p className="my-orders__empty-body">
               {query.trim()
                 ? `No results for "${query}". Try a different order number or product name.`
-                : 'No orders match these filters.'}
+                : 'No orders in this tab.'}
             </p>
           </div>
         )}
-      </motion.main>
-
-      <FilterSheet
-        open={filterOpen}
-        selected={pendingChip}
-        onSelect={setPendingChip}
-        onClear={clearFilters}
-        onApply={applyFilters}
-        onClose={() => setFilterOpen(false)}
-      />
+      </main>
     </div>
   );
 }

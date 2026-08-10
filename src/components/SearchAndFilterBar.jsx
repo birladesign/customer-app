@@ -13,11 +13,13 @@ export default function SearchAndFilterBar({ query, onQueryChange, activeFilterC
           onChange={(e) => onQueryChange(e.target.value)}
         />
       </div>
-      <button className="search-bar__filters" onClick={onOpenFilters}>
-        <FilterIcon aria-hidden="true" />
-        Filters
-        {activeFilterCount > 0 && <span className="search-bar__filter-count">{activeFilterCount}</span>}
-      </button>
+      {onOpenFilters && (
+        <button className="search-bar__filters" onClick={onOpenFilters}>
+          <FilterIcon aria-hidden="true" />
+          Filters
+          {activeFilterCount > 0 && <span className="search-bar__filter-count">{activeFilterCount}</span>}
+        </button>
+      )}
     </div>
   );
 }

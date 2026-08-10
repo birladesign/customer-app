@@ -6,6 +6,7 @@ import { CURRENT_USER } from '../data/profile.js';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
 import { SPRING_STANDARD, DURATION_REDUCED } from '../motion.js';
 import Timeline from '../components/Timeline.jsx';
+import DetailedTracking from '../components/DetailedTracking.jsx';
 import ConfirmSheet from '../components/ConfirmSheet.jsx';
 import BottomSheet from '../components/BottomSheet.jsx';
 import {
@@ -340,7 +341,7 @@ export default function OrderDetails({ params }) {
         <BottomSheet open={trackingOpen} onClose={() => setTrackingOpen(false)}>
           <h2 className="order-details__tracking-sheet-title">Tracking Updates</h2>
           <div className="order-details__tracking-sheet-body">
-            <Timeline steps={order.timeline.steps} currentIndex={order.timeline.currentIndex} />
+            <DetailedTracking steps={order.timeline.steps} currentIndex={order.timeline.currentIndex} />
           </div>
         </BottomSheet>
       )}
