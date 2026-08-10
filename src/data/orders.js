@@ -228,6 +228,15 @@ export const ORDERS = [
       ],
       currentIndex: 2,
     },
+    homeTracker: {
+      steps: [
+        { label: 'Confirmed', date: '06 Aug' },
+        { label: 'Shipped', date: '07 Aug' },
+        { label: 'Out for Delivery', date: '08 Aug' },
+        { label: 'Delivered' },
+      ],
+      currentIndex: 2,
+    },
   },
   {
     id: 'TSC90677',
@@ -252,6 +261,15 @@ export const ORDERS = [
         { label: 'Packing', timestamp: '02 Aug 2026, 10:00 AM' },
         { label: 'Shipped', timestamp: null },
         { label: 'Delivered', timestamp: null },
+      ],
+      currentIndex: 1,
+    },
+    homeTracker: {
+      steps: [
+        { label: 'Confirmed', date: '01 Aug' },
+        { label: 'Packing', date: '02 Aug' },
+        { label: 'Shipped' },
+        { label: 'Delivered' },
       ],
       currentIndex: 1,
     },
@@ -308,8 +326,8 @@ export const ORDERS = [
       ],
       currentIndex: 2,
     },
-    // Home's featured order preview — the one demo order with a real
-    // installation step, so the dated tracker tells a coherent story.
+    // Home's ongoing-orders preview cards read from homeTracker, not
+    // section — any inProgress order can opt in with a dated tracker.
     homeTracker: {
       steps: [
         { label: 'Ordered', date: '28 Jul' },

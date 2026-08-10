@@ -1,19 +1,18 @@
 import { useNavigation } from '../navigation/NavigationContext.jsx';
-import { ORDERS } from '../data/orders.js';
+import { ORDERS, parseOrderDate } from '../data/orders.js';
 import { CURRENT_USER, NOTIFICATIONS } from '../data/profile.js';
-import { QUICK_ACTIONS, PROMO_BANNERS } from '../data/home.js';
-import QuickActionTile from '../components/QuickActionTile.jsx';
+import { PROMO_BANNERS } from '../data/home.js';
 import PromoCarousel from '../components/PromoCarousel.jsx';
 import HomeOrderPreviewCard from '../components/HomeOrderPreviewCard.jsx';
 import Avatar from '../components/Avatar.jsx';
-import { BellIcon, TruckIcon, WrenchIcon, ShieldIcon } from '../components/icons.jsx';
+import { BellIcon } from '../components/icons.jsx';
 import './Home.css';
-
-const QUICK_ACTION_ICON = { truck: TruckIcon, wrench: WrenchIcon, shield: ShieldIcon };
 
 export default function Home() {
   const { switchTab, navigate } = useNavigation();
-  const featuredOrder = ORDERS.find((o) => o.homeTracker);
+  const ongoingOrders = ORDERS.filter((o) => o.homeTracker)
+    .sort((a, b) => parseOrderDate(b.date) - parseOrderDate(a.date))
+    .slice(0, 3);
   const hasUnreadNotifications = NOTIFICATIONS.some((n) => !n.read);
 
   return (
@@ -32,28 +31,21 @@ export default function Home() {
       </header>
 
       <main className="home__content">
-        <div className="home__quick-actions">
-          {QUICK_ACTIONS.map((action) => (
-            <QuickActionTile
-              key={action.key}
-              icon={QUICK_ACTION_ICON[action.icon]}
-              label={action.label}
-              onClick={action.key === 'track' ? () => switchTab('orders') : undefined}
-            />
-          ))}
-        </div>
-
         <PromoCarousel banners={PROMO_BANNERS} />
 
-        {featuredOrder && (
+        {ongoingOrders.length > 0 && (
           <section className="home__section">
             <div className="home__section-heading">
-              <h2>Current Order</h2>
+              <h2>{ongoingOrders.length > 1 ? 'Current Orders' : 'Current Order'}</h2>
               <button className="home__view-all" onClick={() => switchTab('orders')}>
                 View all
               </button>
             </div>
-            <HomeOrderPreviewCard order={featuredOrder} />
+            <div className="home__order-list">
+              {ongoingOrders.map((order) => (
+                <HomeOrderPreviewCard key={order.id} order={order} />
+              ))}
+            </div>
           </section>
         )}
       </main>

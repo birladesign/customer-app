@@ -83,8 +83,9 @@
   gap: var(--space-6);
 }
 
-.home__quick-actions {
+.home__order-list {
   display: flex;
+  flex-direction: column;
   gap: var(--space-3);
 }
 
