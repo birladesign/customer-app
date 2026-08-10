@@ -10,15 +10,17 @@ const TABS = [
   { key: 'support', label: 'Support', Icon: HeadsetIcon },
 ];
 
-// A floating pill, not a full-width bar — sits above content with margin on
-// every side so it reads as its own material layer (glass, elevated shadow)
-// rather than a fixed strip the frame is built into. Only visible on a tab's
-// own root (depth 1); a pushed screen owns the bottom of the frame instead
-// of competing with it.
+// A floating glass pill, not a full-width bar — sits above content with
+// margin on every side so it reads as its own material layer. The active
+// tab is a solid navy capsule that slides and resizes into place (shared
+// layout animation) rather than a static tinted highlight; inactive tabs
+// stay icon-forward and quiet so the one active destination reads clearly.
+// Present on every screen, pushed or not — only hidden while there's no
+// tab context at all (login/onboarding).
 export default function BottomTabBar() {
-  const { depth, activeTab, switchTab } = useNavigation();
+  const { activeTab, switchTab } = useNavigation();
   const reduceMotion = useReducedMotion();
-  if (depth > 1 || !activeTab) return null;
+  if (!activeTab) return null;
 
   return (
     <nav className="bottom-tab-bar">
@@ -27,19 +29,25 @@ export default function BottomTabBar() {
         return (
           <button
             key={key}
-            className={`bottom-tab-bar__tab${active ? ' bottom-tab-bar__tab--active' : ''}`}
+            className="bottom-tab-bar__tab"
             onClick={() => switchTab(key)}
             aria-current={active ? 'page' : undefined}
           >
-            {active && (
+            {active ? (
               <motion.span
-                layoutId="bottom-tab-bar__indicator"
-                className="bottom-tab-bar__indicator"
+                layoutId="bottom-tab-bar__pill"
+                className="bottom-tab-bar__pill"
                 transition={reduceMotion ? DURATION_REDUCED : SPRING_STANDARD}
-              />
+              >
+                <Icon width="18" height="18" strokeWidth={2.4} />
+                <span>{label}</span>
+              </motion.span>
+            ) : (
+              <span className="bottom-tab-bar__tab-inactive">
+                <Icon width="20" height="20" strokeWidth={2} />
+                <span>{label}</span>
+              </span>
             )}
-            <Icon width="20" height="20" strokeWidth={active ? 2.5 : 2} />
-            <span>{label}</span>
           </button>
         );
       })}

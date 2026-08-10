@@ -43,7 +43,7 @@
 
   /* Persistent bottom tab bar — reserved space for screen content padding;
      the bar itself adds env(safe-area-inset-bottom) on top of this in CSS. */
-  --bottom-tab-bar-height: 64px;
+  --bottom-tab-bar-height: 72px;
 
   /* Type family */
   --font-family: 'Montserrat', sans-serif;

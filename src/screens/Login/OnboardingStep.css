@@ -36,7 +36,7 @@
 .onboarding-step__pill {
   width: 100%;
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-lg);
   padding: var(--space-3) var(--space-4);
   font-family: inherit;
   font-size: var(--text-product-size);
