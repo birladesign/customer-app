@@ -4,7 +4,6 @@ import { useNavigation } from '../navigation/NavigationContext.jsx';
 import { SPRING_STANDARD, DURATION_REDUCED } from '../motion.js';
 import { SECTIONS, ORDERS, PROACTIVE_PROMPT, parseOrderDate } from '../data/orders.js';
 import OrderCard from '../components/OrderCard.jsx';
-import ShipmentCard from '../components/ShipmentCard.jsx';
 import ProactiveCard from '../components/ProactiveCard.jsx';
 import TabBar from '../components/TabBar.jsx';
 import SearchAndFilterBar from '../components/SearchAndFilterBar.jsx';
@@ -57,25 +56,6 @@ export default function MyOrders() {
 
     return [...orders].sort((a, b) => parseOrderDate(b.date) - parseOrderDate(a.date));
   }, [activeTab, query, appliedChip]);
-
-  // Orders that share a shipmentId (shipped together, same status/date) group
-  // into one card; everything else renders as its own singleton group,
-  // unchanged from before — grouping never reorders the already-date-sorted
-  // list, since sibling items in one shipment share the same date already.
-  const shipmentGroups = useMemo(() => {
-    const groups = [];
-    const indexByKey = new Map();
-    for (const order of filteredOrders) {
-      const key = order.shipmentId ?? order.id;
-      if (indexByKey.has(key)) {
-        groups[indexByKey.get(key)].push(order);
-      } else {
-        indexByKey.set(key, groups.length);
-        groups.push([order]);
-      }
-    }
-    return groups;
-  }, [filteredOrders]);
 
   const hasAnyResults = filteredOrders.length > 0;
   const isFiltering = query.trim().length > 0 || activeTab !== 'all' || appliedChip;
@@ -138,13 +118,9 @@ export default function MyOrders() {
 
         {hasAnyResults ? (
           <div className="my-orders__cards">
-            {shipmentGroups.map((group) =>
-              group.length > 1 ? (
-                <ShipmentCard key={group[0].shipmentId} orders={group} />
-              ) : (
-                <OrderCard key={group[0].id} order={group[0]} />
-              )
-            )}
+            {filteredOrders.map((order) => (
+              <OrderCard key={order.id} order={order} />
+            ))}
           </div>
         ) : (
           <div className="my-orders__empty">
