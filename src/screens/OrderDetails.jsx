@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { ORDERS, splitProductSpec } from '../data/orders.js';
+import { ORDERS, splitProductSpec, getOrderStatus } from '../data/orders.js';
 import { getOrderIntents } from '../data/intents.js';
 import { CURRENT_USER } from '../data/profile.js';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
 import { SPRING_STANDARD, DURATION_REDUCED } from '../motion.js';
 import Timeline from '../components/Timeline.jsx';
 import DetailedTracking from '../components/DetailedTracking.jsx';
+import LineItems from '../components/LineItems.jsx';
 import ConfirmSheet from '../components/ConfirmSheet.jsx';
 import BottomSheet from '../components/BottomSheet.jsx';
 import {
@@ -46,6 +47,14 @@ export default function OrderDetails({ params }) {
   const [detailsOpen, setDetailsOpen] = useState(true);
   const [confirmingCancel, setConfirmingCancel] = useState(false);
   const [trackingOpen, setTrackingOpen] = useState(false);
+  // Which tracking log the sheet is currently showing — the order's own
+  // aggregate timeline by default, or a single line item's when opened via
+  // that item's "Track This Item" link. Kept separate from trackingOpen so
+  // the sheet's exit animation doesn't lose its content mid-close.
+  const [trackingTarget, setTrackingTarget] = useState(null);
+  // Single-open accordion for line items, mirroring a native list disclosure —
+  // expanding one item retracts whichever was open before.
+  const [openItemSku, setOpenItemSku] = useState(null);
   const reduceMotion = useReducedMotion();
   const order = ORDERS.find((o) => o.id === params.orderId);
 
@@ -65,7 +74,8 @@ export default function OrderDetails({ params }) {
   }
 
   const { name: productName, spec } = splitProductSpec(order.product);
-  const pill = STATUS_PILL[order.status.dot] ?? STATUS_PILL.muted;
+  const status = getOrderStatus(order);
+  const pill = STATUS_PILL[status.dot] ?? STATUS_PILL.muted;
   const intents = getOrderIntents(order);
   const returnIntent = intents.find((i) => i.key === 'returnReplace');
   const warrantyIntent = intents.find((i) => i.key === 'warranty');
@@ -97,6 +107,15 @@ export default function OrderDetails({ params }) {
     setTimeout(() => setCopied(false), 1200);
   }
 
+  function openTracking(title, timeline) {
+    setTrackingTarget({ title, steps: timeline.steps, currentIndex: timeline.currentIndex });
+    setTrackingOpen(true);
+  }
+
+  function toggleItem(sku) {
+    setOpenItemSku((current) => (current === sku ? null : sku));
+  }
+
   return (
     <div className="order-details">
       <header className="order-details__topbar">
@@ -108,13 +127,22 @@ export default function OrderDetails({ params }) {
       </header>
 
       <main className="order-details__content">
-        <div className="order-details__product-card">
-          <img className="order-details__image" src={order.image} alt={order.product} />
-          <div className="order-details__product-text">
-            <p className="order-details__product">{productName}</p>
-            {spec && <p className="order-details__spec">{spec}</p>}
+        {order.items ? (
+          <LineItems
+            items={order.items}
+            openSku={openItemSku}
+            onToggle={toggleItem}
+            onTrack={(item) => openTracking(item.product, item.timeline)}
+          />
+        ) : (
+          <div className="order-details__product-card">
+            <img className="order-details__image" src={order.image} alt={order.product} />
+            <div className="order-details__product-text">
+              <p className="order-details__product">{productName}</p>
+              {spec && <p className="order-details__spec">{spec}</p>}
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="order-details__id-row">
           <div>
@@ -125,14 +153,14 @@ export default function OrderDetails({ params }) {
             </button>
           </div>
           <span className="order-details__status-pill" style={{ background: pill.bg, color: pill.color }}>
-            {order.status.label}
+            {status.label}
           </span>
         </div>
 
         {order.timeline && (
           <div className="order-details__card">
             <Timeline steps={order.timeline.steps} currentIndex={order.timeline.currentIndex} />
-            <button className="order-details__tracking-link" onClick={() => setTrackingOpen(true)}>
+            <button className="order-details__tracking-link" onClick={() => openTracking('Tracking Updates', order.timeline)}>
               <FileTextIcon width="14" height="14" />
               Tracking Updates
             </button>
@@ -177,10 +205,19 @@ export default function OrderDetails({ params }) {
               >
                 <div className="order-details__disclosure-body">
                   <div className="order-details__payment-block">
-                    <div className="order-details__payment-row">
-                      <span>{productName}{spec ? ` (${spec})` : ''}</span>
-                      <span>{formatRupees(order.priceBreakup?.itemPrice ?? order.amount)}</span>
-                    </div>
+                    {order.items ? (
+                      order.items.map((item) => (
+                        <div className="order-details__payment-row" key={item.sku}>
+                          <span>{item.product}{item.qty > 1 ? ` × ${item.qty}` : ''}</span>
+                          <span>{formatRupees(item.price)}</span>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="order-details__payment-row">
+                        <span>{productName}{spec ? ` (${spec})` : ''}</span>
+                        <span>{formatRupees(order.priceBreakup?.itemPrice ?? order.amount)}</span>
+                      </div>
+                    )}
                     {Boolean(order.priceBreakup?.discount) && (
                       <div className="order-details__payment-row">
                         <span>Discount</span>
@@ -337,11 +374,11 @@ export default function OrderDetails({ params }) {
         onClose={() => setConfirmingCancel(false)}
       />
 
-      {order.timeline && (
+      {trackingTarget && (
         <BottomSheet open={trackingOpen} onClose={() => setTrackingOpen(false)}>
-          <h2 className="order-details__tracking-sheet-title">Tracking Updates</h2>
+          <h2 className="order-details__tracking-sheet-title">{trackingTarget.title}</h2>
           <div className="order-details__tracking-sheet-body">
-            <DetailedTracking steps={order.timeline.steps} currentIndex={order.timeline.currentIndex} />
+            <DetailedTracking steps={trackingTarget.steps} currentIndex={trackingTarget.currentIndex} />
           </div>
         </BottomSheet>
       )}

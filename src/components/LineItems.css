@@ -1,0 +1,146 @@
+.line-items {
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.line-items__row + .line-items__row {
+  border-top: 1px solid var(--color-border);
+}
+
+.line-items__summary {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  border: none;
+  background: none;
+  padding: var(--space-3);
+  font-family: inherit;
+  text-align: left;
+  transition: transform 0.1s ease-out;
+}
+
+.line-items__summary:active {
+  transform: scale(0.99);
+}
+
+.line-items__image {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  object-fit: cover;
+  background: var(--color-bg-app);
+  flex-shrink: 0;
+}
+
+.line-items__text {
+  flex: 1;
+  min-width: 0;
+}
+
+.line-items__product {
+  margin: 0;
+  font-size: var(--text-product-size);
+  letter-spacing: var(--text-product-tracking);
+  line-height: var(--text-product-leading);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.line-items__variant {
+  margin: 2px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--text-caption-size);
+  color: var(--color-text-muted);
+}
+
+.line-items__variant-dot {
+  width: 3px;
+  height: 3px;
+  border-radius: var(--radius-full);
+  background: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
+.line-items__status {
+  display: block;
+  margin-top: 3px;
+  font-size: var(--text-caption-size);
+  font-weight: 600;
+}
+
+.line-items__end {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-2);
+}
+
+.line-items__price {
+  font-size: var(--text-body-size);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+}
+
+.line-items__chevron {
+  color: var(--color-text-muted);
+  transition: transform 0.2s var(--ease-standard);
+}
+
+.line-items__chevron--open {
+  transform: rotate(180deg);
+}
+
+.line-items__detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  /* Nested content reads as recessed relative to the row above it — same
+     material-weight hierarchy as the app's other disclosure bodies. */
+  background: var(--color-bg-app);
+  margin: 0 var(--space-3) var(--space-3);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+}
+
+.line-items__caption {
+  margin: 0;
+  font-size: var(--text-body-size);
+  color: var(--color-text-secondary);
+}
+
+.line-items__track {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  border: none;
+  background: none;
+  padding: 0;
+  font-family: inherit;
+  font-size: var(--text-body-size);
+  font-weight: 700;
+  letter-spacing: var(--text-label-tracking);
+  text-transform: uppercase;
+  color: var(--color-navy-900);
+  transition: transform 0.1s ease-out;
+}
+
+.line-items__track:active {
+  transform: scale(0.97);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .line-items__summary:active,
+  .line-items__track:active {
+    transform: none;
+  }
+}

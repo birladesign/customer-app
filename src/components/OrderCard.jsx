@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { splitProductSpec } from '../data/orders.js';
+import { splitProductSpec, getOrderStatus } from '../data/orders.js';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
 import { CopyIcon, CheckIcon, ChevronRightIcon, ZapIcon, AlertTriangleIcon, WalletIcon, CheckCircleIcon, StarIcon } from './icons.jsx';
 import './OrderCard.css';
@@ -71,7 +71,8 @@ function CopyOrderId({ id }) {
 }
 
 export default function OrderCard({ order }) {
-  const { banner, badge, status, product, caption, savings, refundNote, disabledReason, actions, rating } = order;
+  const { banner, badge, product, caption, savings, refundNote, disabledReason, actions, rating } = order;
+  const status = getOrderStatus(order);
   const { navigate } = useNavigation();
   const BannerIcon = banner ? BANNER_ICON[banner.icon] : null;
   const { name: productName, spec } = splitProductSpec(product);

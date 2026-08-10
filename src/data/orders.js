@@ -53,6 +53,19 @@ export function splitProductSpec(product) {
   return match ? { name: match[1].trim(), spec: match[2].trim() } : { name: product, spec: null };
 }
 
+// Multi-item orders don't carry a static status — it's derived from each line
+// item's own status, so the parent pill always reflects reality (one item
+// still in transit while the rest are delivered) instead of a hand-authored
+// order.status drifting from what the items actually say.
+export function getOrderStatus(order) {
+  if (!order.items) return order.status;
+  const total = order.items.length;
+  const delivered = order.items.filter((item) => item.status.label === 'Delivered').length;
+  if (delivered === total) return { dot: 'green', label: 'All Items Delivered' };
+  if (delivered === 0) return { dot: 'blue', label: `${total} Items · In Transit` };
+  return { dot: 'blue', label: `${delivered} of ${total} Items Delivered` };
+}
+
 export const PROACTIVE_PROMPT = {
   id: 'proactive-cod',
   title: 'Confirm Your Cash on Delivery Order',
@@ -601,6 +614,126 @@ export const ORDERS = [
         { label: 'Delivered', timestamp: '20 Nov 2025, 2:00 PM' },
       ],
       currentIndex: 2,
+    },
+  },
+  // A genuine multi-SKU cart — three different products bought together in
+  // one checkout (unlike the same-SKU-×3 shipment above). Each line item
+  // ships and tracks independently, so OrderDetails renders them as their
+  // own expandable rows instead of one product card, and the parent status
+  // above is computed from these items via getOrderStatus, not authored here.
+  {
+    id: 'TSC94500',
+    section: 'inProgress',
+    date: '05 Aug 2026',
+    product: 'Bedroom Refresh Bundle (3 items)',
+    image: imgMattressOrthoHybrid,
+    caption: '2 of 3 items delivered · 1 arriving separately',
+    actions: [{ label: 'Track Order', variant: 'secondary' }],
+    amount: 46488,
+    address: DEMO_ADDRESS,
+    payment: { method: 'UPI', status: 'Paid' },
+    priceBreakup: { itemPrice: 46488, shipping: 0, discount: 0, tax: 0, total: 46488 },
+    items: [
+      {
+        sku: 'TSC94500-1',
+        product: 'Smart Ortho Hybrid Pocketed Spring Mattress (Queen)',
+        image: imgMattressOrthoHybrid,
+        qty: 1,
+        price: 21290,
+        status: { dot: 'green', label: 'Delivered' },
+        caption: 'Delivered on 08 Aug 2026',
+        tracker: { steps: ['Confirmed', 'Shipped', 'Delivered'], currentIndex: 2 },
+        timeline: {
+          steps: [
+            { label: 'Confirmed', timestamp: '05 Aug 2026, 10:05 AM' },
+            {
+              label: 'Shipped',
+              timestamp: '06 Aug 2026, 9:15 AM',
+              updates: [
+                { text: 'Seller has handed over the item to courier', timestamp: '06 Aug 2026, 9:15 AM' },
+                { text: 'Item has reached the courier facility in Gurugram, Haryana', timestamp: '06 Aug 2026, 1:40 PM' },
+              ],
+            },
+            {
+              label: 'Delivered',
+              timestamp: '08 Aug 2026, 1:20 PM',
+              updates: [
+                { text: 'Out for delivery', timestamp: '08 Aug 2026, 9:00 AM' },
+                { text: 'Delivered — signed for at the doorstep', timestamp: '08 Aug 2026, 1:20 PM' },
+              ],
+            },
+          ],
+          currentIndex: 2,
+        },
+      },
+      {
+        sku: 'TSC94500-2',
+        product: 'Smart Hybrid Pillow (Set of 2)',
+        image: imgPillowHybrid,
+        qty: 1,
+        price: 2199,
+        status: { dot: 'green', label: 'Delivered' },
+        caption: 'Delivered on 08 Aug 2026',
+        tracker: { steps: ['Confirmed', 'Shipped', 'Delivered'], currentIndex: 2 },
+        timeline: {
+          steps: [
+            { label: 'Confirmed', timestamp: '05 Aug 2026, 10:05 AM' },
+            {
+              label: 'Shipped',
+              timestamp: '06 Aug 2026, 9:15 AM',
+              updates: [
+                { text: 'Packed with the rest of your order and handed to courier', timestamp: '06 Aug 2026, 9:15 AM' },
+              ],
+            },
+            {
+              label: 'Delivered',
+              timestamp: '08 Aug 2026, 1:20 PM',
+              updates: [{ text: 'Delivered together with your mattress', timestamp: '08 Aug 2026, 1:20 PM' }],
+            },
+          ],
+          currentIndex: 2,
+        },
+      },
+      {
+        sku: 'TSC94500-3',
+        product: 'Elev8 Smart Adjustable Bed Frame',
+        image: imgBedElev8Adjustable,
+        qty: 1,
+        price: 22999,
+        status: { dot: 'blue', label: 'Shipped' },
+        caption: 'Backordered — packed separately, ETA 12 Aug 2026',
+        tracker: { steps: ['Confirmed', 'Shipped', 'Out for Delivery', 'Delivered'], currentIndex: 1 },
+        timeline: {
+          steps: [
+            { label: 'Confirmed', timestamp: '05 Aug 2026, 10:05 AM' },
+            {
+              label: 'Shipped',
+              timestamp: '09 Aug 2026, 11:30 AM',
+              updates: [
+                { text: 'Item was on backorder — now packed and handed to courier', timestamp: '09 Aug 2026, 11:30 AM' },
+                { text: 'Item has reached the courier facility in Gurugram, Haryana', timestamp: '09 Aug 2026, 4:50 PM' },
+              ],
+            },
+            { label: 'Out for Delivery', timestamp: null },
+            { label: 'Delivered', timestamp: null },
+          ],
+          currentIndex: 1,
+        },
+      },
+    ],
+    timeline: {
+      steps: [
+        { label: 'Order Confirmed', timestamp: '05 Aug 2026, 10:05 AM' },
+        { label: 'Processing', timestamp: '05 Aug 2026, 3:00 PM' },
+        { label: 'Shipped', timestamp: '06 Aug 2026, 9:15 AM', description: 'First shipment left the warehouse' },
+        {
+          label: 'Delivered',
+          timestamp: '08 Aug 2026, 1:20 PM',
+          description: '2 of 3 items delivered — Bed Frame still in transit',
+        },
+        { label: 'All Items Delivered', timestamp: null },
+      ],
+      currentIndex: 3,
     },
   },
 ];
