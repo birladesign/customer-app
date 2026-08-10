@@ -67,8 +67,8 @@ export default function MyOrders() {
 
   function applyFilters() {
     setAppliedChip(pendingChip === 'All' ? null : pendingChip);
-    if (['Active', 'Done', 'Closed'].includes(pendingChip)) {
-      setActiveTab(pendingChip.toLowerCase());
+    if (pendingChip === 'Active') {
+      setActiveTab('active');
     } else if (pendingChip === 'All') {
       setActiveTab('all');
     }
