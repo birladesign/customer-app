@@ -14,7 +14,7 @@ import './MyOrders.css';
 
 const TABS = [
   { key: 'all', label: 'All' },
-  ...SECTIONS.filter((s) => s.tabKey !== 'action').map((s) => ({ key: s.tabKey, label: s.tabLabel })),
+  ...SECTIONS.filter((s) => s.tabKey === 'active').map((s) => ({ key: s.tabKey, label: s.tabLabel })),
 ];
 
 export default function MyOrders() {

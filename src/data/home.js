@@ -3,14 +3,6 @@
 import imgMattressLuxeRoyale from '../assets/mattress-luxe-royale.jpg';
 import imgChairElitePremium from '../assets/chair-elite-premium.jpg';
 
-// icon is a lookup key (not a component) — same pattern as OrderCard's
-// banner.icon — so this file stays plain data, not JSX.
-export const QUICK_ACTIONS = [
-  { key: 'track', label: 'Track', icon: 'truck' },
-  { key: 'repair', label: 'Repair', icon: 'wrench' },
-  { key: 'warranty', label: 'Warranty', icon: 'shield' },
-];
-
 export const PROMO_BANNERS = [
   {
     id: 'promo-luxe-royale',
