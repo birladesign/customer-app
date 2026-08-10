@@ -197,9 +197,33 @@ export const ORDERS = [
     priceBreakup: { itemPrice: 4398, shipping: 0, discount: 0, tax: 0, total: 4398 },
     timeline: {
       steps: [
-        { label: 'Confirmed', timestamp: '06 Aug 2026, 11:00 AM' },
-        { label: 'Shipped', timestamp: '07 Aug 2026, 8:30 AM' },
-        { label: 'Out for Delivery', timestamp: '08 Aug 2026, 9:00 AM' },
+        {
+          label: 'Confirmed',
+          timestamp: '06 Aug 2026, 11:00 AM',
+          updates: [
+            { text: 'Order processing has been initiated', timestamp: '06 Aug 2026, 11:00 AM' },
+            { text: 'Order has been confirmed', timestamp: '06 Aug 2026, 11:02 AM' },
+            { text: 'Seller is processing your order', timestamp: '06 Aug 2026, 1:15 PM' },
+          ],
+        },
+        {
+          label: 'Shipped',
+          timestamp: '07 Aug 2026, 8:30 AM',
+          updates: [
+            { text: 'Seller has handed over the item to courier', timestamp: '07 Aug 2026, 8:30 AM' },
+            { text: 'Item has reached the courier facility in Gurugram, Haryana', timestamp: '07 Aug 2026, 11:45 AM' },
+            { text: 'Item has left the courier facility in Gurugram, Haryana', timestamp: '07 Aug 2026, 9:20 PM' },
+            { text: 'Item has reached the courier facility in Delhi Hub', timestamp: '08 Aug 2026, 3:10 AM' },
+          ],
+        },
+        {
+          label: 'Out for Delivery',
+          timestamp: '08 Aug 2026, 9:00 AM',
+          updates: [
+            { text: 'Item has left the courier facility in Delhi Hub', timestamp: '08 Aug 2026, 6:40 AM' },
+            { text: 'Out for delivery, arriving today by 6 PM', timestamp: '08 Aug 2026, 9:00 AM' },
+          ],
+        },
         { label: 'Delivered', timestamp: null },
       ],
       currentIndex: 2,
@@ -253,9 +277,33 @@ export const ORDERS = [
     priceBreakup: { itemPrice: 44999, shipping: 0, discount: 0, tax: 0, total: 44999 },
     timeline: {
       steps: [
-        { label: 'Order Confirmed', timestamp: '28 Jul 2026, 1:00 PM' },
-        { label: 'Delivered', timestamp: '02 Aug 2026, 3:20 PM' },
-        { label: 'Installation Scheduled', timestamp: '03 Aug 2026, 9:00 AM', description: '06 Aug 2026, 10 AM – 12 PM' },
+        {
+          label: 'Order Confirmed',
+          timestamp: '28 Jul 2026, 1:00 PM',
+          updates: [
+            { text: 'Order has been confirmed', timestamp: '28 Jul 2026, 1:00 PM' },
+            { text: 'Seller is processing your order', timestamp: '28 Jul 2026, 4:30 PM' },
+          ],
+        },
+        {
+          label: 'Delivered',
+          timestamp: '02 Aug 2026, 3:20 PM',
+          updates: [
+            { text: 'Item has been shipped from the warehouse', timestamp: '30 Jul 2026, 10:15 AM' },
+            { text: 'Out for delivery', timestamp: '02 Aug 2026, 11:00 AM' },
+            { text: 'Delivered — signed for at the doorstep', timestamp: '02 Aug 2026, 3:20 PM' },
+          ],
+        },
+        {
+          label: 'Installation Scheduled',
+          timestamp: '03 Aug 2026, 9:00 AM',
+          description: '06 Aug 2026, 10 AM – 12 PM',
+          updates: [
+            { text: 'Installation request raised', timestamp: '03 Aug 2026, 9:00 AM' },
+            { text: 'Technician Rajesh Kumar assigned', timestamp: '03 Aug 2026, 2:45 PM' },
+            { text: 'Visit slot confirmed: 06 Aug 2026, 10 AM – 12 PM', timestamp: '03 Aug 2026, 2:50 PM' },
+          ],
+        },
         { label: 'Installation Completed', timestamp: null },
       ],
       currentIndex: 2,
