@@ -6,7 +6,6 @@ import { CURRENT_USER } from '../data/profile.js';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
 import { SPRING_STANDARD, DURATION_REDUCED } from '../motion.js';
 import Timeline from '../components/Timeline.jsx';
-import IntentList from '../components/IntentList.jsx';
 import ConfirmSheet from '../components/ConfirmSheet.jsx';
 import BottomSheet from '../components/BottomSheet.jsx';
 import {
@@ -32,8 +31,6 @@ const STATUS_PILL = {
   green: { bg: 'var(--color-success-tint)', color: 'var(--color-success)' },
   muted: { bg: 'var(--color-disabled-bg)', color: 'var(--color-disabled-text)' },
 };
-
-const FEATURED_INTENT_KEYS = ['returnReplace', 'warranty', 'needHelp', 'cancel'];
 
 function formatRupees(amount) {
   return `₹${amount.toLocaleString('en-IN')}`;
@@ -211,6 +208,21 @@ export default function OrderDetails({ params }) {
                     </button>
                   </div>
 
+                  {order.refund && (
+                    <div className="order-details__refund-block">
+                      <p className="order-details__refund-heading">Refund Status</p>
+                      <div className="order-details__payment-row">
+                        <span>Refund Amount</span>
+                        <span>{formatRupees(order.refund.amount)}</span>
+                      </div>
+                      <div className="order-details__payment-row">
+                        <span>Refund Method</span>
+                        <span>{order.refund.method}</span>
+                      </div>
+                      <Timeline steps={order.refund.timeline.steps} currentIndex={order.refund.timeline.currentIndex} />
+                    </div>
+                  )}
+
                   {order.address && (
                     <div className="order-details__shipping-block">
                       <div className="order-details__shipping-row">
@@ -296,8 +308,6 @@ export default function OrderDetails({ params }) {
           </button>
           {!returnIntent?.enabled && <p className="order-details__return-reason">{returnIntent?.reason}</p>}
         </div>
-
-        <IntentList order={order} excludeKeys={FEATURED_INTENT_KEYS} />
 
         <div className="order-details__help-card">
           <div className="order-details__help-row">

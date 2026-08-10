@@ -340,6 +340,28 @@
   transform: scale(0.97);
 }
 
+.order-details__refund-block {
+  background: var(--color-success-tint);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.order-details__refund-heading {
+  margin: 0;
+  font-size: var(--text-caption-size);
+  font-weight: 700;
+  color: var(--color-success);
+  text-transform: uppercase;
+  letter-spacing: var(--text-label-tracking);
+}
+
+.order-details__refund-block .timeline {
+  margin-top: var(--space-2);
+}
+
 .order-details__shipping-block {
   display: flex;
   flex-direction: column;
