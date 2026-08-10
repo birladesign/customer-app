@@ -171,6 +171,14 @@ export function HouseIcon(props) {
   );
 }
 
+export function HouseFilledIcon(props) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none" {...props}>
+      <path d="M12 3 3 10.5V20a1 1 0 0 0 1 1h5v-6h6v6h5a1 1 0 0 0 1-1v-9.5L12 3Z" />
+    </svg>
+  );
+}
+
 export function HeadsetIcon(props) {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" strokeWidth="2" {...base} {...props}>
@@ -178,6 +186,14 @@ export function HeadsetIcon(props) {
       <rect x="3" y="13" width="4" height="6" rx="1.5" />
       <rect x="17" y="13" width="4" height="6" rx="1.5" />
       <path d="M19 19v1a2 2 0 0 1-2 2h-3" />
+    </svg>
+  );
+}
+
+export function HeadsetFilledIcon(props) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none" {...props}>
+      <path d="M12 3a9 9 0 0 0-9 9v7a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2H4.06A8 8 0 0 1 20 13H18a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-7a9 9 0 0 0-9-9Z" />
     </svg>
   );
 }
@@ -216,6 +232,14 @@ export function PackageIcon(props) {
       <path d="M21 8 12 3 3 8l9 5 9-5Z" />
       <path d="M3 8v8l9 5 9-5V8" />
       <line x1="12" y1="13" x2="12" y2="21" />
+    </svg>
+  );
+}
+
+export function PackageFilledIcon(props) {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" stroke="none" {...props}>
+      <path d="M12 3 21 8v8l-9 5-9-5V8l9-5Z" />
     </svg>
   );
 }
