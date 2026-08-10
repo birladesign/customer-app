@@ -90,6 +90,7 @@ function ChatMessage({ msg }) {
 export default function SupportChat({ escalate, presetOrder, staleOrderId, onClose }) {
   const { navigate } = useNavigation();
   const idRef = useRef(0);
+  const seededRef = useRef(false);
   const transcriptEndRef = useRef(null);
 
   const [messages, setMessages] = useState([]);
@@ -113,6 +114,10 @@ export default function SupportChat({ escalate, presetOrder, staleOrderId, onClo
   }
 
   useEffect(() => {
+    // Guards against StrictMode's dev-only double-invoke of mount effects —
+    // without it, the greeting (and its chips) would be seeded twice.
+    if (seededRef.current) return;
+    seededRef.current = true;
     if (staleOrderId) {
       pushBot({ text: `We couldn't find order ${staleOrderId} — let's start fresh.` });
     }

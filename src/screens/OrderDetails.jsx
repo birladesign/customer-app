@@ -37,7 +37,7 @@ function formatRupees(amount) {
 }
 
 export default function OrderDetails({ params }) {
-  const { goBack, navigate } = useNavigation();
+  const { goBack, navigate, switchTab } = useNavigation();
   const [copied, setCopied] = useState(false);
   // Payment/shipping/cancel info is relevant on first glance, not tucked
   // behind a click — starts open, but stays collapsible for anyone who wants
@@ -319,7 +319,7 @@ export default function OrderDetails({ params }) {
               <p className="order-details__help-subtext">Our sleep experts are here to help you 24/7</p>
             </div>
           </div>
-          <button className="order-details__help-cta" onClick={() => navigate('supportCase', { orderId: order.id })}>
+          <button className="order-details__help-cta" onClick={() => switchTab('support', { openChat: true, orderId: order.id })}>
             <HeadsetIcon width="16" height="16" />
             Get Help
           </button>

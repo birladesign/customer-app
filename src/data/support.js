@@ -18,7 +18,7 @@ export const CONTACT = {
 // "Returns" is a routing lane here for taxonomy fidelity with the PRD's five
 // lanes, but it deep-links into the existing Return & Replace wizard instead
 // of a second complaint sub-flow — see redirectsTo, handled in
-// SupportCaseFlow.jsx.
+// SupportChat.jsx.
 export const CASE_LANES = [
   {
     key: 'logistics',

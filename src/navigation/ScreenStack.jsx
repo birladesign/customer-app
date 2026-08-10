@@ -15,7 +15,6 @@ import Invoices from '../screens/Profile/Invoices.jsx';
 import Requests from '../screens/Profile/Requests.jsx';
 import OrderDetails from '../screens/OrderDetails.jsx';
 import ReturnReplaceFlow from '../screens/ReturnReplace/ReturnReplaceFlow.jsx';
-import SupportCaseFlow from '../screens/SupportCase/SupportCaseFlow.jsx';
 import './ScreenStack.css';
 
 const SCREENS = {
@@ -32,7 +31,6 @@ const SCREENS = {
   requests: Requests,
   orderDetails: OrderDetails,
   returnReplace: ReturnReplaceFlow,
-  supportCase: SupportCaseFlow,
 };
 
 // Spatial consistency: a pushed screen slides in from the right while the one
