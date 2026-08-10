@@ -18,7 +18,7 @@ const TABS = [
 ];
 
 export default function MyOrders() {
-  const { switchTab } = useNavigation();
+  const { switchTab, navigate } = useNavigation();
   const reduceMotion = useReducedMotion();
   const [activeTab, setActiveTab] = useState('all');
   const [query, setQuery] = useState('');
@@ -109,7 +109,7 @@ export default function MyOrders() {
             </button>
             <h1>My Orders</h1>
           </div>
-          <button className="my-orders__help-btn">
+          <button className="my-orders__help-btn" onClick={() => navigate('supportCase', {})}>
             <HelpCircleIcon />
             Need Help
           </button>

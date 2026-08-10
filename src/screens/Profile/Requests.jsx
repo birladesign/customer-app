@@ -1,6 +1,6 @@
-import { getRequestOrders } from '../../data/profile.js';
+import { getAllCases } from '../../data/support.js';
 import { useNavigation } from '../../navigation/NavigationContext.jsx';
-import { ChevronLeftIcon, ChevronRightIcon, ShieldIcon } from '../../components/icons.jsx';
+import { ChevronLeftIcon } from '../../components/icons.jsx';
 import './Requests.css';
 
 // Case status pill — a different domain from OrderDetails' STATUS_PILL (order
@@ -13,12 +13,9 @@ const STATUS_PILL = {
 
 export default function Requests() {
   const { goBack } = useNavigation();
-  const cases = getRequestOrders().map((order) => ({
-    order,
-    state: order.section === 'closed' ? 'resolved' : 'open',
-  }));
-  const openCount = cases.filter((c) => c.state === 'open').length;
-  const resolvedCount = cases.filter((c) => c.state === 'resolved').length;
+  const cases = getAllCases();
+  const openCount = cases.filter((c) => c.status === 'open').length;
+  const resolvedCount = cases.filter((c) => c.status === 'resolved').length;
 
   return (
     <div className="requests">
@@ -38,35 +35,56 @@ export default function Requests() {
       <main className="requests__content">
         {cases.length === 0 ? (
           <div className="requests__empty">
-            <span className="requests__empty-icon">
-              <ShieldIcon width="28" height="28" />
-            </span>
             <p className="requests__empty-title">No Requests Yet</p>
             <p className="requests__empty-body">
-              Any return, replacement, or warranty case you open will show up here.
+              Any return, replacement, warranty, or support case you open will show up here.
             </p>
           </div>
         ) : (
-          cases.map(({ order, state }) => {
-            const pill = STATUS_PILL[state];
+          cases.map((c) => {
+            const pill = STATUS_PILL[c.status];
+            if (c.legacyOrder) {
+              const order = c.legacyOrder;
+              return (
+                <div className="requests__card" key={order.id}>
+                  <div className="requests__card-top">
+                    <div className="requests__id-row">
+                      <p className="requests__id">{order.id}</p>
+                      <span className="requests__pill" style={{ background: pill.bg, color: pill.color }}>
+                        {pill.label}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="requests__divider" />
+                  <p className="requests__ordered-on">Ordered on {order.date}</p>
+                  <div className="requests__divider" />
+                  <p className="requests__case-title">{order.status.label}</p>
+                  {order.caption && <p className="requests__case-desc">{order.caption}</p>}
+                  <div className="requests__sla">
+                    <strong>Next SLA:</strong> {order.banner?.text ?? "We'll update you as soon as there's progress."}
+                  </div>
+                </div>
+              );
+            }
             return (
-              <div className="requests__card" key={order.id}>
+              <div className="requests__case-card" key={c.id}>
                 <div className="requests__card-top">
                   <div className="requests__id-row">
-                    <p className="requests__id">{order.id}</p>
+                    <p className="requests__id">{c.id}</p>
                     <span className="requests__pill" style={{ background: pill.bg, color: pill.color }}>
                       {pill.label}
                     </span>
+                    {c.escalated && <span className="requests__escalated-badge">Escalated</span>}
                   </div>
-                  <ChevronRightIcon className="requests__chevron" aria-hidden="true" />
                 </div>
                 <div className="requests__divider" />
-                <p className="requests__ordered-on">Ordered on {order.date}</p>
-                <div className="requests__divider" />
-                <p className="requests__case-title">{order.status.label}</p>
-                {order.caption && <p className="requests__case-desc">{order.caption}</p>}
+                <p className="requests__case-title">
+                  {c.laneLabel}
+                  {c.orderProduct ? ` · ${c.orderProduct}` : ''}
+                </p>
+                {c.description && <p className="requests__case-desc">{c.description}</p>}
                 <div className="requests__sla">
-                  <strong>Next SLA:</strong> {order.banner?.text ?? "We'll update you as soon as there's progress."}
+                  <strong>Next SLA:</strong> {c.slaLabel}
                 </div>
               </div>
             );

@@ -8,14 +8,13 @@ const INTENT_LABELS = {
   modify: 'Modify Order',
   cancel: 'Cancel Order',
   returnReplace: 'Return or Replace',
-  reportIssue: 'Report an Issue',
   warranty: 'Warranty',
   invoice: 'Download Invoice',
   paymentDetails: 'Payment & Refund Details',
   needHelp: 'Need Help',
 };
 
-const INTENT_ORDER = ['returnReplace', 'modify', 'cancel', 'reportIssue', 'warranty', 'invoice', 'paymentDetails', 'needHelp'];
+const INTENT_ORDER = ['returnReplace', 'modify', 'cancel', 'warranty', 'invoice', 'paymentDetails', 'needHelp'];
 
 // Only "returnReplace" and "payment" actually navigate anywhere in this pass —
 // the rest render enabled/disabled for completeness but have no onClick yet,
@@ -46,7 +45,6 @@ export function getOrderIntents(order) {
       !isDelivered && !isClosed
         ? { enabled: true }
         : { enabled: false, reason: isClosed ? 'Order already closed' : 'Order already delivered' },
-    reportIssue: { enabled: true },
     warranty: isDelivered ? { enabled: true } : { enabled: false, reason: 'Available after delivery' },
     invoice: { enabled: true },
     paymentDetails: { enabled: true },
