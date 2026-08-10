@@ -3,7 +3,7 @@ import { SPRING_GESTURE } from '../motion.js';
 import './BottomSheet.css';
 
 // Shared overlay/drag/spring shell for every bottom sheet in the app
-// (FilterSheet, ConfirmSheet, ...). A fast downward flick OR a long drag
+// (ConfirmSheet, ...). A fast downward flick OR a long drag
 // commits to close — velocity decides intent, not just distance.
 export default function BottomSheet({ open, onClose, children }) {
   const reduceMotion = useReducedMotion();

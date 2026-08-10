@@ -1,10 +1,7 @@
 import { useState } from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { splitProductSpec } from '../data/orders.js';
-import Tracker from './Tracker.jsx';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
-import { SPRING_STANDARD, DURATION_REDUCED } from '../motion.js';
-import { CopyIcon, CheckIcon, ChevronDownIcon, ChevronRightIcon, ZapIcon, AlertTriangleIcon, WalletIcon, CheckCircleIcon, StarIcon } from './icons.jsx';
+import { CopyIcon, CheckIcon, ChevronRightIcon, ZapIcon, AlertTriangleIcon, WalletIcon, CheckCircleIcon, StarIcon } from './icons.jsx';
 import './OrderCard.css';
 
 const DOT_COLOR = {
@@ -19,7 +16,7 @@ const BANNER_ICON = {
   alert: AlertTriangleIcon,
 };
 
-function ActionButton({ label, variant, isTrackTrigger, isOpen, onClick }) {
+function ActionButton({ label, variant, onClick }) {
   if (variant === 'disabled') {
     return (
       <button className="order-card__action order-card__action--disabled" disabled>
@@ -40,14 +37,8 @@ function ActionButton({ label, variant, isTrackTrigger, isOpen, onClick }) {
         e.stopPropagation();
         onClick?.(e);
       }}
-      aria-expanded={isTrackTrigger ? isOpen : undefined}
     >
       {label}
-      {isTrackTrigger && (
-        <ChevronDownIcon
-          className={`order-card__track-chevron${isOpen ? ' order-card__track-chevron--open' : ''}`}
-        />
-      )}
     </button>
   );
 }
@@ -80,12 +71,11 @@ function CopyOrderId({ id }) {
 }
 
 export default function OrderCard({ order }) {
-  const { banner, badge, status, product, caption, savings, refundNote, disabledReason, actions, rating, tracker } = order;
-  const reduceMotion = useReducedMotion();
+  const { banner, badge, status, product, caption, savings, refundNote, disabledReason, actions, rating } = order;
   const { navigate } = useNavigation();
-  const [trackerOpen, setTrackerOpen] = useState(false);
   const BannerIcon = banner ? BANNER_ICON[banner.icon] : null;
   const { name: productName, spec } = splitProductSpec(product);
+  const visibleActions = actions.filter((a) => !a.label.startsWith('Track'));
 
   function openDetails() {
     navigate('orderDetails', { orderId: order.id });
@@ -152,37 +142,13 @@ export default function OrderCard({ order }) {
 
         {disabledReason && <p className="order-card__disabled-reason">{disabledReason}</p>}
 
-        {actions.length > 0 && (
+        {visibleActions.length > 0 && (
           <div className="order-card__actions">
-            {actions.map((a) => {
-              const isTrackTrigger = Boolean(tracker) && a.label.startsWith('Track');
-              return (
-                <ActionButton
-                  key={a.label}
-                  {...a}
-                  isTrackTrigger={isTrackTrigger}
-                  isOpen={trackerOpen}
-                  onClick={isTrackTrigger ? () => setTrackerOpen((v) => !v) : undefined}
-                />
-              );
-            })}
+            {visibleActions.map((a) => (
+              <ActionButton key={a.label} {...a} />
+            ))}
           </div>
         )}
-
-        <AnimatePresence initial={false}>
-          {trackerOpen && tracker && (
-            <motion.div
-              className="order-card__tracker-wrap"
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={reduceMotion ? DURATION_REDUCED : SPRING_STANDARD}
-              style={{ overflow: 'hidden' }}
-            >
-              <Tracker steps={tracker.steps} currentIndex={tracker.currentIndex} />
-            </motion.div>
-          )}
-        </AnimatePresence>
 
         {typeof rating === 'number' && (
           <div className="order-card__rating">

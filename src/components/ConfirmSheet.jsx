@@ -2,8 +2,7 @@ import BottomSheet from './BottomSheet.jsx';
 import './ConfirmSheet.css';
 
 // Generic bottom-sheet confirm dialog — composes the shared BottomSheet shell
-// (also used by FilterSheet) rather than duplicating the drag/spring/overlay
-// mechanics.
+// rather than duplicating the drag/spring/overlay mechanics.
 export default function ConfirmSheet({ open, title, body, confirmLabel = 'Confirm', cancelLabel = 'Cancel', danger = false, onConfirm, onClose }) {
   return (
     <BottomSheet open={open} onClose={onClose}>

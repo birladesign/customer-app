@@ -24,9 +24,10 @@ import imgDeskAeroplus from '../assets/desk-aeroplus.png';
 import imgMattressOrtho from '../assets/mattress-ortho.jpg';
 import imgPillowCervical from '../assets/pillow-cervical.jpg';
 
-// Sections still back the tab filter (Action/Active/Done/Closed) and their
-// counts — they're a filter dimension, not a display grouping. The list itself
-// always renders in date order, never grouped/sorted by these tags.
+// Sections still back the tab filter (Active/Closed are shown as tabs; Action
+// and Done are folded into All) and their counts — they're a filter dimension,
+// not a display grouping. The list itself always renders in date order, never
+// grouped/sorted by these tags.
 export const SECTIONS = [
   { key: 'needsAttention', label: 'Needs Attention', tabKey: 'action', tabLabel: 'Action' },
   { key: 'inProgress', label: 'In Progress', tabKey: 'active', tabLabel: 'Active' },
