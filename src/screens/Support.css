@@ -20,12 +20,34 @@
 }
 
 .support__topbar h1 {
+  flex: 1;
+  min-width: 0;
   margin: 0;
   font-size: var(--text-heading-size);
   letter-spacing: var(--text-heading-tracking);
   line-height: var(--text-heading-leading);
   font-weight: 700;
   color: var(--color-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.support__close-btn {
+  flex-shrink: 0;
+  border: none;
+  background: rgba(26, 43, 88, 0.06);
+  border-radius: var(--radius-full);
+  padding: var(--space-2) var(--space-3);
+  font-family: inherit;
+  font-size: var(--text-body-size);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  transition: transform 0.1s ease-out;
+}
+
+.support__close-btn:active {
+  transform: scale(0.96);
 }
 
 .support__icon-btn {

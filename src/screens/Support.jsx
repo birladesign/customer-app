@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
 import { FAQ_ITEMS, CONTACT, getAllCases } from '../data/support.js';
+import { ORDERS } from '../data/orders.js';
 import { SPRING_STANDARD, DURATION_REDUCED } from '../motion.js';
 import SearchAndFilterBar from '../components/SearchAndFilterBar.jsx';
 import { HouseIcon, ChevronDownIcon } from '../components/icons.jsx';
+import SupportChat from './SupportCase/SupportChat.jsx';
 import './Support.css';
 
 const STATUS_PILL = {
@@ -12,11 +14,23 @@ const STATUS_PILL = {
   resolved: { bg: 'var(--color-success-tint)', color: 'var(--color-success)', label: 'Resolved' },
 };
 
-export default function Support() {
+// A cross-tab deep link (My Orders' "Need Help", Order Details' "Get Help")
+// hands the chat its starting state via switchTab params, same shape the old
+// pushed supportCase route used to take (see git history) — resolved once at
+// mount so re-rendering never re-derives a stale preset order.
+function initialChatConfig(params) {
+  if (!params.openChat) return null;
+  const presetOrder = params.orderId ? ORDERS.find((o) => o.id === params.orderId) : null;
+  const staleOrderId = params.orderId && !presetOrder ? params.orderId : null;
+  return { escalate: Boolean(params.escalate), presetOrder, staleOrderId };
+}
+
+export default function Support({ params = {} }) {
   const { switchTab, navigate } = useNavigation();
   const reduceMotion = useReducedMotion();
   const [query, setQuery] = useState('');
   const [openId, setOpenId] = useState(null);
+  const [chatConfig, setChatConfig] = useState(() => initialChatConfig(params));
 
   const recentCases = getAllCases().slice(0, 3);
 
@@ -24,6 +38,28 @@ export default function Support() {
   const filteredFaqs = q
     ? FAQ_ITEMS.filter((f) => f.question.toLowerCase().includes(q) || f.answer.toLowerCase().includes(q))
     : FAQ_ITEMS;
+
+  if (chatConfig) {
+    return (
+      <div className="support">
+        <header className="support__topbar">
+          <button className="support__icon-btn" onClick={() => switchTab('home')} aria-label="Home">
+            <HouseIcon width="18" height="18" />
+          </button>
+          <h1>{chatConfig.escalate ? 'Talk to a Human' : 'Raise a New Case'}</h1>
+          <button className="support__close-btn" onClick={() => setChatConfig(null)}>
+            Close
+          </button>
+        </header>
+        <SupportChat
+          escalate={chatConfig.escalate}
+          presetOrder={chatConfig.presetOrder}
+          staleOrderId={chatConfig.staleOrderId}
+          onClose={() => setChatConfig(null)}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="support">
@@ -40,10 +76,10 @@ export default function Support() {
           <p className="support__hero-body">
             We'll package your order, issue, and evidence so you don't have to repeat yourself.
           </p>
-          <button className="support__hero-primary" onClick={() => navigate('supportCase', { escalate: true })}>
+          <button className="support__hero-primary" onClick={() => setChatConfig({ escalate: true, presetOrder: null, staleOrderId: null })}>
             Talk to a Human
           </button>
-          <button className="support__hero-secondary" onClick={() => navigate('supportCase', {})}>
+          <button className="support__hero-secondary" onClick={() => setChatConfig({ escalate: false, presetOrder: null, staleOrderId: null })}>
             Raise a New Case
           </button>
         </div>
@@ -84,7 +120,10 @@ export default function Support() {
           {filteredFaqs.length === 0 ? (
             <div className="support__faq-empty">
               <p className="support__faq-empty-title">No results for &quot;{query}&quot;</p>
-              <button className="support__faq-empty-cta" onClick={() => navigate('supportCase', {})}>
+              <button
+                className="support__faq-empty-cta"
+                onClick={() => setChatConfig({ escalate: false, presetOrder: null, staleOrderId: null })}
+              >
                 Raise a case instead
               </button>
             </div>
