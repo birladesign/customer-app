@@ -11,6 +11,20 @@ export const CURRENT_USER = {
   avatarInitial: 'A',
 };
 
+let addressSeq = 0;
+
+export function addAddress(address) {
+  addressSeq += 1;
+  const record = { id: `addr-new-${addressSeq}`, ...address };
+  if (record.isDefault) {
+    for (const a of ADDRESSES) a.isDefault = false;
+  } else if (ADDRESSES.length === 0) {
+    record.isDefault = true;
+  }
+  ADDRESSES.push(record);
+  return record;
+}
+
 export const ADDRESSES = [
   {
     id: 'addr-home',

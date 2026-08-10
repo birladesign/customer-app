@@ -29,7 +29,7 @@ function AddressCard({ address, onDelete }) {
 }
 
 export default function Addresses() {
-  const { goBack } = useNavigation();
+  const { goBack, navigate } = useNavigation();
   const [addresses, setAddresses] = useState(ADDRESSES);
   const [pendingDelete, setPendingDelete] = useState(null);
 
@@ -52,7 +52,9 @@ export default function Addresses() {
       </header>
 
       <main className="addresses__content">
-        <button className="addresses__add-btn">Add New Address</button>
+        <button className="addresses__add-btn" onClick={() => navigate('addAddress')}>
+          Add New Address
+        </button>
 
         {addresses.length === 0 ? (
           <div className="addresses__empty">

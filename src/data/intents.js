@@ -5,22 +5,18 @@
 // (§7.7-7.9 M/N/A tables) is out of scope here.
 
 const INTENT_LABELS = {
-  modify: 'Modify Order',
   cancel: 'Cancel Order',
   returnReplace: 'Return or Replace',
-  reportIssue: 'Report an Issue',
   warranty: 'Warranty',
-  invoice: 'Download Invoice',
-  paymentDetails: 'Payment & Refund Details',
   needHelp: 'Need Help',
 };
 
-const INTENT_ORDER = ['returnReplace', 'modify', 'cancel', 'reportIssue', 'warranty', 'invoice', 'paymentDetails', 'needHelp'];
+const INTENT_ORDER = ['returnReplace', 'cancel', 'warranty', 'needHelp'];
 
-// Only "returnReplace" and "payment" actually navigate anywhere in this pass —
-// the rest render enabled/disabled for completeness but have no onClick yet,
-// same precedent as this app's own inert Need-Help/Back buttons.
-export const NAVIGABLE_INTENTS = new Set(['returnReplace', 'paymentDetails']);
+// Only "returnReplace" navigates anywhere — OrderDetails.jsx reads the other
+// three (cancel/warranty/needHelp) directly for their enabled/reason state,
+// each with its own dedicated on-page treatment rather than a generic list.
+export const NAVIGABLE_INTENTS = new Set(['returnReplace']);
 
 function hasReachedStep(order, label) {
   if (!order.timeline) return false;
@@ -30,26 +26,17 @@ function hasReachedStep(order, label) {
 
 export function getOrderIntents(order) {
   const isDelivered = hasReachedStep(order, 'Delivered');
-  const isShipped = hasReachedStep(order, 'Shipped');
   const isClosed = order.section === 'closed';
 
   const state = {
     returnReplace: isDelivered
       ? { enabled: true }
       : { enabled: false, reason: 'Available once the order is delivered' },
-    modify: isDelivered
-      ? { enabled: false, reason: 'Order already delivered' }
-      : isShipped
-      ? { enabled: false, reason: 'Order already shipped' }
-      : { enabled: true },
     cancel:
       !isDelivered && !isClosed
         ? { enabled: true }
         : { enabled: false, reason: isClosed ? 'Order already closed' : 'Order already delivered' },
-    reportIssue: { enabled: true },
     warranty: isDelivered ? { enabled: true } : { enabled: false, reason: 'Available after delivery' },
-    invoice: { enabled: true },
-    paymentDetails: { enabled: true },
     needHelp: { enabled: true },
   };
 

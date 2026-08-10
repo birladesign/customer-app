@@ -109,7 +109,7 @@ export default function MyOrders() {
             </button>
             <h1>My Orders</h1>
           </div>
-          <button className="my-orders__help-btn">
+          <button className="my-orders__help-btn" onClick={() => switchTab('support', { openChat: true })}>
             <HelpCircleIcon />
             Need Help
           </button>

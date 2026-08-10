@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { ORDERS, splitProductSpec } from '../data/orders.js';
 import { getOrderIntents } from '../data/intents.js';
+import { CURRENT_USER } from '../data/profile.js';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
 import { SPRING_STANDARD, DURATION_REDUCED } from '../motion.js';
 import Timeline from '../components/Timeline.jsx';
-import IntentList from '../components/IntentList.jsx';
+import ConfirmSheet from '../components/ConfirmSheet.jsx';
+import BottomSheet from '../components/BottomSheet.jsx';
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -17,6 +19,9 @@ import {
   StarIcon,
   HelpCircleIcon,
   HeadsetIcon,
+  MailIcon,
+  PhoneIcon,
+  UserIcon,
 } from '../components/icons.jsx';
 import './OrderDetails.css';
 
@@ -27,16 +32,19 @@ const STATUS_PILL = {
   muted: { bg: 'var(--color-disabled-bg)', color: 'var(--color-disabled-text)' },
 };
 
-const FEATURED_INTENT_KEYS = ['returnReplace', 'warranty', 'needHelp'];
-
 function formatRupees(amount) {
   return `₹${amount.toLocaleString('en-IN')}`;
 }
 
 export default function OrderDetails({ params }) {
-  const { goBack, navigate } = useNavigation();
+  const { goBack, navigate, switchTab } = useNavigation();
   const [copied, setCopied] = useState(false);
-  const [detailsOpen, setDetailsOpen] = useState(false);
+  // Payment/shipping/cancel info is relevant on first glance, not tucked
+  // behind a click — starts open, but stays collapsible for anyone who wants
+  // to hide it.
+  const [detailsOpen, setDetailsOpen] = useState(true);
+  const [confirmingCancel, setConfirmingCancel] = useState(false);
+  const [trackingOpen, setTrackingOpen] = useState(false);
   const reduceMotion = useReducedMotion();
   const order = ORDERS.find((o) => o.id === params.orderId);
 
@@ -60,6 +68,23 @@ export default function OrderDetails({ params }) {
   const intents = getOrderIntents(order);
   const returnIntent = intents.find((i) => i.key === 'returnReplace');
   const warrantyIntent = intents.find((i) => i.key === 'warranty');
+  const cancelIntent = intents.find((i) => i.key === 'cancel');
+
+  // No backend in this prototype — mutate the shared order object in place
+  // (same pattern as PersonalInformation/AddAddress) so My Orders reflects
+  // the cancellation the moment we navigate back to it.
+  function handleCancelOrder() {
+    Object.assign(order, {
+      section: 'closed',
+      status: { dot: 'muted', label: 'Cancelled' },
+      caption: 'Cancelled as per your request',
+      actions: [],
+    });
+    order.timeline?.steps.push({ label: 'Cancelled', timestamp: null, description: 'Cancelled as per your request' });
+    if (order.timeline) order.timeline.currentIndex = order.timeline.steps.length - 1;
+    setConfirmingCancel(false);
+    goBack();
+  }
 
   async function handleCopy() {
     try {
@@ -106,10 +131,26 @@ export default function OrderDetails({ params }) {
         {order.timeline && (
           <div className="order-details__card">
             <Timeline steps={order.timeline.steps} currentIndex={order.timeline.currentIndex} />
-            <button className="order-details__tracking-link">
+            <button className="order-details__tracking-link" onClick={() => setTrackingOpen(true)}>
               <FileTextIcon width="14" height="14" />
               Tracking Updates
             </button>
+          </div>
+        )}
+
+        {order.technician && (
+          <div className="order-details__technician-card">
+            <span className="order-details__technician-icon">
+              <UserIcon width="18" height="18" />
+            </span>
+            <div className="order-details__technician-text">
+              <p className="order-details__technician-label">Your Technician</p>
+              <p className="order-details__technician-name">{order.technician.name}</p>
+            </div>
+            <a className="order-details__technician-call" href={`tel:${order.technician.phone}`}>
+              <PhoneIcon width="14" height="14" />
+              Call
+            </a>
           </div>
         )}
 
@@ -134,20 +175,88 @@ export default function OrderDetails({ params }) {
                 style={{ overflow: 'hidden' }}
               >
                 <div className="order-details__disclosure-body">
-                  <div className="order-details__row">
-                    <span>Order Amount</span>
-                    <strong>{formatRupees(order.amount)}</strong>
+                  <div className="order-details__payment-block">
+                    <div className="order-details__payment-row">
+                      <span>{productName}{spec ? ` (${spec})` : ''}</span>
+                      <span>{formatRupees(order.priceBreakup?.itemPrice ?? order.amount)}</span>
+                    </div>
+                    {Boolean(order.priceBreakup?.discount) && (
+                      <div className="order-details__payment-row">
+                        <span>Discount</span>
+                        <span className="order-details__payment-positive">-{formatRupees(order.priceBreakup.discount)}</span>
+                      </div>
+                    )}
+                    <div className="order-details__payment-row">
+                      <span>Shipping &amp; Handling</span>
+                      <span className="order-details__payment-positive">
+                        {order.priceBreakup?.shipping ? formatRupees(order.priceBreakup.shipping) : 'FREE'}
+                      </span>
+                    </div>
+                    <div className="order-details__payment-divider" />
+                    <div className="order-details__payment-row order-details__payment-row--total">
+                      <span>Total Amount</span>
+                      <span>{formatRupees(order.priceBreakup?.total ?? order.amount)}</span>
+                    </div>
+                    <div className="order-details__payment-divider" />
+                    <div className="order-details__payment-row">
+                      <span>Payment Method</span>
+                      <span>{order.payment.method} · {order.payment.status}</span>
+                    </div>
+                    <button className="order-details__get-invoice">
+                      <FileTextIcon width="14" height="14" />
+                      Get Invoice
+                    </button>
                   </div>
-                  <div className="order-details__row">
-                    <span>Payment</span>
-                    <strong>{order.payment.method} · {order.payment.status}</strong>
-                  </div>
-                  {order.address && (
-                    <div className="order-details__row order-details__row--address">
-                      <span>Delivery Address</span>
-                      <strong>{order.address}</strong>
+
+                  {order.refund && (
+                    <div className="order-details__refund-block">
+                      <p className="order-details__refund-heading">Refund Status</p>
+                      <div className="order-details__payment-row">
+                        <span>Refund Amount</span>
+                        <span>{formatRupees(order.refund.amount)}</span>
+                      </div>
+                      <div className="order-details__payment-row">
+                        <span>Refund Method</span>
+                        <span>{order.refund.method}</span>
+                      </div>
+                      <Timeline steps={order.refund.timeline.steps} currentIndex={order.refund.timeline.currentIndex} />
                     </div>
                   )}
+
+                  {order.address && (
+                    <div className="order-details__shipping-block">
+                      <div className="order-details__shipping-row">
+                        <p className="order-details__shipping-label">Delivery Address</p>
+                        <p className="order-details__shipping-value">{order.address}</p>
+                      </div>
+                      <div className="order-details__shipping-divider" />
+                      <div className="order-details__shipping-row">
+                        <p className="order-details__shipping-label">Billing Address</p>
+                        <p className="order-details__shipping-value">{order.address}</p>
+                      </div>
+                      <div className="order-details__shipping-divider" />
+                      <div className="order-details__shipping-row">
+                        <p className="order-details__shipping-label">Contact Details</p>
+                        <p className="order-details__contact-line">
+                          <MailIcon width="13" height="13" />
+                          {CURRENT_USER.email}
+                        </p>
+                        <p className="order-details__contact-line">
+                          <PhoneIcon width="13" height="13" />
+                          +91 {CURRENT_USER.phone}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  <button
+                    className="order-details__cancel-btn"
+                    disabled={!cancelIntent?.enabled}
+                    onClick={cancelIntent?.enabled ? () => setConfirmingCancel(true) : undefined}
+                  >
+                    Cancel Order
+                  </button>
+                  {!cancelIntent?.enabled && <p className="order-details__cancel-reason">{cancelIntent?.reason}</p>}
                 </div>
               </motion.div>
             )}
@@ -200,8 +309,6 @@ export default function OrderDetails({ params }) {
           {!returnIntent?.enabled && <p className="order-details__return-reason">{returnIntent?.reason}</p>}
         </div>
 
-        <IntentList order={order} excludeKeys={FEATURED_INTENT_KEYS} />
-
         <div className="order-details__help-card">
           <div className="order-details__help-row">
             <span className="order-details__help-icon">
@@ -212,12 +319,31 @@ export default function OrderDetails({ params }) {
               <p className="order-details__help-subtext">Our sleep experts are here to help you 24/7</p>
             </div>
           </div>
-          <button className="order-details__help-cta">
+          <button className="order-details__help-cta" onClick={() => switchTab('support', { openChat: true, orderId: order.id })}>
             <HeadsetIcon width="16" height="16" />
-            Chat with Support
+            Get Help
           </button>
         </div>
       </main>
+
+      <ConfirmSheet
+        open={confirmingCancel}
+        title="Cancel this order?"
+        body={`This will cancel ${productName}. This can't be undone.`}
+        confirmLabel="Cancel Order"
+        danger
+        onConfirm={handleCancelOrder}
+        onClose={() => setConfirmingCancel(false)}
+      />
+
+      {order.timeline && (
+        <BottomSheet open={trackingOpen} onClose={() => setTrackingOpen(false)}>
+          <h2 className="order-details__tracking-sheet-title">Tracking Updates</h2>
+          <div className="order-details__tracking-sheet-body">
+            <Timeline steps={order.timeline.steps} currentIndex={order.timeline.currentIndex} />
+          </div>
+        </BottomSheet>
+      )}
     </div>
   );
 }

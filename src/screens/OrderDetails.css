@@ -165,6 +165,77 @@
   transform: scale(0.97);
 }
 
+.order-details__technician-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3);
+}
+
+.order-details__technician-icon {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-accent-cyan-wash);
+  color: var(--color-navy-900);
+}
+
+.order-details__technician-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.order-details__technician-label {
+  margin: 0;
+  font-size: var(--text-caption-size);
+  color: var(--color-text-muted);
+}
+
+.order-details__technician-name {
+  margin: 2px 0 0;
+  font-size: var(--text-product-size);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.order-details__technician-call {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: var(--radius-full);
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-navy-900);
+  color: var(--color-text-inverse);
+  font-size: var(--text-body-size);
+  font-weight: 700;
+  text-decoration: none;
+  transition: transform 0.1s ease-out;
+}
+
+.order-details__technician-call:active {
+  transform: scale(0.96);
+}
+
+.order-details__tracking-sheet-title {
+  margin: 0 0 var(--space-4);
+  font-size: var(--text-heading-size);
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.order-details__tracking-sheet-body {
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
 .order-details__disclosure-wrap {
   background: var(--color-bg-primary);
   border: 1px solid var(--color-border);
@@ -201,32 +272,169 @@
 }
 
 .order-details__disclosure-body {
-  padding: 0 var(--space-4) var(--space-3);
+  padding: 0 var(--space-4) var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
 }
 
-.order-details__row {
+.order-details__payment-block {
+  background: var(--color-accent-cyan-wash);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.order-details__payment-row {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: var(--space-3);
   font-size: var(--text-body-size);
-  color: var(--color-text-muted);
-  padding: var(--space-2) 0;
+  color: var(--color-text-secondary);
 }
 
-.order-details__row:not(:last-child) {
-  border-bottom: 1px solid rgba(26, 43, 88, 0.06);
-}
-
-.order-details__row strong {
+.order-details__payment-row span:last-child {
   color: var(--color-text-primary);
-  font-weight: 600;
+  font-weight: 500;
   text-align: right;
+  flex-shrink: 0;
 }
 
-.order-details__row--address strong {
-  font-weight: 500;
-  max-width: 220px;
+.order-details__payment-positive {
+  color: var(--color-success) !important;
+}
+
+.order-details__payment-divider {
+  height: 1px;
+  background: rgba(26, 43, 88, 0.1);
+}
+
+.order-details__payment-row--total span {
+  font-weight: 700 !important;
+  font-size: var(--text-product-size);
+  color: var(--color-text-primary) !important;
+}
+
+.order-details__get-invoice {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-top: var(--space-1);
+  border: none;
+  background: none;
+  padding: 0;
+  font-family: inherit;
+  font-size: var(--text-body-size);
+  font-weight: 700;
+  letter-spacing: var(--text-label-tracking);
+  text-transform: uppercase;
+  text-decoration: underline;
+  color: var(--color-action-red);
+  transition: transform 0.1s ease-out;
+}
+
+.order-details__get-invoice:active {
+  transform: scale(0.97);
+}
+
+.order-details__refund-block {
+  background: var(--color-success-tint);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.order-details__refund-heading {
+  margin: 0;
+  font-size: var(--text-caption-size);
+  font-weight: 700;
+  color: var(--color-success);
+  text-transform: uppercase;
+  letter-spacing: var(--text-label-tracking);
+}
+
+.order-details__refund-block .timeline {
+  margin-top: var(--space-2);
+}
+
+.order-details__shipping-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.order-details__shipping-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.order-details__shipping-divider {
+  height: 1px;
+  background: rgba(26, 43, 88, 0.06);
+}
+
+.order-details__shipping-label {
+  margin: 0;
+  font-size: var(--text-caption-size);
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: var(--text-label-tracking);
+}
+
+.order-details__shipping-value {
+  margin: 0;
+  font-size: var(--text-body-size);
+  color: var(--color-text-primary);
+}
+
+.order-details__contact-line {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-body-size);
+  color: var(--color-text-primary);
+}
+
+.order-details__contact-line svg {
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+}
+
+.order-details__cancel-btn {
+  align-self: center;
+  border: none;
+  background: none;
+  padding: 0;
+  font-family: inherit;
+  font-size: var(--text-product-size);
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--color-action-red);
+  transition: transform 0.1s ease-out;
+}
+
+.order-details__cancel-btn:active {
+  transform: scale(0.97);
+}
+
+.order-details__cancel-btn:disabled {
+  color: var(--color-disabled-text);
+}
+
+.order-details__cancel-reason {
+  margin: 0;
+  text-align: center;
+  font-size: var(--text-caption-size);
+  color: var(--color-text-muted);
 }
 
 .order-details__warranty-row {
@@ -348,7 +556,7 @@
   font-size: var(--text-product-size);
   font-weight: 700;
   text-transform: uppercase;
-  color: var(--color-action-red);
+  color: var(--color-navy-900);
   transition: transform 0.1s ease-out;
 }
 
@@ -439,7 +647,10 @@
   .order-details__disclosure:active,
   .order-details__warranty-row:active,
   .order-details__return-link:active,
-  .order-details__help-cta:active {
+  .order-details__help-cta:active,
+  .order-details__get-invoice:active,
+  .order-details__cancel-btn:active,
+  .order-details__technician-call:active {
     transform: none;
   }
 }

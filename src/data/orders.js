@@ -239,6 +239,7 @@ export const ORDERS = [
     status: { dot: 'blue', label: 'Installation Scheduled' },
     product: 'Luxe Grande Recliner Sofa',
     caption: 'Technician visit: 06 Aug 2026, 10 AM – 12 PM',
+    technician: { name: 'Rajesh Kumar', phone: '+919876543210', phoneDisplay: '+91 98765 43210' },
     // Viewing the booked slot is a passive look, not a decision — same
     // reasoning as the Track buttons, so no dark CTA here either.
     actions: [
