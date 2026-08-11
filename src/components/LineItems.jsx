@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { splitProductSpec } from '../data/orders.js';
 import { getItemIntents, getEditEligibility } from '../data/intents.js';
@@ -28,6 +29,16 @@ function formatRupees(amount) {
 // it arrives, regardless of a still-in-transit bed frame in the same order.
 export default function LineItems({ items, openSku, onToggle, onTrack, onReturn, onRate, onEdit }) {
   const reduceMotion = useReducedMotion();
+  // Confirms the tap actually registered — a rating is a "completion" event
+  // (Apple's four feedback kinds), and filling a star silently isn't enough
+  // on its own to read as confirmed.
+  const [justRatedSku, setJustRatedSku] = useState(null);
+
+  function handleRate(item, value) {
+    onRate(item, value);
+    setJustRatedSku(item.sku);
+    setTimeout(() => setJustRatedSku((current) => (current === item.sku ? null : current)), 1800);
+  }
 
   return (
     <div className="line-items">
@@ -84,13 +95,17 @@ export default function LineItems({ items, openSku, onToggle, onTrack, onReturn,
 
                     {typeof item.rating === 'number' && (
                       <div className="line-items__rate">
-                        <span className="line-items__rate-label">Rate this item</span>
+                        <span
+                          className={`line-items__rate-label${justRatedSku === item.sku ? ' line-items__rate-label--confirmed' : ''}`}
+                        >
+                          {justRatedSku === item.sku ? 'Thanks for rating!' : 'Rate this item'}
+                        </span>
                         <span className="line-items__stars">
                           {Array.from({ length: 5 }, (_, i) => (
                             <button
                               key={i}
                               className="line-items__star-btn"
-                              onClick={() => onRate(item, i + 1)}
+                              onClick={() => handleRate(item, i + 1)}
                               aria-label={`Rate ${item.product} ${i + 1} out of 5 stars`}
                             >
                               <StarIcon filled={i < item.rating} />
@@ -104,7 +119,6 @@ export default function LineItems({ items, openSku, onToggle, onTrack, onReturn,
                       <button
                         className="line-items__action-link"
                         disabled={!editIntent.enabled}
-                        title={editIntent.enabled ? undefined : editIntent.reason}
                         onClick={editIntent.enabled ? () => onEdit(item) : undefined}
                       >
                         <EditIcon width="13" height="13" />
@@ -113,7 +127,6 @@ export default function LineItems({ items, openSku, onToggle, onTrack, onReturn,
                       <button
                         className="line-items__action-link"
                         disabled={!intents.warranty.enabled}
-                        title={intents.warranty.enabled ? undefined : intents.warranty.reason}
                       >
                         <ShieldIcon width="13" height="13" />
                         Warranty
@@ -127,6 +140,10 @@ export default function LineItems({ items, openSku, onToggle, onTrack, onReturn,
                         Return / Replace
                       </button>
                     </div>
+                    {/* A native `title` tooltip never appears on touch, so a
+                        disabled action's reason needs to be real, visible
+                        text — not just an attribute only a mouse can hover. */}
+                    {!editIntent.enabled && <p className="line-items__action-reason">{editIntent.reason}</p>}
                     {!intents.returnReplace.enabled && (
                       <p className="line-items__action-reason">{intents.returnReplace.reason}</p>
                     )}

@@ -152,6 +152,11 @@
   color: var(--color-text-primary);
 }
 
+.line-items__rate-label--confirmed {
+  color: var(--color-success);
+  font-weight: 600;
+}
+
 .line-items__stars {
   display: inline-flex;
   gap: 1px;

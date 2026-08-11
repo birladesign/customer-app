@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { splitProductSpec } from '../data/orders.js';
 import { getItemIntents, getEditEligibility } from '../data/intents.js';
 import Tracker from './Tracker.jsx';
@@ -23,6 +24,16 @@ export default function PrimaryItem({ item, onTrack, onReturn, onRate, onEdit })
   const { name, spec } = splitProductSpec(item.product);
   const intents = getItemIntents(item);
   const editIntent = getEditEligibility(item);
+  // Confirms the tap actually registered — a rating is a "completion" event
+  // (Apple's four feedback kinds), and filling a star silently isn't enough
+  // on its own to read as confirmed.
+  const [justRated, setJustRated] = useState(false);
+
+  function handleRate(value) {
+    onRate(item, value);
+    setJustRated(true);
+    setTimeout(() => setJustRated(false), 1800);
+  }
 
   return (
     <div className="primary-item">
@@ -56,13 +67,15 @@ export default function PrimaryItem({ item, onTrack, onReturn, onRate, onEdit })
 
         {typeof item.rating === 'number' && (
           <div className="primary-item__rate">
-            <span className="primary-item__rate-label">Rate this item</span>
+            <span className={`primary-item__rate-label${justRated ? ' primary-item__rate-label--confirmed' : ''}`}>
+              {justRated ? 'Thanks for rating!' : 'Rate this item'}
+            </span>
             <span className="primary-item__stars">
               {Array.from({ length: 5 }, (_, i) => (
                 <button
                   key={i}
                   className="primary-item__star-btn"
-                  onClick={() => onRate(item, i + 1)}
+                  onClick={() => handleRate(i + 1)}
                   aria-label={`Rate ${item.product} ${i + 1} out of 5 stars`}
                 >
                   <StarIcon filled={i < item.rating} />
@@ -76,17 +89,12 @@ export default function PrimaryItem({ item, onTrack, onReturn, onRate, onEdit })
           <button
             className="primary-item__action-link"
             disabled={!editIntent.enabled}
-            title={editIntent.enabled ? undefined : editIntent.reason}
             onClick={editIntent.enabled ? () => onEdit(item) : undefined}
           >
             <EditIcon width="13" height="13" />
             Edit
           </button>
-          <button
-            className="primary-item__action-link"
-            disabled={!intents.warranty.enabled}
-            title={intents.warranty.enabled ? undefined : intents.warranty.reason}
-          >
+          <button className="primary-item__action-link" disabled={!intents.warranty.enabled}>
             <ShieldIcon width="13" height="13" />
             Warranty
             {intents.warranty.enabled && <ExternalLinkIcon width="12" height="12" />}
@@ -99,6 +107,9 @@ export default function PrimaryItem({ item, onTrack, onReturn, onRate, onEdit })
             Return / Replace
           </button>
         </div>
+        {/* A native `title` tooltip never appears on touch, so a disabled
+            action's reason needs to be real, visible text. */}
+        {!editIntent.enabled && <p className="primary-item__action-reason">{editIntent.reason}</p>}
         {!intents.returnReplace.enabled && (
           <p className="primary-item__action-reason">{intents.returnReplace.reason}</p>
         )}

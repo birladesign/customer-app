@@ -1,7 +1,10 @@
 .primary-item {
   background: var(--color-bg-primary);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-card);
+  /* Deeper than --shadow-card (the app's default) — this is the biggest,
+     most important surface on the page, so it should read as physically
+     thicker than the secondary cards below it, not the same weight. */
+  box-shadow: 0 8px 24px rgba(26, 43, 88, 0.14);
   overflow: hidden;
 }
 
@@ -118,6 +121,11 @@
 .primary-item__rate-label {
   font-size: var(--text-body-size);
   color: var(--color-text-primary);
+}
+
+.primary-item__rate-label--confirmed {
+  color: var(--color-success);
+  font-weight: 600;
 }
 
 .primary-item__stars {
