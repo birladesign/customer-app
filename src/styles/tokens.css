@@ -81,14 +81,16 @@
   --spring-response: 0.35s;
   --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
 
-  /* Glassmorphism fallbacks for browsers that do not support prefers-reduced-transparency media query */
-  --glass-bg: rgba(255, 255, 255, 0.72);
+  /* Glassmorphism fallbacks for browsers that do not support prefers-reduced-transparency media query.
+     A light navy tint (not pure white) so the glass reads as darker and
+     matches the same navy-tinted shadow language used everywhere else. */
+  --glass-bg: rgba(224, 228, 236, 0.75);
   --glass-blur: blur(20px) saturate(180%);
 }
 
 @media (prefers-reduced-transparency: reduce) {
   :root {
-    --glass-bg: rgba(255, 255, 255, 0.98);
+    --glass-bg: rgba(224, 228, 236, 0.98);
     --glass-blur: none;
   }
 }
