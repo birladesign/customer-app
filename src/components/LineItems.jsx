@@ -1,8 +1,9 @@
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { splitProductSpec } from '../data/orders.js';
+import { getItemIntents } from '../data/intents.js';
 import { SPRING_STANDARD, DURATION_REDUCED } from '../motion.js';
 import Tracker from './Tracker.jsx';
-import { ChevronDownIcon, FileTextIcon } from './icons.jsx';
+import { ChevronDownIcon, FileTextIcon, ShieldIcon, ExternalLinkIcon, StarIcon } from './icons.jsx';
 import './LineItems.css';
 
 const STATUS_COLOR = {
@@ -21,7 +22,11 @@ function formatRupees(amount) {
 // behavior as a native list disclosure. Tapping the already-open row closes
 // it. The parent (OrderDetails) owns openSku/onToggle so it stays in sync
 // with which item's tracking sheet is showing.
-export default function LineItems({ items, openSku, onToggle, onTrack }) {
+//
+// Return/Warranty eligibility is computed per item (getItemIntents), not
+// inherited from the order — a delivered mattress is returnable the moment
+// it arrives, regardless of a still-in-transit bed frame in the same order.
+export default function LineItems({ items, openSku, onToggle, onTrack, onReturn, onRate }) {
   const reduceMotion = useReducedMotion();
 
   return (
@@ -29,6 +34,7 @@ export default function LineItems({ items, openSku, onToggle, onTrack }) {
       {items.map((item) => {
         const isOpen = openSku === item.sku;
         const { name, spec } = splitProductSpec(item.product);
+        const intents = getItemIntents(item);
         return (
           <div className="line-items__row" key={item.sku}>
             <button
@@ -74,6 +80,46 @@ export default function LineItems({ items, openSku, onToggle, onTrack }) {
                       <FileTextIcon width="14" height="14" />
                       Track This Item
                     </button>
+
+                    {typeof item.rating === 'number' && (
+                      <div className="line-items__rate">
+                        <span className="line-items__rate-label">Rate this item</span>
+                        <span className="line-items__stars">
+                          {Array.from({ length: 5 }, (_, i) => (
+                            <button
+                              key={i}
+                              className="line-items__star-btn"
+                              onClick={() => onRate(item, i + 1)}
+                              aria-label={`Rate ${item.product} ${i + 1} out of 5 stars`}
+                            >
+                              <StarIcon filled={i < item.rating} />
+                            </button>
+                          ))}
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="line-items__item-actions">
+                      <button
+                        className="line-items__warranty"
+                        disabled={!intents.warranty.enabled}
+                        title={intents.warranty.enabled ? undefined : intents.warranty.reason}
+                      >
+                        <ShieldIcon width="13" height="13" />
+                        Warranty
+                        {intents.warranty.enabled && <ExternalLinkIcon width="12" height="12" />}
+                      </button>
+                      <button
+                        className="line-items__return"
+                        disabled={!intents.returnReplace.enabled}
+                        onClick={intents.returnReplace.enabled ? () => onReturn(item) : undefined}
+                      >
+                        Return / Replace
+                      </button>
+                    </div>
+                    {!intents.returnReplace.enabled && (
+                      <p className="line-items__action-reason">{intents.returnReplace.reason}</p>
+                    )}
                   </div>
                 </motion.div>
               )}

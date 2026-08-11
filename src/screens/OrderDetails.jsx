@@ -55,6 +55,10 @@ export default function OrderDetails({ params }) {
   // Single-open accordion for line items, mirroring a native list disclosure —
   // expanding one item retracts whichever was open before.
   const [openItemSku, setOpenItemSku] = useState(null);
+  // Item ratings live in local state rather than mutating the shared item
+  // object in place — order.items is a plain module-level array, so a
+  // direct mutation wouldn't trigger a re-render the way this does.
+  const [itemRatings, setItemRatings] = useState({});
   const reduceMotion = useReducedMotion();
   const order = ORDERS.find((o) => o.id === params.orderId);
 
@@ -116,6 +120,14 @@ export default function OrderDetails({ params }) {
     setOpenItemSku((current) => (current === sku ? null : sku));
   }
 
+  function handleRateItem(item, value) {
+    setItemRatings((prev) => ({ ...prev, [item.sku]: value }));
+  }
+
+  const displayItems = order.items?.map((item) =>
+    itemRatings[item.sku] != null ? { ...item, rating: itemRatings[item.sku] } : item
+  );
+
   return (
     <div className="order-details">
       <header className="order-details__topbar">
@@ -129,10 +141,12 @@ export default function OrderDetails({ params }) {
       <main className="order-details__content">
         {order.items ? (
           <LineItems
-            items={order.items}
+            items={displayItems}
             openSku={openItemSku}
             onToggle={toggleItem}
             onTrack={(item) => openTracking(item.product, item.timeline)}
+            onReturn={(item) => navigate('returnReplace', { orderId: order.id, sku: item.sku })}
+            onRate={handleRateItem}
           />
         ) : (
           <div className="order-details__product-card">
@@ -301,51 +315,58 @@ export default function OrderDetails({ params }) {
           </AnimatePresence>
         </div>
 
-        {warrantyIntent?.enabled ? (
-          <button className="order-details__warranty-row">
-            <span className="order-details__warranty-icon">
-              <ShieldIcon />
-            </span>
-            <span className="order-details__warranty-label">Warranty Details</span>
-            <ExternalLinkIcon className="order-details__warranty-external" />
-          </button>
-        ) : (
-          <div className="order-details__warranty-row order-details__warranty-row--disabled">
-            <span className="order-details__warranty-icon">
-              <ShieldIcon />
-            </span>
-            <span className="order-details__warranty-text">
-              <span className="order-details__warranty-label">Warranty Details</span>
-              <span className="order-details__warranty-reason">{warrantyIntent?.reason}</span>
-            </span>
-          </div>
-        )}
+        {/* Multi-item orders get these scoped per line item inside LineItems
+            instead — a single order-level Warranty/Rate/Return doesn't make
+            sense once each SKU has its own delivery state and eligibility. */}
+        {!order.items && (
+          <>
+            {warrantyIntent?.enabled ? (
+              <button className="order-details__warranty-row">
+                <span className="order-details__warranty-icon">
+                  <ShieldIcon />
+                </span>
+                <span className="order-details__warranty-label">Warranty Details</span>
+                <ExternalLinkIcon className="order-details__warranty-external" />
+              </button>
+            ) : (
+              <div className="order-details__warranty-row order-details__warranty-row--disabled">
+                <span className="order-details__warranty-icon">
+                  <ShieldIcon />
+                </span>
+                <span className="order-details__warranty-text">
+                  <span className="order-details__warranty-label">Warranty Details</span>
+                  <span className="order-details__warranty-reason">{warrantyIntent?.reason}</span>
+                </span>
+              </div>
+            )}
 
-        {typeof order.rating === 'number' && (
-          <div className="order-details__rating">
-            <img className="order-details__rating-image" src={order.image} alt="" />
-            <div>
-              <p className="order-details__rating-heading">Rate {productName}</p>
-              <span className="order-details__rating-stars">
-                {Array.from({ length: 5 }, (_, i) => (
-                  <StarIcon key={i} filled={i < order.rating} />
-                ))}
-              </span>
+            {typeof order.rating === 'number' && (
+              <div className="order-details__rating">
+                <img className="order-details__rating-image" src={order.image} alt="" />
+                <div>
+                  <p className="order-details__rating-heading">Rate {productName}</p>
+                  <span className="order-details__rating-stars">
+                    {Array.from({ length: 5 }, (_, i) => (
+                      <StarIcon key={i} filled={i < order.rating} />
+                    ))}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            <div className="order-details__return-cta">
+              <p className="order-details__return-prompt">Not sure about the item?</p>
+              <button
+                className="order-details__return-link"
+                disabled={!returnIntent?.enabled}
+                onClick={returnIntent?.enabled ? () => navigate('returnReplace', { orderId: order.id }) : undefined}
+              >
+                Return / Replacement
+              </button>
+              {!returnIntent?.enabled && <p className="order-details__return-reason">{returnIntent?.reason}</p>}
             </div>
-          </div>
+          </>
         )}
-
-        <div className="order-details__return-cta">
-          <p className="order-details__return-prompt">Not sure about the item?</p>
-          <button
-            className="order-details__return-link"
-            disabled={!returnIntent?.enabled}
-            onClick={returnIntent?.enabled ? () => navigate('returnReplace', { orderId: order.id }) : undefined}
-          >
-            Return / Replacement
-          </button>
-          {!returnIntent?.enabled && <p className="order-details__return-reason">{returnIntent?.reason}</p>}
-        </div>
 
         <div className="order-details__help-card">
           <div className="order-details__help-row">

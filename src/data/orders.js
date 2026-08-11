@@ -642,6 +642,7 @@ export const ORDERS = [
         price: 21290,
         status: { dot: 'green', label: 'Delivered' },
         caption: 'Delivered on 08 Aug 2026',
+        rating: 0,
         tracker: { steps: ['Confirmed', 'Shipped', 'Delivered'], currentIndex: 2 },
         timeline: {
           steps: [
@@ -674,6 +675,7 @@ export const ORDERS = [
         price: 2199,
         status: { dot: 'green', label: 'Delivered' },
         caption: 'Delivered on 08 Aug 2026',
+        rating: 0,
         tracker: { steps: ['Confirmed', 'Shipped', 'Delivered'], currentIndex: 2 },
         timeline: {
           steps: [

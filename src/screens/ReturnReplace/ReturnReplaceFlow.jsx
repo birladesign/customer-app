@@ -17,6 +17,11 @@ export default function ReturnReplaceFlow({ params }) {
   const { goBack } = useNavigation();
   const reduceMotion = useReducedMotion();
   const order = ORDERS.find((o) => o.id === params.orderId);
+  // For a multi-SKU order, params.sku scopes the flow to one line item —
+  // EvidenceStep/ExecutionStep only ever read `.product` off what's passed
+  // to them, so overriding it here is enough; no changes needed there.
+  const item = order?.items?.find((i) => i.sku === params.sku);
+  const target = item ? { ...order, product: item.product, image: item.image } : order;
 
   const [step, setStep] = useState(0);
   const [reason, setReason] = useState(null);
@@ -86,7 +91,7 @@ export default function ReturnReplaceFlow({ params }) {
             )}
             {step === 1 && (
               <EvidenceStep
-                order={order}
+                order={target}
                 reason={reason}
                 photo={photo}
                 onPhotoChange={setPhoto}
@@ -95,14 +100,14 @@ export default function ReturnReplaceFlow({ params }) {
             )}
             {step === 2 && (
               <OptionsStep
-                order={order}
+                order={target}
                 reason={reason}
                 selectedLever={selectedLever}
                 onSelectLever={setSelectedLever}
                 onContinue={() => goToStep(3)}
               />
             )}
-            {step === 3 && <ExecutionStep order={order} leverId={selectedLever} onDone={goBack} />}
+            {step === 3 && <ExecutionStep order={target} leverId={selectedLever} onDone={goBack} />}
           </motion.div>
         </AnimatePresence>
       </div>

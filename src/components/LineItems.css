@@ -138,9 +138,104 @@
   transform: scale(0.97);
 }
 
+.line-items__rate {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-border);
+}
+
+.line-items__rate-label {
+  font-size: var(--text-body-size);
+  color: var(--color-text-primary);
+}
+
+.line-items__stars {
+  display: inline-flex;
+  gap: 1px;
+  color: var(--color-disabled-text);
+}
+
+.line-items__star-btn {
+  border: none;
+  background: none;
+  padding: 2px;
+  line-height: 0;
+  color: inherit;
+  transition: transform 0.1s ease-out;
+}
+
+.line-items__star-btn:active {
+  transform: scale(0.85);
+}
+
+.line-items__item-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-border);
+}
+
+.line-items__warranty {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: none;
+  background: none;
+  padding: 0;
+  font-family: inherit;
+  font-size: var(--text-body-size);
+  font-weight: 600;
+  color: var(--color-navy-900);
+  transition: transform 0.1s ease-out;
+}
+
+.line-items__warranty:active {
+  transform: scale(0.97);
+}
+
+.line-items__warranty:disabled {
+  color: var(--color-disabled-text);
+}
+
+.line-items__return {
+  margin-left: auto;
+  border: none;
+  background: none;
+  padding: 0;
+  font-family: inherit;
+  font-size: var(--text-body-size);
+  font-weight: 700;
+  letter-spacing: var(--text-label-tracking);
+  text-transform: uppercase;
+  color: var(--color-navy-900);
+  transition: transform 0.1s ease-out;
+}
+
+.line-items__return:active {
+  transform: scale(0.97);
+}
+
+.line-items__return:disabled {
+  color: var(--color-disabled-text);
+}
+
+.line-items__action-reason {
+  margin: 0;
+  font-size: var(--text-caption-size);
+  color: var(--color-text-muted);
+  text-align: right;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .line-items__summary:active,
-  .line-items__track:active {
+  .line-items__track:active,
+  .line-items__star-btn:active,
+  .line-items__warranty:active,
+  .line-items__return:active {
     transform: none;
   }
 }

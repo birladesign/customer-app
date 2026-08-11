@@ -53,3 +53,17 @@ export function getOrderIntents(order) {
     ...state[key],
   }));
 }
+
+// Per-item counterpart to getOrderIntents, for a line item inside a
+// multi-SKU order. Each item's own delivery state decides its own
+// Return/Warranty eligibility — a mattress that arrived doesn't wait on a
+// still-in-transit bed frame from the same order, and vice versa.
+export function getItemIntents(item) {
+  const isDelivered = item.status.label === 'Delivered';
+  return {
+    returnReplace: isDelivered
+      ? { enabled: true }
+      : { enabled: false, reason: 'Available once this item is delivered' },
+    warranty: isDelivered ? { enabled: true } : { enabled: false, reason: 'Available after delivery' },
+  };
+}
