@@ -4,10 +4,10 @@ import { useNavigation } from '../../navigation/NavigationContext.jsx';
 import { ChevronLeftIcon, HouseIcon } from '../../components/icons.jsx';
 import './AddAddress.css';
 
-const LABELS = ['HOME', 'OFFICE', 'OTHER'];
+const LABELS = ['Home', 'Office', 'Other'];
 
 const EMPTY_FORM = {
-  label: 'HOME',
+  label: 'Home',
   name: `${CURRENT_USER.firstName} ${CURRENT_USER.lastName}`,
   phone: CURRENT_USER.phone,
   line1: '',

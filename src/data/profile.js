@@ -28,7 +28,7 @@ export function addAddress(address) {
 export const ADDRESSES = [
   {
     id: 'addr-home',
-    label: 'HOME',
+    label: 'Home',
     isDefault: true,
     name: 'Sudarshan Birla',
     lines: ['H.No. 24, Sector 44', 'Gurugram, Haryana', '122003', 'India'],
@@ -36,7 +36,7 @@ export const ADDRESSES = [
   },
   {
     id: 'addr-office',
-    label: 'OFFICE',
+    label: 'Office',
     isDefault: false,
     name: 'Sudarshan Birla',
     lines: ['Tower B, Cyber Hub', 'DLF Phase 2, Gurugram', 'Haryana 122002', 'India'],

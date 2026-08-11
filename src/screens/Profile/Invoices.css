@@ -101,7 +101,6 @@
   font-weight: 700;
   letter-spacing: var(--text-caption-tracking);
   color: var(--color-text-muted);
-  text-transform: uppercase;
 }
 
 .invoices__product {

@@ -197,7 +197,7 @@ export default function EditOrder({ params }) {
             className={`edit-order__address-card${selectedAddress === 'current' ? ' edit-order__address-card--selected' : ''}`}
             onClick={() => setSelectedAddress('current')}
           >
-            <span className="edit-order__address-badge">CURRENT</span>
+            <span className="edit-order__address-badge">Current</span>
             <span className="edit-order__address-text">{order.address}</span>
           </button>
           {ADDRESSES.map((a) => (

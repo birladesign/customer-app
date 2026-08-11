@@ -99,7 +99,7 @@ export default function OrderCard({ order }) {
       {banner && (
         <div className="order-card__banner">
           {BannerIcon && <BannerIcon className="order-card__banner-icon" />}
-          {banner.text.toUpperCase()}
+          {banner.text}
         </div>
       )}
 

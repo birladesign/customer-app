@@ -156,7 +156,6 @@
   font-size: var(--text-caption-size);
   font-weight: 700;
   color: var(--color-text-muted);
-  text-transform: uppercase;
   letter-spacing: var(--text-label-tracking);
 }
 
@@ -172,7 +171,6 @@
   font-size: var(--text-body-size);
   font-weight: 700;
   letter-spacing: var(--text-label-tracking);
-  text-transform: uppercase;
   color: var(--color-navy-900);
   transition: transform 0.1s ease-out;
 }
@@ -347,7 +345,6 @@
   font-size: var(--text-body-size);
   font-weight: 700;
   letter-spacing: var(--text-label-tracking);
-  text-transform: uppercase;
   text-decoration: underline;
   color: var(--color-action-red);
   transition: transform 0.1s ease-out;
@@ -371,7 +368,6 @@
   font-size: var(--text-caption-size);
   font-weight: 700;
   color: var(--color-success);
-  text-transform: uppercase;
   letter-spacing: var(--text-label-tracking);
 }
 
@@ -401,7 +397,6 @@
   font-size: var(--text-caption-size);
   font-weight: 700;
   color: var(--color-text-muted);
-  text-transform: uppercase;
   letter-spacing: var(--text-label-tracking);
 }
 
@@ -544,7 +539,6 @@
   font-family: inherit;
   font-size: var(--text-product-size);
   font-weight: 700;
-  text-transform: uppercase;
   color: var(--color-navy-900);
   transition: transform 0.1s ease-out;
 }
