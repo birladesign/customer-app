@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { splitProductSpec } from '../data/orders.js';
-import { getItemIntents, getEditEligibility } from '../data/intents.js';
+import { getItemIntents } from '../data/intents.js';
 import { SPRING_STANDARD, DURATION_REDUCED } from '../motion.js';
 import Tracker from './Tracker.jsx';
-import { ChevronDownIcon, FileTextIcon, ShieldIcon, ExternalLinkIcon, StarIcon, EditIcon } from './icons.jsx';
+import { ChevronDownIcon, FileTextIcon, ShieldIcon, ExternalLinkIcon, StarIcon } from './icons.jsx';
 import './LineItems.css';
 
 const STATUS_COLOR = {
@@ -27,7 +27,7 @@ function formatRupees(amount) {
 // Return/Warranty eligibility is computed per item (getItemIntents), not
 // inherited from the order — a delivered mattress is returnable the moment
 // it arrives, regardless of a still-in-transit bed frame in the same order.
-export default function LineItems({ items, openSku, onToggle, onTrack, onReturn, onRate, onEdit }) {
+export default function LineItems({ items, openSku, onToggle, onTrack, onReturn, onRate }) {
   const reduceMotion = useReducedMotion();
   // Confirms the tap actually registered — a rating is a "completion" event
   // (Apple's four feedback kinds), and filling a star silently isn't enough
@@ -46,7 +46,6 @@ export default function LineItems({ items, openSku, onToggle, onTrack, onReturn,
         const isOpen = openSku === item.sku;
         const { name, spec } = splitProductSpec(item.product);
         const intents = getItemIntents(item);
-        const editIntent = getEditEligibility(item);
         return (
           <div className="line-items__row" key={item.sku}>
             <button
@@ -118,14 +117,6 @@ export default function LineItems({ items, openSku, onToggle, onTrack, onReturn,
                     <div className="line-items__item-actions">
                       <button
                         className="line-items__action-link"
-                        disabled={!editIntent.enabled}
-                        onClick={editIntent.enabled ? () => onEdit(item) : undefined}
-                      >
-                        <EditIcon width="13" height="13" />
-                        Edit
-                      </button>
-                      <button
-                        className="line-items__action-link"
                         disabled={!intents.warranty.enabled}
                       >
                         <ShieldIcon width="13" height="13" />
@@ -143,7 +134,6 @@ export default function LineItems({ items, openSku, onToggle, onTrack, onReturn,
                     {/* A native `title` tooltip never appears on touch, so a
                         disabled action's reason needs to be real, visible
                         text — not just an attribute only a mouse can hover. */}
-                    {!editIntent.enabled && <p className="line-items__action-reason">{editIntent.reason}</p>}
                     {!intents.returnReplace.enabled && (
                       <p className="line-items__action-reason">{intents.returnReplace.reason}</p>
                     )}

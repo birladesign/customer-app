@@ -425,107 +425,6 @@
   color: var(--color-text-muted);
 }
 
-.order-details__edit-btn {
-  align-self: center;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  border: none;
-  background: none;
-  padding: 0;
-  font-family: inherit;
-  font-size: var(--text-product-size);
-  font-weight: 700;
-  text-transform: uppercase;
-  color: var(--color-navy-900);
-  transition: transform 0.1s ease-out;
-}
-
-.order-details__edit-btn:active {
-  transform: scale(0.97);
-}
-
-.order-details__edit-btn:disabled {
-  color: var(--color-disabled-text);
-}
-
-.order-details__cancel-wrap {
-  border-top: 1px solid var(--color-border);
-  padding-top: var(--space-3);
-}
-
-/* Deliberately quiet — plain caption-weight text, not the bold/red
-   treatment a destructive action gets once you actually open it. A rare,
-   irreversible action shouldn't be the loudest thing on the page. */
-.order-details__cancel-toggle {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border: none;
-  background: none;
-  padding: 0;
-  font-family: inherit;
-  font-size: var(--text-body-size);
-  font-weight: 500;
-  color: var(--color-text-muted);
-  transition: transform 0.1s ease-out;
-}
-
-.order-details__cancel-toggle:active {
-  transform: scale(0.99);
-}
-
-.order-details__cancel-chevron {
-  color: var(--color-text-muted);
-  transition: transform 0.2s var(--ease-standard);
-}
-
-.order-details__cancel-chevron--open {
-  transform: rotate(90deg);
-}
-
-.order-details__cancel-body {
-  padding-top: var(--space-3);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-1);
-}
-
-.order-details__cancel-hint {
-  margin: 0;
-  font-size: var(--text-caption-size);
-  color: var(--color-text-muted);
-}
-
-.order-details__cancel-btn {
-  align-self: center;
-  border: none;
-  background: none;
-  padding: 0;
-  font-family: inherit;
-  font-size: var(--text-product-size);
-  font-weight: 700;
-  text-transform: uppercase;
-  color: var(--color-action-red);
-  transition: transform 0.1s ease-out;
-}
-
-.order-details__cancel-btn:active {
-  transform: scale(0.97);
-}
-
-.order-details__cancel-btn:disabled {
-  color: var(--color-disabled-text);
-}
-
-.order-details__cancel-reason {
-  margin: 0;
-  text-align: center;
-  font-size: var(--text-caption-size);
-  color: var(--color-text-muted);
-}
 
 .order-details__warranty-row {
   width: 100%;
@@ -664,19 +563,30 @@
   color: var(--color-text-muted);
 }
 
-.order-details__help-card {
+.order-details__help-wrap {
   background: var(--color-accent-cyan-wash);
   border-radius: var(--radius-md);
-  padding: var(--space-4);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
+  overflow: hidden;
 }
 
-.order-details__help-row {
+/* Edit and Cancel are both rare, one-off requests — this is the one place on
+   the page that surfaces them, and even here they stay a tap away rather
+   than sitting open by default. */
+.order-details__help-toggle {
+  width: 100%;
   display: flex;
   gap: var(--space-3);
-  align-items: flex-start;
+  align-items: center;
+  border: none;
+  background: none;
+  padding: var(--space-4);
+  font-family: inherit;
+  text-align: left;
+  transition: transform 0.1s ease-out;
+}
+
+.order-details__help-toggle:active {
+  transform: scale(0.99);
 }
 
 .order-details__help-icon {
@@ -691,37 +601,77 @@
   color: var(--color-navy-900);
 }
 
+.order-details__help-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 .order-details__help-heading {
-  margin: 0;
   font-size: var(--text-product-size);
   font-weight: 600;
   color: var(--color-text-primary);
 }
 
 .order-details__help-subtext {
-  margin: 2px 0 0;
+  margin-top: 2px;
   font-size: var(--text-body-size);
   color: var(--color-text-muted);
 }
 
-.order-details__help-cta {
-  align-self: center;
-  display: inline-flex;
+.order-details__help-chevron {
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+  transition: transform 0.2s var(--ease-standard);
+}
+
+.order-details__help-chevron--open {
+  transform: rotate(90deg);
+}
+
+.order-details__help-actions {
+  padding: 0 var(--space-4) var(--space-4);
+  display: flex;
+  flex-direction: column;
+}
+
+.order-details__help-action {
+  width: 100%;
+  display: flex;
   align-items: center;
   gap: var(--space-2);
   border: none;
-  background: var(--color-action-red);
-  color: var(--color-text-inverse);
-  border-radius: var(--radius-full);
-  padding: var(--space-2) var(--space-4);
+  border-top: 1px solid rgba(26, 43, 88, 0.1);
+  background: none;
+  padding: var(--space-3) 0;
   font-family: inherit;
   font-size: var(--text-product-size);
   font-weight: 600;
+  color: var(--color-navy-900);
   transition: transform 0.1s ease-out;
 }
 
-.order-details__help-cta:active {
-  transform: scale(0.96);
+.order-details__help-action:active {
+  transform: scale(0.99);
+}
+
+.order-details__help-action:disabled {
+  color: var(--color-disabled-text);
+}
+
+.order-details__help-action--danger {
+  color: var(--color-action-red);
+}
+
+.order-details__help-action--danger:disabled {
+  color: var(--color-disabled-text);
+}
+
+.order-details__help-action-reason {
+  margin: 0 0 var(--space-1);
+  font-size: var(--text-caption-size);
+  color: var(--color-text-muted);
 }
 
 .order-details__not-found {
@@ -737,11 +687,9 @@
   .order-details__disclosure:active,
   .order-details__warranty-row:active,
   .order-details__return-link:active,
-  .order-details__help-cta:active,
   .order-details__get-invoice:active,
-  .order-details__cancel-btn:active,
-  .order-details__cancel-toggle:active,
-  .order-details__edit-btn:active,
+  .order-details__help-toggle:active,
+  .order-details__help-action:active,
   .order-details__technician-call:active {
     transform: none;
   }

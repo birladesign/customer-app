@@ -16,12 +16,12 @@ import {
   ChevronRightIcon,
   CopyIcon,
   CheckIcon,
+  CloseIcon,
   FileTextIcon,
   ShieldIcon,
   ExternalLinkIcon,
   StarIcon,
   HelpCircleIcon,
-  HeadsetIcon,
   MailIcon,
   PhoneIcon,
   UserIcon,
@@ -41,17 +41,17 @@ function formatRupees(amount) {
 }
 
 export default function OrderDetails({ params }) {
-  const { goBack, navigate, switchTab } = useNavigation();
+  const { goBack, navigate } = useNavigation();
   const [copied, setCopied] = useState(false);
   // Payment/shipping/cancel info is relevant on first glance, not tucked
   // behind a click — starts open, but stays collapsible for anyone who wants
   // to hide it.
   const [detailsOpen, setDetailsOpen] = useState(true);
   const [confirmingCancel, setConfirmingCancel] = useState(false);
-  // Cancel is destructive and rare — it stays closed by default, one tap
-  // deeper than the rest of Item & Billing Info, instead of sitting there
-  // as a loud, always-visible red button.
-  const [cancelSectionOpen, setCancelSectionOpen] = useState(false);
+  // Edit and Cancel are both rare, one-off actions — neither belongs sitting
+  // on the page by default. Both live behind this one closed-by-default
+  // "need help" disclosure instead of two separate always-visible controls.
+  const [helpSectionOpen, setHelpSectionOpen] = useState(false);
   const [trackingOpen, setTrackingOpen] = useState(false);
   // Which tracking log the sheet is currently showing — the order's own
   // aggregate timeline by default, or a single line item's when opened via
@@ -90,7 +90,6 @@ export default function OrderDetails({ params }) {
   const returnIntent = intents.find((i) => i.key === 'returnReplace');
   const warrantyIntent = intents.find((i) => i.key === 'warranty');
   const cancelIntent = intents.find((i) => i.key === 'cancel');
-  const editIntent = getEditEligibility(order);
 
   // No backend in this prototype — mutate the shared order object in place
   // (same pattern as PersonalInformation/AddAddress) so My Orders reflects
@@ -138,6 +137,10 @@ export default function OrderDetails({ params }) {
   // "also in this order," not a second thing equally competing for it.
   const primaryItem = displayItems?.[0];
   const otherItems = displayItems?.slice(1) ?? [];
+  // Edit is order-level now, not per-item — for a multi-SKU order it targets
+  // the primary item, the same "what this order is mainly about" item the
+  // page already leads with.
+  const editIntent = getEditEligibility(order.items ? primaryItem : order);
 
   return (
     <div className="order-details">
@@ -157,7 +160,6 @@ export default function OrderDetails({ params }) {
               onTrack={(item) => openTracking(item.product, item.timeline)}
               onReturn={(item) => navigate('returnReplace', { orderId: order.id, sku: item.sku })}
               onRate={handleRateItem}
-              onEdit={(item) => navigate('editOrder', { orderId: order.id, sku: item.sku })}
             />
             {otherItems.length > 0 && (
               <div className="order-details__other-items">
@@ -171,7 +173,6 @@ export default function OrderDetails({ params }) {
                   onTrack={(item) => openTracking(item.product, item.timeline)}
                   onReturn={(item) => navigate('returnReplace', { orderId: order.id, sku: item.sku })}
                   onRate={handleRateItem}
-                  onEdit={(item) => navigate('editOrder', { orderId: order.id, sku: item.sku })}
                 />
               </div>
             )}
@@ -330,56 +331,6 @@ export default function OrderDetails({ params }) {
                     </div>
                   )}
 
-                  {!order.items && (
-                    <>
-                      <button
-                        className="order-details__edit-btn"
-                        disabled={!editIntent.enabled}
-                        onClick={editIntent.enabled ? () => navigate('editOrder', { orderId: order.id }) : undefined}
-                      >
-                        <EditIcon width="14" height="14" />
-                        Edit Order
-                      </button>
-                      {!editIntent.enabled && <p className="order-details__cancel-reason">{editIntent.reason}</p>}
-                    </>
-                  )}
-
-                  <div className="order-details__cancel-wrap">
-                    <button
-                      className="order-details__cancel-toggle"
-                      onClick={() => setCancelSectionOpen((v) => !v)}
-                      aria-expanded={cancelSectionOpen}
-                    >
-                      <span>Cancel Order</span>
-                      <ChevronRightIcon
-                        className={`order-details__cancel-chevron${cancelSectionOpen ? ' order-details__cancel-chevron--open' : ''}`}
-                      />
-                    </button>
-                    <AnimatePresence initial={false}>
-                      {cancelSectionOpen && (
-                        <motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: 'auto', opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          transition={reduceMotion ? DURATION_REDUCED : SPRING_STANDARD}
-                          style={{ overflow: 'hidden' }}
-                        >
-                          <div className="order-details__cancel-body">
-                            {cancelIntent?.enabled ? (
-                              <>
-                                <p className="order-details__cancel-hint">This can't be undone.</p>
-                                <button className="order-details__cancel-btn" onClick={() => setConfirmingCancel(true)}>
-                                  Cancel Order
-                                </button>
-                              </>
-                            ) : (
-                              <p className="order-details__cancel-reason">{cancelIntent?.reason}</p>
-                            )}
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
                 </div>
               </motion.div>
             )}
@@ -439,20 +390,64 @@ export default function OrderDetails({ params }) {
           </>
         )}
 
-        <div className="order-details__help-card">
-          <div className="order-details__help-row">
+        <div className="order-details__help-wrap">
+          <button
+            className="order-details__help-toggle"
+            onClick={() => setHelpSectionOpen((v) => !v)}
+            aria-expanded={helpSectionOpen}
+          >
             <span className="order-details__help-icon">
               <HelpCircleIcon />
             </span>
-            <div>
-              <p className="order-details__help-heading">Need Help with this order?</p>
-              <p className="order-details__help-subtext">Our sleep experts are here to help you 24/7</p>
-            </div>
-          </div>
-          <button className="order-details__help-cta" onClick={() => switchTab('support', { openChat: true, orderId: order.id })}>
-            <HeadsetIcon width="16" height="16" />
-            Get Help
+            <span className="order-details__help-text">
+              <span className="order-details__help-heading">Do you need help with the existing order?</span>
+              <span className="order-details__help-subtext">Edit or cancel this order</span>
+            </span>
+            <ChevronRightIcon
+              className={`order-details__help-chevron${helpSectionOpen ? ' order-details__help-chevron--open' : ''}`}
+            />
           </button>
+          <AnimatePresence initial={false}>
+            {helpSectionOpen && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={reduceMotion ? DURATION_REDUCED : SPRING_STANDARD}
+                style={{ overflow: 'hidden' }}
+              >
+                <div className="order-details__help-actions">
+                  <button
+                    className="order-details__help-action"
+                    disabled={!editIntent.enabled}
+                    onClick={
+                      editIntent.enabled
+                        ? () =>
+                            navigate(
+                              'editOrder',
+                              order.items ? { orderId: order.id, sku: primaryItem.sku } : { orderId: order.id }
+                            )
+                        : undefined
+                    }
+                  >
+                    <EditIcon width="15" height="15" />
+                    <span>Edit Order</span>
+                  </button>
+                  {!editIntent.enabled && <p className="order-details__help-action-reason">{editIntent.reason}</p>}
+
+                  <button
+                    className="order-details__help-action order-details__help-action--danger"
+                    disabled={!cancelIntent?.enabled}
+                    onClick={cancelIntent?.enabled ? () => setConfirmingCancel(true) : undefined}
+                  >
+                    <CloseIcon width="14" height="14" />
+                    <span>Cancel Order</span>
+                  </button>
+                  {!cancelIntent?.enabled && <p className="order-details__help-action-reason">{cancelIntent?.reason}</p>}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </main>
 

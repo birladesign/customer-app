@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { splitProductSpec } from '../data/orders.js';
-import { getItemIntents, getEditEligibility } from '../data/intents.js';
+import { getItemIntents } from '../data/intents.js';
 import Tracker from './Tracker.jsx';
-import { FileTextIcon, ShieldIcon, ExternalLinkIcon, StarIcon, EditIcon } from './icons.jsx';
+import { FileTextIcon, ShieldIcon, ExternalLinkIcon, StarIcon } from './icons.jsx';
 import './PrimaryItem.css';
 
 const STATUS_COLOR = {
@@ -20,10 +20,9 @@ function formatRupees(amount) {
 // multi-item order still reads at a glance the way a single-item order does:
 // here's what this is mainly about. The remaining items sit in their own,
 // visually quieter list below (LineItems), each needing a tap to open.
-export default function PrimaryItem({ item, onTrack, onReturn, onRate, onEdit }) {
+export default function PrimaryItem({ item, onTrack, onReturn, onRate }) {
   const { name, spec } = splitProductSpec(item.product);
   const intents = getItemIntents(item);
-  const editIntent = getEditEligibility(item);
   // Confirms the tap actually registered — a rating is a "completion" event
   // (Apple's four feedback kinds), and filling a star silently isn't enough
   // on its own to read as confirmed.
@@ -86,14 +85,6 @@ export default function PrimaryItem({ item, onTrack, onReturn, onRate, onEdit })
         )}
 
         <div className="primary-item__actions">
-          <button
-            className="primary-item__action-link"
-            disabled={!editIntent.enabled}
-            onClick={editIntent.enabled ? () => onEdit(item) : undefined}
-          >
-            <EditIcon width="13" height="13" />
-            Edit
-          </button>
           <button className="primary-item__action-link" disabled={!intents.warranty.enabled}>
             <ShieldIcon width="13" height="13" />
             Warranty
@@ -109,7 +100,6 @@ export default function PrimaryItem({ item, onTrack, onReturn, onRate, onEdit })
         </div>
         {/* A native `title` tooltip never appears on touch, so a disabled
             action's reason needs to be real, visible text. */}
-        {!editIntent.enabled && <p className="primary-item__action-reason">{editIntent.reason}</p>}
         {!intents.returnReplace.enabled && (
           <p className="primary-item__action-reason">{intents.returnReplace.reason}</p>
         )}
