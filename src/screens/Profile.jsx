@@ -9,10 +9,8 @@ import {
   BellIcon,
   FileTextIcon,
   ShieldIcon,
-  HeadsetIcon,
   ChevronRightIcon,
   LogoutIcon,
-  HouseIcon,
 } from '../components/icons.jsx';
 import './Profile.css';
 
@@ -27,7 +25,7 @@ const MENU = [
 ];
 
 export default function Profile() {
-  const { navigate, switchTab, replace } = useNavigation();
+  const { navigate, replace } = useNavigation();
   const [confirmingLogout, setConfirmingLogout] = useState(false);
 
   function handleLogout() {
@@ -38,15 +36,12 @@ export default function Profile() {
   return (
     <div className="profile">
       <header className="profile__topbar">
-        <button className="profile__icon-btn" onClick={() => switchTab('home')} aria-label="Home">
-          <HouseIcon width="18" height="18" />
-        </button>
         <h1>Profile</h1>
       </header>
 
       <main className="profile__content">
         <div className="profile__identity">
-          <Avatar initial={CURRENT_USER.avatarInitial} size={56} />
+          <Avatar initial={CURRENT_USER.avatarInitial} photoUrl={CURRENT_USER.avatarPhoto} size={56} />
           <div className="profile__identity-text">
             <p className="profile__name">
               {CURRENT_USER.firstName} {CURRENT_USER.lastName}
@@ -66,13 +61,6 @@ export default function Profile() {
               <ChevronRightIcon className="profile__row-chevron" aria-hidden="true" />
             </button>
           ))}
-          <button className="profile__row" onClick={() => switchTab('support')}>
-            <span className="profile__row-icon">
-              <HeadsetIcon width="18" height="18" />
-            </span>
-            <span className="profile__row-label">Help &amp; Support</span>
-            <ChevronRightIcon className="profile__row-chevron" aria-hidden="true" />
-          </button>
         </div>
 
         <button className="profile__logout" onClick={() => setConfirmingLogout(true)}>

@@ -37,8 +37,8 @@ export function NavigationProvider({ children }) {
   // A tab switch is a hard reset to that tab's root, not a push — no per-tab
   // history is kept (this app already accepts deep state resetting on
   // navigation elsewhere, e.g. Return & Replace's wizard step). params lets a
-  // cross-tab deep link (e.g. "Need Help" on My Orders) hand the destination
-  // tab root some initial state, same idea as navigate's params.
+  // cross-tab deep link hand the destination tab root some initial state,
+  // same idea as navigate's params.
   const switchTab = useCallback((tabKey, params = {}) => {
     const screen = ROOT_SCREEN_BY_TAB[tabKey];
     if (screen) setStack([{ screen, params }]);

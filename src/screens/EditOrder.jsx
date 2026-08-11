@@ -75,7 +75,7 @@ export default function EditOrder({ params }) {
           <img className="edit-order__locked-image" src={target.image} alt={target.product} />
           <p className="edit-order__locked-title">{eligibility.reason}</p>
           <p className="edit-order__locked-body">
-            {withSpec(baseName, currentSpec)} can no longer be edited here — reach out to support if you need a change.
+            {withSpec(baseName, currentSpec)} can no longer be edited here.
           </p>
         </div>
       </div>

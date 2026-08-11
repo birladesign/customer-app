@@ -3,12 +3,12 @@
 import { ORDERS, parseOrderDate, getOrderStatus } from './orders.js';
 
 export const CURRENT_USER = {
-  firstName: 'Ainish',
-  lastName: 'Nemlawala',
-  phone: '9824148166',
-  email: 'ainishnemlawala111@gmail.com',
+  firstName: 'Sudarshan',
+  lastName: 'Birla',
+  phone: '99999999',
+  email: 'sudarshanbirla@testemail.com',
   dob: '1996-04-12',
-  avatarInitial: 'A',
+  avatarInitial: 'S',
 };
 
 let addressSeq = 0;
@@ -30,17 +30,17 @@ export const ADDRESSES = [
     id: 'addr-home',
     label: 'HOME',
     isDefault: true,
-    name: 'Ainish Nemlawala',
+    name: 'Sudarshan Birla',
     lines: ['H.No. 24, Sector 44', 'Gurugram, Haryana', '122003', 'India'],
-    phone: '9824148166',
+    phone: '99999999',
   },
   {
     id: 'addr-office',
     label: 'OFFICE',
     isDefault: false,
-    name: 'Ainish Nemlawala',
+    name: 'Sudarshan Birla',
     lines: ['Tower B, Cyber Hub', 'DLF Phase 2, Gurugram', 'Haryana 122002', 'India'],
-    phone: '9824148166',
+    phone: '99999999',
   },
 ];
 

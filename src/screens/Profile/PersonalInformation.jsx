@@ -20,6 +20,22 @@ export default function PersonalInformation() {
     setSaved(false);
   }
 
+  // Avatar's own live preview is a blob URL, which gets revoked the moment
+  // this screen unmounts — so it can't be what persists. Convert to a data
+  // URL (survives navigation, can sit in CURRENT_USER as a plain string)
+  // and route it through the same update() as every other field, so
+  // changing your photo now actually marks the form dirty and Update
+  // Profile stops being a dead end for it.
+  function handlePhotoChange(file) {
+    if (!file) {
+      update('avatarPhoto', null);
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => update('avatarPhoto', reader.result);
+    reader.readAsDataURL(file);
+  }
+
   function handleSubmit() {
     // No backend in this prototype — mutate the shared CURRENT_USER object in
     // place so every other screen that reads it (e.g. the Profile hub) sees
@@ -43,7 +59,13 @@ export default function PersonalInformation() {
 
       <main className="personal-info__content">
         <div className="personal-info__avatar-row">
-          <Avatar initial={form.avatarInitial} size={100} editable />
+          <Avatar
+            initial={form.avatarInitial}
+            photoUrl={form.avatarPhoto}
+            size={100}
+            editable
+            onChange={handlePhotoChange}
+          />
         </div>
 
         <div className="personal-info__fields">

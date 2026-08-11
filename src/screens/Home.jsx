@@ -26,7 +26,7 @@ export default function Home() {
             {hasUnreadNotifications && <span className="home__bell-badge" />}
           </button>
           <button className="home__profile-btn" aria-label="Profile" onClick={() => switchTab('profile')}>
-            <Avatar initial={CURRENT_USER.avatarInitial} size={32} />
+            <Avatar initial={CURRENT_USER.avatarInitial} photoUrl={CURRENT_USER.avatarPhoto} size={32} />
           </button>
         </div>
       </header>

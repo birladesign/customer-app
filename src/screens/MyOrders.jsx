@@ -1,11 +1,10 @@
 import { useMemo, useState } from 'react';
-import { useNavigation } from '../navigation/NavigationContext.jsx';
 import { SECTIONS, ORDERS, PROACTIVE_PROMPT, parseOrderDate } from '../data/orders.js';
 import OrderCard from '../components/OrderCard.jsx';
 import ProactiveCard from '../components/ProactiveCard.jsx';
 import TabBar from '../components/TabBar.jsx';
 import SearchAndFilterBar from '../components/SearchAndFilterBar.jsx';
-import { HelpCircleIcon, InboxIcon, HouseIcon } from '../components/icons.jsx';
+import { InboxIcon } from '../components/icons.jsx';
 import './MyOrders.css';
 
 const TABS = [
@@ -14,7 +13,6 @@ const TABS = [
 ];
 
 export default function MyOrders() {
-  const { switchTab } = useNavigation();
   const [activeTab, setActiveTab] = useState('all');
   const [query, setQuery] = useState('');
 
@@ -54,15 +52,8 @@ export default function MyOrders() {
       <div className="my-orders__chrome">
         <header className="my-orders__topbar">
           <div className="my-orders__topbar-left">
-            <button className="my-orders__icon-btn" onClick={() => switchTab('home')} aria-label="Home">
-              <HouseIcon width="18" height="18" />
-            </button>
             <h1>My Orders</h1>
           </div>
-          <button className="my-orders__help-btn" onClick={() => switchTab('support', { openChat: true })}>
-            <HelpCircleIcon />
-            Need Help
-          </button>
         </header>
 
         <SearchAndFilterBar query={query} onQueryChange={setQuery} />

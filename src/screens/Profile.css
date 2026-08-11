@@ -28,24 +28,6 @@
   color: var(--color-text-primary);
 }
 
-.profile__icon-btn {
-  flex-shrink: 0;
-  border: none;
-  background: rgba(26, 43, 88, 0.06);
-  border-radius: var(--radius-full);
-  width: 32px;
-  height: 32px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--color-text-primary);
-  transition: transform 0.1s ease-out;
-}
-
-.profile__icon-btn:active {
-  transform: scale(0.92);
-}
-
 .profile__content {
   flex: 1;
   padding: var(--space-4);
@@ -157,7 +139,6 @@
 
 @media (prefers-reduced-motion: reduce) {
   .profile__row:active,
-  .profile__icon-btn:active,
   .profile__logout:active {
     transform: none;
   }
