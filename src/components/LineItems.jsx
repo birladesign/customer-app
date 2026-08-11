@@ -1,9 +1,9 @@
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { splitProductSpec } from '../data/orders.js';
-import { getItemIntents } from '../data/intents.js';
+import { getItemIntents, getEditEligibility } from '../data/intents.js';
 import { SPRING_STANDARD, DURATION_REDUCED } from '../motion.js';
 import Tracker from './Tracker.jsx';
-import { ChevronDownIcon, FileTextIcon, ShieldIcon, ExternalLinkIcon, StarIcon } from './icons.jsx';
+import { ChevronDownIcon, FileTextIcon, ShieldIcon, ExternalLinkIcon, StarIcon, EditIcon } from './icons.jsx';
 import './LineItems.css';
 
 const STATUS_COLOR = {
@@ -26,7 +26,7 @@ function formatRupees(amount) {
 // Return/Warranty eligibility is computed per item (getItemIntents), not
 // inherited from the order — a delivered mattress is returnable the moment
 // it arrives, regardless of a still-in-transit bed frame in the same order.
-export default function LineItems({ items, openSku, onToggle, onTrack, onReturn, onRate }) {
+export default function LineItems({ items, openSku, onToggle, onTrack, onReturn, onRate, onEdit }) {
   const reduceMotion = useReducedMotion();
 
   return (
@@ -35,6 +35,7 @@ export default function LineItems({ items, openSku, onToggle, onTrack, onReturn,
         const isOpen = openSku === item.sku;
         const { name, spec } = splitProductSpec(item.product);
         const intents = getItemIntents(item);
+        const editIntent = getEditEligibility(item);
         return (
           <div className="line-items__row" key={item.sku}>
             <button
@@ -101,7 +102,16 @@ export default function LineItems({ items, openSku, onToggle, onTrack, onReturn,
 
                     <div className="line-items__item-actions">
                       <button
-                        className="line-items__warranty"
+                        className="line-items__action-link"
+                        disabled={!editIntent.enabled}
+                        title={editIntent.enabled ? undefined : editIntent.reason}
+                        onClick={editIntent.enabled ? () => onEdit(item) : undefined}
+                      >
+                        <EditIcon width="13" height="13" />
+                        Edit
+                      </button>
+                      <button
+                        className="line-items__action-link"
                         disabled={!intents.warranty.enabled}
                         title={intents.warranty.enabled ? undefined : intents.warranty.reason}
                       >

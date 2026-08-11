@@ -14,6 +14,7 @@ import Notifications from '../screens/Profile/Notifications.jsx';
 import Invoices from '../screens/Profile/Invoices.jsx';
 import Requests from '../screens/Profile/Requests.jsx';
 import OrderDetails from '../screens/OrderDetails.jsx';
+import EditOrder from '../screens/EditOrder.jsx';
 import ReturnReplaceFlow from '../screens/ReturnReplace/ReturnReplaceFlow.jsx';
 import './ScreenStack.css';
 
@@ -30,6 +31,7 @@ const SCREENS = {
   invoices: Invoices,
   requests: Requests,
   orderDetails: OrderDetails,
+  editOrder: EditOrder,
   returnReplace: ReturnReplaceFlow,
 };
 

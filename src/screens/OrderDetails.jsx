@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { ORDERS, splitProductSpec, getOrderStatus } from '../data/orders.js';
-import { getOrderIntents } from '../data/intents.js';
+import { getOrderIntents, getEditEligibility } from '../data/intents.js';
 import { CURRENT_USER } from '../data/profile.js';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
 import { SPRING_STANDARD, DURATION_REDUCED } from '../motion.js';
@@ -24,6 +24,7 @@ import {
   MailIcon,
   PhoneIcon,
   UserIcon,
+  EditIcon,
 } from '../components/icons.jsx';
 import './OrderDetails.css';
 
@@ -84,6 +85,7 @@ export default function OrderDetails({ params }) {
   const returnIntent = intents.find((i) => i.key === 'returnReplace');
   const warrantyIntent = intents.find((i) => i.key === 'warranty');
   const cancelIntent = intents.find((i) => i.key === 'cancel');
+  const editIntent = getEditEligibility(order);
 
   // No backend in this prototype — mutate the shared order object in place
   // (same pattern as PersonalInformation/AddAddress) so My Orders reflects
@@ -147,6 +149,7 @@ export default function OrderDetails({ params }) {
             onTrack={(item) => openTracking(item.product, item.timeline)}
             onReturn={(item) => navigate('returnReplace', { orderId: order.id, sku: item.sku })}
             onRate={handleRateItem}
+            onEdit={(item) => navigate('editOrder', { orderId: order.id, sku: item.sku })}
           />
         ) : (
           <div className="order-details__product-card">
@@ -220,12 +223,13 @@ export default function OrderDetails({ params }) {
                 <div className="order-details__disclosure-body">
                   <div className="order-details__payment-block">
                     {order.items ? (
-                      order.items.map((item) => (
-                        <div className="order-details__payment-row" key={item.sku}>
-                          <span>{item.product}{item.qty > 1 ? ` × ${item.qty}` : ''}</span>
-                          <span>{formatRupees(item.price)}</span>
-                        </div>
-                      ))
+                      // Each item's own price already lives in its LineItems
+                      // row above — no need to repeat the full breakdown here,
+                      // just the combined line this block otherwise shows.
+                      <div className="order-details__payment-row">
+                        <span>{order.items.length} Items</span>
+                        <span>{formatRupees(order.priceBreakup?.itemPrice ?? order.amount)}</span>
+                      </div>
                     ) : (
                       <div className="order-details__payment-row">
                         <span>{productName}{spec ? ` (${spec})` : ''}</span>
@@ -299,6 +303,20 @@ export default function OrderDetails({ params }) {
                         </p>
                       </div>
                     </div>
+                  )}
+
+                  {!order.items && (
+                    <>
+                      <button
+                        className="order-details__edit-btn"
+                        disabled={!editIntent.enabled}
+                        onClick={editIntent.enabled ? () => navigate('editOrder', { orderId: order.id }) : undefined}
+                      >
+                        <EditIcon width="14" height="14" />
+                        Edit Order
+                      </button>
+                      {!editIntent.enabled && <p className="order-details__cancel-reason">{editIntent.reason}</p>}
+                    </>
                   )}
 
                   <button

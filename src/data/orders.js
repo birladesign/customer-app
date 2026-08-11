@@ -66,6 +66,18 @@ export function getOrderStatus(order) {
   return { dot: 'blue', label: `${delivered} of ${total} Items Delivered` };
 }
 
+// After Edit Order changes a line item's price (qty or size change), the
+// order's own amount/priceBreakup are re-derived from its items rather than
+// left stale — same discount/shipping/tax, new item total.
+export function recomputeOrderTotals(order) {
+  if (!order.items) return;
+  const itemPrice = order.items.reduce((sum, item) => sum + item.price, 0);
+  const { discount = 0, shipping = 0, tax = 0 } = order.priceBreakup ?? {};
+  const total = itemPrice - discount + shipping + tax;
+  order.priceBreakup = { ...order.priceBreakup, itemPrice, total };
+  order.amount = total;
+}
+
 export const PROACTIVE_PROMPT = {
   id: 'proactive-cod',
   title: 'Confirm Your Cash on Delivery Order',
