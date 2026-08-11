@@ -19,6 +19,7 @@
 }
 
 .bottom-tab-bar__tab {
+  position: relative;
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -44,6 +45,39 @@
 
 .bottom-tab-bar__tab:active {
   transform: scale(0.92);
+}
+
+/* Sized to the tab's own flex:1 column via inset, never to the label's
+   content width — this is what lets it slide between tabs of different
+   label widths without stretching/squashing along the way. */
+.bottom-tab-bar__indicator {
+  position: absolute;
+  inset: 2px 4px;
+  border-radius: 20px;
+  background: var(--color-accent-cyan-wash);
+  z-index: 0;
+}
+
+.bottom-tab-bar__icon {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+}
+
+.bottom-tab-bar__label {
+  position: relative;
+  z-index: 1;
+}
+
+.bottom-tab-bar__badge {
+  position: absolute;
+  top: -2px;
+  right: -3px;
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-full);
+  background: var(--color-action-red);
+  border: 1.5px solid var(--color-bg-primary);
 }
 
 @media (prefers-reduced-motion: reduce) {

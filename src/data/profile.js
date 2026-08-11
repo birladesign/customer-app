@@ -1,6 +1,6 @@
 // Demo data for the Profile section. Plain data only — icon fields are string
 // keys mapped to components where consumed, same convention as data/home.js.
-import { ORDERS, parseOrderDate } from './orders.js';
+import { ORDERS, parseOrderDate, getOrderStatus } from './orders.js';
 
 export const CURRENT_USER = {
   firstName: 'Ainish',
@@ -90,10 +90,12 @@ export function getInvoiceOrders() {
 // ineligible action, so a plain truthiness check would false-positive on any
 // order whose warranty happens to be gated for an unrelated reason.
 export function getRequestOrders() {
-  return ORDERS.filter(
-    (o) =>
+  return ORDERS.filter((o) => {
+    const status = getOrderStatus(o);
+    return (
       /mid-claim/i.test(o.intentOverrides?.warranty ?? '') ||
       o.banner?.icon === 'alert' ||
-      (o.status.dot === 'muted' && /Refund/.test(o.status.label))
-  );
+      (status.dot === 'muted' && /Refund/.test(status.label))
+    );
+  });
 }

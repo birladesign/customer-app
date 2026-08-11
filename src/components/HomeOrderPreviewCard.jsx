@@ -1,4 +1,5 @@
 import { useNavigation } from '../navigation/NavigationContext.jsx';
+import { getOrderStatus } from '../data/orders.js';
 import Tracker from './Tracker.jsx';
 import { ChevronRightIcon } from './icons.jsx';
 import './HomeOrderPreviewCard.css';
@@ -7,6 +8,7 @@ import './HomeOrderPreviewCard.css';
 // rating/copy-id concerns that don't apply to this compact dashboard peek.
 export default function HomeOrderPreviewCard({ order }) {
   const { navigate } = useNavigation();
+  const status = getOrderStatus(order);
 
   return (
     <article
@@ -25,7 +27,7 @@ export default function HomeOrderPreviewCard({ order }) {
         <img className="home-order-preview-card__image" src={order.image} alt={order.product} />
         <div className="home-order-preview-card__text">
           <p className="home-order-preview-card__product">{order.product}</p>
-          <p className="home-order-preview-card__status">{order.status.label}</p>
+          <p className="home-order-preview-card__status">{status.label}</p>
         </div>
         <ChevronRightIcon className="home-order-preview-card__chevron" aria-hidden="true" />
       </div>

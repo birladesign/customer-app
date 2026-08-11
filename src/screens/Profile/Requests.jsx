@@ -1,4 +1,5 @@
 import { getAllCases } from '../../data/support.js';
+import { getOrderStatus } from '../../data/orders.js';
 import { useNavigation } from '../../navigation/NavigationContext.jsx';
 import { ChevronLeftIcon } from '../../components/icons.jsx';
 import './Requests.css';
@@ -58,7 +59,7 @@ export default function Requests() {
                   <div className="requests__divider" />
                   <p className="requests__ordered-on">Ordered on {order.date}</p>
                   <div className="requests__divider" />
-                  <p className="requests__case-title">{order.status.label}</p>
+                  <p className="requests__case-title">{getOrderStatus(order).label}</p>
                   {order.caption && <p className="requests__case-desc">{order.caption}</p>}
                   <div className="requests__sla">
                     <strong>Next SLA:</strong> {order.banner?.text ?? "We'll update you as soon as there's progress."}
