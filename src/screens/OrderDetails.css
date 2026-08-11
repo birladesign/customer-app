@@ -144,6 +144,22 @@
   padding: var(--space-4);
 }
 
+.order-details__other-items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.order-details__other-items-heading {
+  margin: 0;
+  padding: 0 var(--space-1);
+  font-size: var(--text-caption-size);
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: var(--text-label-tracking);
+}
+
 .order-details__tracking-link {
   display: inline-flex;
   align-items: center;
@@ -433,6 +449,56 @@
   color: var(--color-disabled-text);
 }
 
+.order-details__cancel-wrap {
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--space-3);
+}
+
+/* Deliberately quiet — plain caption-weight text, not the bold/red
+   treatment a destructive action gets once you actually open it. A rare,
+   irreversible action shouldn't be the loudest thing on the page. */
+.order-details__cancel-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: none;
+  background: none;
+  padding: 0;
+  font-family: inherit;
+  font-size: var(--text-body-size);
+  font-weight: 500;
+  color: var(--color-text-muted);
+  transition: transform 0.1s ease-out;
+}
+
+.order-details__cancel-toggle:active {
+  transform: scale(0.99);
+}
+
+.order-details__cancel-chevron {
+  color: var(--color-text-muted);
+  transition: transform 0.2s var(--ease-standard);
+}
+
+.order-details__cancel-chevron--open {
+  transform: rotate(90deg);
+}
+
+.order-details__cancel-body {
+  padding-top: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.order-details__cancel-hint {
+  margin: 0;
+  font-size: var(--text-caption-size);
+  color: var(--color-text-muted);
+}
+
 .order-details__cancel-btn {
   align-self: center;
   border: none;
@@ -674,6 +740,7 @@
   .order-details__help-cta:active,
   .order-details__get-invoice:active,
   .order-details__cancel-btn:active,
+  .order-details__cancel-toggle:active,
   .order-details__edit-btn:active,
   .order-details__technician-call:active {
     transform: none;

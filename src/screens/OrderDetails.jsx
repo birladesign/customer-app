@@ -8,6 +8,7 @@ import { SPRING_STANDARD, DURATION_REDUCED } from '../motion.js';
 import Timeline from '../components/Timeline.jsx';
 import DetailedTracking from '../components/DetailedTracking.jsx';
 import LineItems from '../components/LineItems.jsx';
+import PrimaryItem from '../components/PrimaryItem.jsx';
 import ConfirmSheet from '../components/ConfirmSheet.jsx';
 import BottomSheet from '../components/BottomSheet.jsx';
 import {
@@ -47,6 +48,10 @@ export default function OrderDetails({ params }) {
   // to hide it.
   const [detailsOpen, setDetailsOpen] = useState(true);
   const [confirmingCancel, setConfirmingCancel] = useState(false);
+  // Cancel is destructive and rare — it stays closed by default, one tap
+  // deeper than the rest of Item & Billing Info, instead of sitting there
+  // as a loud, always-visible red button.
+  const [cancelSectionOpen, setCancelSectionOpen] = useState(false);
   const [trackingOpen, setTrackingOpen] = useState(false);
   // Which tracking log the sheet is currently showing — the order's own
   // aggregate timeline by default, or a single line item's when opened via
@@ -129,6 +134,10 @@ export default function OrderDetails({ params }) {
   const displayItems = order.items?.map((item) =>
     itemRatings[item.sku] != null ? { ...item, rating: itemRatings[item.sku] } : item
   );
+  // The first item carries the order's full attention — everything else is
+  // "also in this order," not a second thing equally competing for it.
+  const primaryItem = displayItems?.[0];
+  const otherItems = displayItems?.slice(1) ?? [];
 
   return (
     <div className="order-details">
@@ -142,15 +151,31 @@ export default function OrderDetails({ params }) {
 
       <main className="order-details__content">
         {order.items ? (
-          <LineItems
-            items={displayItems}
-            openSku={openItemSku}
-            onToggle={toggleItem}
-            onTrack={(item) => openTracking(item.product, item.timeline)}
-            onReturn={(item) => navigate('returnReplace', { orderId: order.id, sku: item.sku })}
-            onRate={handleRateItem}
-            onEdit={(item) => navigate('editOrder', { orderId: order.id, sku: item.sku })}
-          />
+          <>
+            <PrimaryItem
+              item={primaryItem}
+              onTrack={(item) => openTracking(item.product, item.timeline)}
+              onReturn={(item) => navigate('returnReplace', { orderId: order.id, sku: item.sku })}
+              onRate={handleRateItem}
+              onEdit={(item) => navigate('editOrder', { orderId: order.id, sku: item.sku })}
+            />
+            {otherItems.length > 0 && (
+              <div className="order-details__other-items">
+                <p className="order-details__other-items-heading">
+                  Other Items in This Order ({otherItems.length})
+                </p>
+                <LineItems
+                  items={otherItems}
+                  openSku={openItemSku}
+                  onToggle={toggleItem}
+                  onTrack={(item) => openTracking(item.product, item.timeline)}
+                  onReturn={(item) => navigate('returnReplace', { orderId: order.id, sku: item.sku })}
+                  onRate={handleRateItem}
+                  onEdit={(item) => navigate('editOrder', { orderId: order.id, sku: item.sku })}
+                />
+              </div>
+            )}
+          </>
         ) : (
           <div className="order-details__product-card">
             <img className="order-details__image" src={order.image} alt={order.product} />
@@ -319,14 +344,42 @@ export default function OrderDetails({ params }) {
                     </>
                   )}
 
-                  <button
-                    className="order-details__cancel-btn"
-                    disabled={!cancelIntent?.enabled}
-                    onClick={cancelIntent?.enabled ? () => setConfirmingCancel(true) : undefined}
-                  >
-                    Cancel Order
-                  </button>
-                  {!cancelIntent?.enabled && <p className="order-details__cancel-reason">{cancelIntent?.reason}</p>}
+                  <div className="order-details__cancel-wrap">
+                    <button
+                      className="order-details__cancel-toggle"
+                      onClick={() => setCancelSectionOpen((v) => !v)}
+                      aria-expanded={cancelSectionOpen}
+                    >
+                      <span>Cancel Order</span>
+                      <ChevronRightIcon
+                        className={`order-details__cancel-chevron${cancelSectionOpen ? ' order-details__cancel-chevron--open' : ''}`}
+                      />
+                    </button>
+                    <AnimatePresence initial={false}>
+                      {cancelSectionOpen && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={reduceMotion ? DURATION_REDUCED : SPRING_STANDARD}
+                          style={{ overflow: 'hidden' }}
+                        >
+                          <div className="order-details__cancel-body">
+                            {cancelIntent?.enabled ? (
+                              <>
+                                <p className="order-details__cancel-hint">This can't be undone.</p>
+                                <button className="order-details__cancel-btn" onClick={() => setConfirmingCancel(true)}>
+                                  Cancel Order
+                                </button>
+                              </>
+                            ) : (
+                              <p className="order-details__cancel-reason">{cancelIntent?.reason}</p>
+                            )}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
                 </div>
               </motion.div>
             )}
