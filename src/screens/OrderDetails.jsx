@@ -17,6 +17,7 @@ import {
   CopyIcon,
   CheckIcon,
   CloseIcon,
+  ClockIcon,
   FileTextIcon,
   ShieldIcon,
   ExternalLinkIcon,
@@ -36,6 +37,15 @@ const STATUS_PILL = {
   muted: { bg: 'var(--color-disabled-bg)', color: 'var(--color-disabled-text)' },
 };
 
+// Short, tappable — mirrors ReturnReplace's RETURN_REASONS in shape/length.
+const CANCEL_REASONS = [
+  'Ordered by mistake',
+  'Found a better price',
+  'Delivery taking too long',
+  'No longer needed',
+  'Other',
+];
+
 function formatRupees(amount) {
   return `₹${amount.toLocaleString('en-IN')}`;
 }
@@ -47,6 +57,13 @@ export default function OrderDetails({ params }) {
   // behind a click — starts open, but stays collapsible for anyone who wants
   // to hide it.
   const [detailsOpen, setDetailsOpen] = useState(true);
+  // Cancelling is a multi-step conversation, not a single tap: pick a reason,
+  // then get offered Hold as a suitable alternative (see handlePutOnHold),
+  // and only reach the final irreversible confirm after declining that.
+  // cancelStep drives the reason/alternative sheet; confirmingCancel is the
+  // separate, final ConfirmSheet reached only after "No, Cancel My Order."
+  const [cancelStep, setCancelStep] = useState(null); // null | 'reason' | 'alternative'
+  const [cancelReason, setCancelReason] = useState(null);
   const [confirmingCancel, setConfirmingCancel] = useState(false);
   // Edit and Cancel are both rare, one-off actions — neither belongs sitting
   // on the page by default. Both live behind this one closed-by-default
@@ -91,6 +108,51 @@ export default function OrderDetails({ params }) {
   const warrantyIntent = intents.find((i) => i.key === 'warranty');
   const cancelIntent = intents.find((i) => i.key === 'cancel');
 
+  function openCancelFlow() {
+    setCancelStep('reason');
+  }
+
+  function closeCancelFlow() {
+    setCancelStep(null);
+    setCancelReason(null);
+  }
+
+  function selectCancelReason(reason) {
+    setCancelReason(reason);
+  }
+
+  function continueToAlternative() {
+    setCancelStep('alternative');
+  }
+
+  // Offered instead of an outright cancel — "Hold or cancel" is the real
+  // decision point (per the order-lifecycle notes), and unlike Return/
+  // Replace, Hold is always available in exactly the window Cancel is:
+  // Return only ever unlocks after delivery, by which point Cancel isn't
+  // offered anymore, so it could never actually be reached from this flow.
+  // Mirrors the app's own existing "On Hold — Decision Needed" state
+  // (see TSC92401) rather than inventing a new one.
+  function handlePutOnHold() {
+    Object.assign(order, {
+      section: 'needsAttention',
+      status: { dot: 'red', label: 'On Hold — Decision Needed' },
+      caption: `Paused at your request${cancelReason ? ` (${cancelReason})` : ''} — resume or cancel anytime before it ships.`,
+      actions: [
+        { label: 'Resume Order', variant: 'primary' },
+        { label: 'Manage Order', variant: 'secondary-danger' },
+      ],
+    });
+    order.timeline?.steps.push({ label: 'On Hold', timestamp: null, description: 'Awaiting your decision' });
+    if (order.timeline) order.timeline.currentIndex = order.timeline.steps.length - 1;
+    closeCancelFlow();
+    goBack();
+  }
+
+  function proceedToFinalCancel() {
+    setCancelStep(null);
+    setConfirmingCancel(true);
+  }
+
   // No backend in this prototype — mutate the shared order object in place
   // (same pattern as PersonalInformation/AddAddress) so My Orders reflects
   // the cancellation the moment we navigate back to it.
@@ -98,12 +160,13 @@ export default function OrderDetails({ params }) {
     Object.assign(order, {
       section: 'closed',
       status: { dot: 'muted', label: 'Cancelled' },
-      caption: 'Cancelled as per your request',
+      caption: cancelReason ? `Cancelled — ${cancelReason}` : 'Cancelled as per your request',
       actions: [],
     });
     order.timeline?.steps.push({ label: 'Cancelled', timestamp: null, description: 'Cancelled as per your request' });
     if (order.timeline) order.timeline.currentIndex = order.timeline.steps.length - 1;
     setConfirmingCancel(false);
+    setCancelReason(null);
     goBack();
   }
 
@@ -204,8 +267,11 @@ export default function OrderDetails({ params }) {
           <div className="order-details__card">
             <Timeline steps={order.timeline.steps} currentIndex={order.timeline.currentIndex} />
             <button className="order-details__tracking-link" onClick={() => openTracking('Tracking Updates', order.timeline)}>
-              <FileTextIcon width="14" height="14" />
-              Tracking Updates
+              <span className="order-details__tracking-link-icon">
+                <FileTextIcon width="14" height="14" />
+              </span>
+              <span className="order-details__tracking-link-label">Tracking Updates</span>
+              <ChevronRightIcon className="order-details__tracking-link-chevron" aria-hidden="true" />
             </button>
           </div>
         )}
@@ -375,18 +441,6 @@ export default function OrderDetails({ params }) {
                 </div>
               </div>
             )}
-
-            <div className="order-details__return-cta">
-              <p className="order-details__return-prompt">Not sure about the item?</p>
-              <button
-                className="order-details__return-link"
-                disabled={!returnIntent?.enabled}
-                onClick={returnIntent?.enabled ? () => navigate('returnReplace', { orderId: order.id }) : undefined}
-              >
-                Return / Replacement
-              </button>
-              {!returnIntent?.enabled && <p className="order-details__return-reason">{returnIntent?.reason}</p>}
-            </div>
           </>
         )}
 
@@ -401,7 +455,9 @@ export default function OrderDetails({ params }) {
             </span>
             <span className="order-details__help-text">
               <span className="order-details__help-heading">Do you need help with the existing order?</span>
-              <span className="order-details__help-subtext">Edit or cancel this order</span>
+              <span className="order-details__help-subtext">
+                {order.items ? 'Edit or cancel this order' : 'Edit, return, or cancel this order'}
+              </span>
             </span>
             <ChevronRightIcon
               className={`order-details__help-chevron${helpSectionOpen ? ' order-details__help-chevron--open' : ''}`}
@@ -435,10 +491,26 @@ export default function OrderDetails({ params }) {
                   </button>
                   {!editIntent.enabled && <p className="order-details__help-action-reason">{editIntent.reason}</p>}
 
+                  {!order.items && (
+                    <>
+                      <button
+                        className="order-details__help-action"
+                        disabled={!returnIntent?.enabled}
+                        onClick={returnIntent?.enabled ? () => navigate('returnReplace', { orderId: order.id }) : undefined}
+                      >
+                        <ExternalLinkIcon width="14" height="14" />
+                        <span>Return or Replace</span>
+                      </button>
+                      {!returnIntent?.enabled && (
+                        <p className="order-details__help-action-reason">{returnIntent?.reason}</p>
+                      )}
+                    </>
+                  )}
+
                   <button
-                    className="order-details__help-action order-details__help-action--danger"
+                    className="order-details__help-action"
                     disabled={!cancelIntent?.enabled}
-                    onClick={cancelIntent?.enabled ? () => setConfirmingCancel(true) : undefined}
+                    onClick={cancelIntent?.enabled ? openCancelFlow : undefined}
                   >
                     <CloseIcon width="14" height="14" />
                     <span>Cancel Order</span>
@@ -456,10 +528,44 @@ export default function OrderDetails({ params }) {
         title="Cancel this order?"
         body={`This will cancel ${productName}. This can't be undone.`}
         confirmLabel="Cancel Order"
-        danger
         onConfirm={handleCancelOrder}
         onClose={() => setConfirmingCancel(false)}
       />
+
+      <BottomSheet open={cancelStep === 'reason'} onClose={closeCancelFlow}>
+        <h2 className="confirm-sheet__title">Why are you cancelling?</h2>
+        <p className="order-details__cancel-prompt">This helps us route it correctly.</p>
+        <div className="order-details__cancel-reasons">
+          {CANCEL_REASONS.map((reason) => (
+            <button
+              key={reason}
+              className={`order-details__cancel-reason${cancelReason === reason ? ' order-details__cancel-reason--selected' : ''}`}
+              onClick={() => selectCancelReason(reason)}
+            >
+              {reason}
+            </button>
+          ))}
+        </div>
+        <button className="order-details__cancel-continue" disabled={!cancelReason} onClick={continueToAlternative}>
+          Continue
+        </button>
+      </BottomSheet>
+
+      <BottomSheet open={cancelStep === 'alternative'} onClose={closeCancelFlow}>
+        <h2 className="confirm-sheet__title">Before you cancel</h2>
+        <p className="confirm-sheet__body">
+          You can put {order.items ? 'this order' : productName} on hold instead — it stays paused and unshipped
+          until you decide, and you can resume or cancel it anytime before it ships.
+        </p>
+        <div className="confirm-sheet__footer confirm-sheet__footer--stacked">
+          <button className="confirm-sheet__confirm" onClick={handlePutOnHold}>
+            Put on Hold Instead
+          </button>
+          <button className="confirm-sheet__cancel" onClick={proceedToFinalCancel}>
+            No, Cancel My Order
+          </button>
+        </div>
+      </BottomSheet>
 
       {trackingTarget && (
         <BottomSheet open={trackingOpen} onClose={() => setTrackingOpen(false)}>

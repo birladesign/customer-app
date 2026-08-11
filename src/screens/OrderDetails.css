@@ -160,23 +160,47 @@
 }
 
 .order-details__tracking-link {
-  display: inline-flex;
+  width: 100%;
+  display: flex;
   align-items: center;
-  gap: var(--space-1);
+  gap: var(--space-3);
   margin-top: var(--space-3);
   border: none;
-  background: none;
-  padding: 0;
+  background: var(--color-accent-cyan-wash);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  text-align: left;
   font-family: inherit;
-  font-size: var(--text-body-size);
-  font-weight: 700;
-  letter-spacing: var(--text-label-tracking);
-  color: var(--color-navy-900);
   transition: transform 0.1s ease-out;
 }
 
 .order-details__tracking-link:active {
-  transform: scale(0.97);
+  transform: scale(0.99);
+}
+
+.order-details__tracking-link-icon {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg-primary);
+  color: var(--color-navy-900);
+}
+
+.order-details__tracking-link-label {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--text-product-size);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.order-details__tracking-link-chevron {
+  flex-shrink: 0;
+  color: var(--color-navy-900);
 }
 
 .order-details__technician-card {
@@ -519,44 +543,6 @@
   color: var(--color-disabled-text);
 }
 
-.order-details__return-cta {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-}
-
-.order-details__return-prompt {
-  margin: 0;
-  font-size: var(--text-body-size);
-  color: var(--color-text-primary);
-}
-
-.order-details__return-link {
-  align-self: flex-start;
-  border: none;
-  background: none;
-  padding: 0;
-  font-family: inherit;
-  font-size: var(--text-product-size);
-  font-weight: 700;
-  color: var(--color-navy-900);
-  transition: transform 0.1s ease-out;
-}
-
-.order-details__return-link:active {
-  transform: scale(0.97);
-}
-
-.order-details__return-link:disabled {
-  color: var(--color-disabled-text);
-}
-
-.order-details__return-reason {
-  margin: 0;
-  font-size: var(--text-caption-size);
-  color: var(--color-text-muted);
-}
-
 .order-details__help-wrap {
   background: var(--color-accent-cyan-wash);
   border-radius: var(--radius-md);
@@ -654,18 +640,68 @@
   color: var(--color-disabled-text);
 }
 
-.order-details__help-action--danger {
-  color: var(--color-action-red);
-}
-
-.order-details__help-action--danger:disabled {
-  color: var(--color-disabled-text);
-}
-
 .order-details__help-action-reason {
   margin: 0 0 var(--space-1);
   font-size: var(--text-caption-size);
   color: var(--color-text-muted);
+}
+
+.order-details__cancel-prompt {
+  margin: 0 0 var(--space-4);
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-leading);
+  color: var(--color-text-muted);
+}
+
+.order-details__cancel-reasons {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.order-details__cancel-reason {
+  text-align: left;
+  border: 1px solid rgba(26, 43, 88, 0.1);
+  background: var(--color-bg-primary);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  font-family: inherit;
+  font-size: var(--text-product-size);
+  font-weight: 500;
+  color: var(--color-text-primary);
+  transition: transform 0.1s ease-out, background 0.15s var(--ease-standard), color 0.15s var(--ease-standard);
+}
+
+.order-details__cancel-reason:active {
+  transform: scale(0.98);
+}
+
+.order-details__cancel-reason--selected {
+  background: var(--color-navy-900);
+  border-color: var(--color-navy-900);
+  color: var(--color-text-inverse);
+}
+
+.order-details__cancel-continue {
+  width: 100%;
+  border: none;
+  border-radius: var(--radius-full);
+  padding: var(--space-3);
+  background: var(--color-navy-900);
+  color: var(--color-text-inverse);
+  font-family: inherit;
+  font-size: var(--text-product-size);
+  font-weight: 600;
+  transition: transform 0.1s ease-out, opacity 0.15s var(--ease-standard);
+}
+
+.order-details__cancel-continue:disabled {
+  opacity: 0.4;
+}
+
+.order-details__cancel-continue:not(:disabled):active {
+  transform: scale(0.97);
 }
 
 .order-details__not-found {
@@ -680,11 +716,12 @@
   .order-details__tracking-link:active,
   .order-details__disclosure:active,
   .order-details__warranty-row:active,
-  .order-details__return-link:active,
   .order-details__get-invoice:active,
   .order-details__help-toggle:active,
   .order-details__help-action:active,
-  .order-details__technician-call:active {
+  .order-details__technician-call:active,
+  .order-details__cancel-reason:active,
+  .order-details__cancel-continue:not(:disabled):active {
     transform: none;
   }
 }

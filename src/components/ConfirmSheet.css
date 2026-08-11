@@ -17,6 +17,10 @@
   gap: var(--space-3);
 }
 
+.confirm-sheet__footer--stacked {
+  flex-direction: column;
+}
+
 .confirm-sheet__cancel,
 .confirm-sheet__confirm {
   flex: 1;
