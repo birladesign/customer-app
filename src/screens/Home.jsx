@@ -5,6 +5,7 @@ import { PROMO_BANNERS } from '../data/home.js';
 import PromoCarousel from '../components/PromoCarousel.jsx';
 import HomeOrderPreviewCard from '../components/HomeOrderPreviewCard.jsx';
 import Avatar from '../components/Avatar.jsx';
+import Logo from '../components/Logo.jsx';
 import { BellIcon } from '../components/icons.jsx';
 import './Home.css';
 
@@ -18,7 +19,7 @@ export default function Home() {
   return (
     <div className="home">
       <header className="home__topbar">
-        <span className="home__logo">The Sleep Company</span>
+        <Logo className="home__logo" />
         <div className="home__topbar-actions">
           <button className="home__bell-btn" aria-label="Notifications" onClick={() => navigate('notifications')}>
             <BellIcon width="18" height="18" />

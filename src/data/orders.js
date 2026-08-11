@@ -216,14 +216,14 @@ export const ORDERS = [
           updates: [
             { text: 'Order processing has been initiated', timestamp: '06 Aug 2026, 11:00 AM' },
             { text: 'Order has been confirmed', timestamp: '06 Aug 2026, 11:02 AM' },
-            { text: 'Seller is processing your order', timestamp: '06 Aug 2026, 1:15 PM' },
+            { text: 'We are processing your order', timestamp: '06 Aug 2026, 1:15 PM' },
           ],
         },
         {
           label: 'Shipped',
           timestamp: '07 Aug 2026, 8:30 AM',
           updates: [
-            { text: 'Seller has handed over the item to courier', timestamp: '07 Aug 2026, 8:30 AM' },
+            { text: 'We have handed over the item to courier', timestamp: '07 Aug 2026, 8:30 AM' },
             { text: 'Item has reached the courier facility in Gurugram, Haryana', timestamp: '07 Aug 2026, 11:45 AM' },
             { text: 'Item has left the courier facility in Gurugram, Haryana', timestamp: '07 Aug 2026, 9:20 PM' },
             { text: 'Item has reached the courier facility in Delhi Hub', timestamp: '08 Aug 2026, 3:10 AM' },
@@ -313,7 +313,7 @@ export const ORDERS = [
           timestamp: '28 Jul 2026, 1:00 PM',
           updates: [
             { text: 'Order has been confirmed', timestamp: '28 Jul 2026, 1:00 PM' },
-            { text: 'Seller is processing your order', timestamp: '28 Jul 2026, 4:30 PM' },
+            { text: 'We are processing your order', timestamp: '28 Jul 2026, 4:30 PM' },
           ],
         },
         {
@@ -650,7 +650,7 @@ export const ORDERS = [
               label: 'Shipped',
               timestamp: '06 Aug 2026, 9:15 AM',
               updates: [
-                { text: 'Seller has handed over the item to courier', timestamp: '06 Aug 2026, 9:15 AM' },
+                { text: 'We have handed over the item to courier', timestamp: '06 Aug 2026, 9:15 AM' },
                 { text: 'Item has reached the courier facility in Gurugram, Haryana', timestamp: '06 Aug 2026, 1:40 PM' },
               ],
             },

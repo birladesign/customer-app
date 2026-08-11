@@ -20,10 +20,8 @@
 }
 
 .home__logo {
-  font-size: var(--text-heading-size);
-  letter-spacing: var(--text-heading-tracking);
-  font-weight: 700;
-  color: var(--color-navy-900);
+  height: 26px;
+  width: auto;
 }
 
 .home__topbar-actions {
