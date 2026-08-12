@@ -25,9 +25,9 @@ const TABS = [
 // Present on every screen, pushed or not — only hidden while there's no
 // tab context at all (login/onboarding).
 export default function BottomTabBar() {
-  const { activeTab, switchTab } = useNavigation();
+  const { activeTab, switchTab, hideTabBar } = useNavigation();
   const reduceMotion = useReducedMotion();
-  if (!activeTab) return null;
+  if (!activeTab || hideTabBar) return null;
 
   const hasOrdersNeedingAttention = ORDERS.some((o) => o.section === 'needsAttention');
 

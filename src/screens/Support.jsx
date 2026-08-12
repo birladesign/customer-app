@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
 import {
@@ -13,9 +13,14 @@ import {
 import { ORDERS } from '../data/orders.js';
 import { SPRING_STANDARD, DURATION_REDUCED } from '../motion.js';
 import SearchAndFilterBar from '../components/SearchAndFilterBar.jsx';
-import { HouseIcon, ChevronDownIcon, ChevronRightIcon, ChevronLeftIcon, PackageIcon, CopyIcon, CheckIcon } from '../components/icons.jsx';
+import { HouseIcon, ChevronDownIcon, ChevronRightIcon, ChevronLeftIcon, PackageIcon } from '../components/icons.jsx';
 import SupportChat from './SupportCase/SupportChat.jsx';
 import './Support.css';
+
+const CHAT_INTRO = {
+  chat: "We'll connect you with a specialist over chat. First, what's this about?",
+  call: "We'll arrange a callback. First, what's this about?",
+};
 
 // A cross-tab deep link (My Orders' "Need Help", Order Details' "Get Help")
 // hands the chat its starting state via switchTab params.
@@ -71,65 +76,52 @@ function OrderHelpCard({ order, onClick }) {
 }
 
 export default function Support({ params = {} }) {
-  const { switchTab } = useNavigation();
+  const { switchTab, setHideTabBar } = useNavigation();
   const reduceMotion = useReducedMotion();
   const [query, setQuery] = useState('');
   const [openId, setOpenId] = useState(null);
   const [activeCategory, setActiveCategory] = useState(null);
   const [chatConfig, setChatConfig] = useState(() => initialChatConfig(params));
-  const [ticketId, setTicketId] = useState(() => initialChatConfig(params)?.resumeCase?.id ?? null);
-  const [copiedTicket, setCopiedTicket] = useState(false);
+  const [chatOrderId, setChatOrderId] = useState(
+    () => initialChatConfig(params)?.presetOrder?.id ?? initialChatConfig(params)?.resumeCase?.orderId ?? null
+  );
+
+  // The bottom tab bar has no place in a conversation — Support stays at its
+  // tab root the whole time (chat is just local state, not a pushed route),
+  // so nothing else would ever hide it otherwise. Cleared on unmount too, in
+  // case the tab bar's own "Support" tap remounts this screen mid-chat.
+  useEffect(() => {
+    setHideTabBar(Boolean(chatConfig));
+    return () => setHideTabBar(false);
+  }, [chatConfig, setHideTabBar]);
 
   function openChat(config) {
-    setTicketId(config.resumeCase?.id ?? null);
+    setChatOrderId(config.presetOrder?.id ?? config.resumeCase?.orderId ?? null);
     setChatConfig(config);
   }
 
   function closeChat() {
     setChatConfig(null);
-    setTicketId(null);
-  }
-
-  async function handleCopyTicket() {
-    try {
-      await navigator.clipboard.writeText(ticketId);
-    } catch {
-      // Clipboard API unavailable — the checkmark still confirms the tap.
-    }
-    setCopiedTicket(true);
-    setTimeout(() => setCopiedTicket(false), 1200);
+    setChatOrderId(null);
   }
 
   if (chatConfig) {
     return (
       <div className="support">
-        <header className="support__topbar">
-          <button className="support__icon-btn" onClick={() => switchTab('home')} aria-label="Home">
-            <HouseIcon width="18" height="18" />
+        <header className="support__topbar support__topbar--chat">
+          <button className="support__icon-btn" onClick={closeChat} aria-label="Back">
+            <ChevronLeftIcon />
           </button>
-          <div className="support__topbar-titles">
-            <h1>
-              {chatConfig.escalate ? 'Talk to a Human' : 'Raise a New Case'}
-              {chatConfig.escalate && <span className="support__priority-badge">Priority</span>}
-            </h1>
-            {ticketId && (
-              <button className="support__ticket-id" onClick={handleCopyTicket}>
-                {copiedTicket ? <CheckIcon width="11" height="11" strokeWidth="3" /> : <CopyIcon width="11" height="11" />}
-                <span>{ticketId}</span>
-              </button>
-            )}
-          </div>
-          <button className="support__close-btn" onClick={closeChat}>
-            End Chat
-          </button>
+          {chatOrderId && <span className="support__chat-order-id">Order ID: {chatOrderId}</span>}
         </header>
         <SupportChat
           escalate={chatConfig.escalate}
           presetOrder={chatConfig.presetOrder}
           staleOrderId={chatConfig.staleOrderId}
           resumeCase={chatConfig.resumeCase}
+          intro={chatConfig.intro}
           onClose={closeChat}
-          onTicketReady={setTicketId}
+          onOrderSelected={(order) => setChatOrderId(order.id)}
         />
       </div>
     );
@@ -155,19 +147,21 @@ export default function Support({ params = {} }) {
       </header>
 
       <main className="support__content">
-        <div className="support__hero">
-          <p className="support__hero-heading">Talk to a Human</p>
-          <p className="support__hero-body">
-            We'll package your order, issue, and evidence so you don't have to repeat yourself.
-          </p>
+        <div className="support__quick-actions">
           <button
-            className="support__hero-primary"
-            onClick={() => openChat({ escalate: true, presetOrder: null, staleOrderId: null, resumeCase: null })}
+            className="support__quick-action"
+            onClick={() => openChat({ escalate: true, presetOrder: null, staleOrderId: null, resumeCase: null, intro: CHAT_INTRO.chat })}
           >
-            Talk to a Human
+            Chat with us
           </button>
           <button
-            className="support__hero-secondary"
+            className="support__quick-action"
+            onClick={() => openChat({ escalate: true, presetOrder: null, staleOrderId: null, resumeCase: null, intro: CHAT_INTRO.call })}
+          >
+            Connect on call
+          </button>
+          <button
+            className="support__quick-action"
             onClick={() => openChat({ escalate: false, presetOrder: null, staleOrderId: null, resumeCase: null })}
           >
             Raise a New Case

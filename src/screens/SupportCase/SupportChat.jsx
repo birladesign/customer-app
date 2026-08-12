@@ -6,6 +6,7 @@ import { CopyIcon, CheckIcon, CameraIcon, CloseIcon } from '../../components/ico
 import './SupportChat.css';
 
 const MIN_LENGTH = 10;
+const VISIBLE_ORDER_COUNT = 3;
 const GENERAL_LANE = CASE_LANES.find((l) => l.key === 'general');
 
 function isReturnEligible(order) {
@@ -67,6 +68,11 @@ function ChatMessage({ msg }) {
               </span>
             </button>
           ))}
+          {msg.onViewAll && (
+            <button className="support-chat__order-skip" onClick={msg.onViewAll}>
+              View All Orders ({msg.moreCount} more)
+            </button>
+          )}
         </div>
       )}
 
@@ -89,7 +95,7 @@ function ChatMessage({ msg }) {
 // hide the input while you're picking an option), a resumable/persisted
 // ticket (see resumeCase + updateCaseMessages), and a guard against off-topic
 // input derailing whatever the bot is currently waiting on an answer to.
-export default function SupportChat({ escalate, presetOrder, staleOrderId, resumeCase, onClose, onTicketReady }) {
+export default function SupportChat({ escalate, presetOrder, staleOrderId, resumeCase, intro, onClose, onOrderSelected }) {
   const { navigate } = useNavigation();
   const idRef = useRef(0);
   const seededRef = useRef(false);
@@ -124,7 +130,6 @@ export default function SupportChat({ escalate, presetOrder, staleOrderId, resum
   }
 
   useEffect(() => {
-    if (resumeCase) onTicketReady?.(resumeCase.id);
     if (seededRef.current || resumeCase) {
       seededRef.current = true;
       return;
@@ -134,7 +139,7 @@ export default function SupportChat({ escalate, presetOrder, staleOrderId, resum
       pushBot({ text: `We couldn't find order ${staleOrderId} — let's start fresh.` });
     }
     pushBot({
-      text: escalate ? "We'll connect you with a specialist. First, what's this about?" : 'Hi! What can we help with?',
+      text: intro ?? (escalate ? "We'll connect you with a specialist. First, what's this about?" : 'Hi! What can we help with?'),
       chips: CASE_LANES.map((l) => ({ key: l.key, label: l.label, onClick: () => handleSelectLane(l) })),
     });
     // Seed the conversation once — intentionally not re-run on prop changes.
@@ -185,13 +190,28 @@ export default function SupportChat({ escalate, presetOrder, staleOrderId, resum
       });
       return;
     }
+    const visible = candidates.slice(0, VISIBLE_ORDER_COUNT);
+    const rest = candidates.slice(VISIBLE_ORDER_COUNT);
     pushBot({
-      text: 'Which order is this about?',
-      orders: candidates,
+      text: 'Which order is this about? Here are your most recent:',
+      orders: visible,
       allowSkip: selectedLane.key === 'general',
       onSelectOrder: (o) => handleSelectOrder(selectedLane, o),
+      moreCount: rest.length,
+      onViewAll: rest.length > 0 ? () => revealMoreOrders(selectedLane, rest) : undefined,
     });
     setStage('order');
+  }
+
+  // "View All Orders" doesn't replace the first message — it adds a second
+  // one with the rest, so the 3 already shown don't jump around or vanish.
+  function revealMoreOrders(selectedLane, rest) {
+    pushUser({ text: 'View All Orders' });
+    pushBot({
+      text: 'Here are the rest of your orders:',
+      orders: rest,
+      onSelectOrder: (o) => handleSelectOrder(selectedLane, o),
+    });
   }
 
   function handleSelectOrder(selectedLane, selectedOrder) {
@@ -203,6 +223,7 @@ export default function SupportChat({ escalate, presetOrder, staleOrderId, resum
     }
 
     setOrder(selectedOrder);
+    if (selectedOrder) onOrderSelected?.(selectedOrder);
     askToDescribe(selectedLane, selectedOrder);
   }
 
@@ -228,8 +249,8 @@ export default function SupportChat({ escalate, presetOrder, staleOrderId, resum
     const pending = pendingPromptRef.current;
     pushBot({ text: "We hear you — let's sort this out first." });
     if (pending) {
-      const { text: pendingText, chips, orders, allowSkip, onSelectOrder, tone } = pending;
-      pushBot({ text: pendingText, chips, orders, allowSkip, onSelectOrder, tone });
+      const { text: pendingText, chips, orders, allowSkip, onSelectOrder, tone, moreCount, onViewAll } = pending;
+      pushBot({ text: pendingText, chips, orders, allowSkip, onSelectOrder, tone, moreCount, onViewAll });
     }
   }
 
@@ -274,7 +295,6 @@ export default function SupportChat({ escalate, presetOrder, staleOrderId, resum
   function handleSubmit() {
     const record = createCase({ lane: lane.key, order, description: draft, hasPhoto: Boolean(photoFile), escalate, messages });
     caseIdRef.current = record.id;
-    onTicketReady?.(record.id);
     pushBot({
       text: 'Case filed.',
       caseResult: record,

@@ -19,6 +19,12 @@ const INITIAL_STACK = [{ screen: 'login', params: {} }];
 
 export function NavigationProvider({ children }) {
   const [stack, setStack] = useState(INITIAL_STACK);
+  // An escape hatch for a screen that needs the tab bar gone without pushing
+  // a new route — e.g. Support's inline chat, which stays at the tab root
+  // (depth never changes) but still wants the full-screen feel of a
+  // conversation. Resets to false on tab switch so it can never leak onto a
+  // different tab's root.
+  const [hideTabBar, setHideTabBar] = useState(false);
 
   const navigate = useCallback((screen, params = {}) => {
     setStack((s) => [...s, { screen, params }]);
@@ -41,7 +47,10 @@ export function NavigationProvider({ children }) {
   // same idea as navigate's params.
   const switchTab = useCallback((tabKey, params = {}) => {
     const screen = ROOT_SCREEN_BY_TAB[tabKey];
-    if (screen) setStack([{ screen, params }]);
+    if (screen) {
+      setStack([{ screen, params }]);
+      setHideTabBar(false);
+    }
   }, []);
 
   const current = stack[stack.length - 1];
@@ -60,8 +69,10 @@ export function NavigationProvider({ children }) {
       goBack,
       replace,
       switchTab,
+      hideTabBar,
+      setHideTabBar,
     }),
-    [stack, current, previous, activeTab, navigate, goBack, replace, switchTab]
+    [stack, current, previous, activeTab, navigate, goBack, replace, switchTab, hideTabBar]
   );
 
   return <NavigationContext.Provider value={value}>{children}</NavigationContext.Provider>;
