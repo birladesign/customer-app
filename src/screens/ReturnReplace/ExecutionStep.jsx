@@ -10,8 +10,14 @@ const LEVER_CONFIRMATION = {
   return: 'Return booked',
 };
 
-export default function ExecutionStep({ order, leverId, onDone }) {
+export default function ExecutionStep({ order, leverId, refundMethod, onDone }) {
   const execution = getExecutionSteps(leverId);
+  const refundNote =
+    leverId === 'return'
+      ? refundMethod === 'wallet'
+        ? "Once the quality check is passed, we'll refund instantly to your TSC Wallet."
+        : "Once the quality check is passed, we'll refund to your original payment method within 2–5 business days."
+      : `We'll keep you updated on ${order.product} right here and in My Orders.`;
 
   return (
     <div className="execution-step">
@@ -21,9 +27,7 @@ export default function ExecutionStep({ order, leverId, onDone }) {
         </span>
         <div>
           <p className="execution-step__confirm-title">{LEVER_CONFIRMATION[leverId] ?? 'Request booked'}</p>
-          <p className="execution-step__confirm-body">
-            We'll keep you updated on {order.product} right here and in My Orders.
-          </p>
+          <p className="execution-step__confirm-body">{refundNote}</p>
         </div>
       </div>
 

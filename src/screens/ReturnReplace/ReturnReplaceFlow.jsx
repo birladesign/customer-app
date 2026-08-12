@@ -7,11 +7,23 @@ import { ChevronLeftIcon } from '../../components/icons.jsx';
 import ReasonStep from './ReasonStep.jsx';
 import EvidenceStep from './EvidenceStep.jsx';
 import OptionsStep from './OptionsStep.jsx';
+import RefundMethodStep from './RefundMethodStep.jsx';
 import ExecutionStep from './ExecutionStep.jsx';
 import './ReturnReplaceFlow.css';
 
-const STEP_TITLES = ["What's the issue?", 'Tell us more', 'Choose an option', 'Tracking it'];
-const STEP_COUNT = STEP_TITLES.length;
+const STEP_TITLES = {
+  reason: "What's the issue?",
+  evidence: 'Tell us more',
+  options: 'Choose an option',
+  refundMethod: 'Confirm Refund',
+  execution: 'Tracking it',
+};
+
+// Refund method + pickup confirmation only makes sense for "Return for
+// Refund" — repair/replace/sendPart never move money, so those levers skip
+// straight from Options to Execution instead of carrying a dead step.
+const STEPS_WITH_REFUND = ['reason', 'evidence', 'options', 'refundMethod', 'execution'];
+const STEPS_WITHOUT_REFUND = ['reason', 'evidence', 'options', 'execution'];
 
 export default function ReturnReplaceFlow({ params }) {
   const { goBack } = useNavigation();
@@ -22,12 +34,31 @@ export default function ReturnReplaceFlow({ params }) {
   // to them, so overriding it here is enough; no changes needed there.
   const item = order?.items?.find((i) => i.sku === params.sku);
   const target = item ? { ...order, product: item.product, image: item.image } : order;
+  // Per-item price for a multi-SKU order; for a single-item order, the item
+  // price net of its own discount (order.priceBreakup already scopes to just
+  // that one line, unlike order.amount which also folds in shipping/tax).
+  const itemPrice = item
+    ? item.price
+    : order
+    ? (order.priceBreakup?.itemPrice ?? order.amount) - (order.priceBreakup?.discount ?? 0)
+    : 0;
+  // Only shown for single-item orders — a line item inside a multi-SKU order
+  // doesn't carry its own discount breakdown, so there's nothing honest to
+  // display there.
+  const itemSavings = !item ? order?.priceBreakup?.discount ?? 0 : 0;
 
   const [step, setStep] = useState(0);
   const [reason, setReason] = useState(null);
   const [photo, setPhoto] = useState(null);
   const [selectedLever, setSelectedLever] = useState(null);
+  // Defaults to the safest option — no assumption of a wallet balance —
+  // matching the reference flow's own default selection.
+  const [refundMethod, setRefundMethod] = useState('original');
   const directionRef = useRef(1);
+
+  const stepKeys = selectedLever === 'return' ? STEPS_WITH_REFUND : STEPS_WITHOUT_REFUND;
+  const stepCount = stepKeys.length;
+  const currentKey = stepKeys[step] ?? stepKeys[stepKeys.length - 1];
 
   function goToStep(next) {
     directionRef.current = next > step ? 1 : -1;
@@ -62,12 +93,12 @@ export default function ReturnReplaceFlow({ params }) {
         <button className="return-replace__icon-btn" onClick={handleBack} aria-label="Back">
           <ChevronLeftIcon />
         </button>
-        <h1>{STEP_TITLES[step]}</h1>
+        <h1>{STEP_TITLES[currentKey]}</h1>
         <span className="return-replace__icon-btn-spacer" />
       </header>
 
       <div className="return-replace__progress">
-        {Array.from({ length: STEP_COUNT }, (_, i) => (
+        {Array.from({ length: stepCount }, (_, i) => (
           <span key={i} className={`return-replace__dot${i <= step ? ' return-replace__dot--done' : ''}`} />
         ))}
       </div>
@@ -82,23 +113,26 @@ export default function ReturnReplaceFlow({ params }) {
             exit={reduceMotion ? { opacity: 0 } : { x: direction > 0 ? '-30%' : '100%', opacity: direction > 0 ? 0.6 : 1 }}
             transition={reduceMotion ? DURATION_REDUCED : SPRING_STANDARD}
           >
-            {step === 0 && (
+            {currentKey === 'reason' && (
               <ReasonStep
                 selected={reason}
                 onSelect={setReason}
                 onContinue={() => goToStep(1)}
               />
             )}
-            {step === 1 && (
+            {currentKey === 'evidence' && (
               <EvidenceStep
                 order={target}
                 reason={reason}
+                price={itemPrice}
+                savings={itemSavings}
                 photo={photo}
                 onPhotoChange={setPhoto}
+                onChangeReason={() => goToStep(0)}
                 onContinue={() => goToStep(2)}
               />
             )}
-            {step === 2 && (
+            {currentKey === 'options' && (
               <OptionsStep
                 order={target}
                 reason={reason}
@@ -107,7 +141,18 @@ export default function ReturnReplaceFlow({ params }) {
                 onContinue={() => goToStep(3)}
               />
             )}
-            {step === 3 && <ExecutionStep order={target} leverId={selectedLever} onDone={goBack} />}
+            {currentKey === 'refundMethod' && (
+              <RefundMethodStep
+                order={target}
+                refundAmount={itemPrice}
+                method={refundMethod}
+                onSelectMethod={setRefundMethod}
+                onSubmit={() => goToStep(4)}
+              />
+            )}
+            {currentKey === 'execution' && (
+              <ExecutionStep order={target} leverId={selectedLever} refundMethod={refundMethod} onDone={goBack} />
+            )}
           </motion.div>
         </AnimatePresence>
       </div>
