@@ -205,6 +205,9 @@ export default function OrderDetails({ params }) {
   // page already leads with.
   const editIntent = getEditEligibility(order.items ? primaryItem : order);
 
+  const itemPrice = order.priceBreakup?.itemPrice ?? order.amount;
+  const discount = order.priceBreakup?.discount ?? 0;
+
   return (
     <div className="order-details">
       <header className="order-details__topbar">
@@ -298,7 +301,7 @@ export default function OrderDetails({ params }) {
             onClick={() => setDetailsOpen((v) => !v)}
             aria-expanded={detailsOpen}
           >
-            <span>Item &amp; Billing Info</span>
+            <span>Bill Summary</span>
             <ChevronRightIcon
               className={`order-details__disclosure-chevron${detailsOpen ? ' order-details__disclosure-chevron--open' : ''}`}
             />
@@ -314,35 +317,22 @@ export default function OrderDetails({ params }) {
               >
                 <div className="order-details__disclosure-body">
                   <div className="order-details__payment-block">
-                    {order.items ? (
-                      // Each item's own price already lives in its LineItems
-                      // row above — no need to repeat the full breakdown here,
-                      // just the combined line this block otherwise shows.
-                      <div className="order-details__payment-row">
-                        <span>{order.items.length} Items</span>
-                        <span>{formatRupees(order.priceBreakup?.itemPrice ?? order.amount)}</span>
-                      </div>
-                    ) : (
-                      <div className="order-details__payment-row">
-                        <span>{productName}{spec ? ` (${spec})` : ''}</span>
-                        <span>{formatRupees(order.priceBreakup?.itemPrice ?? order.amount)}</span>
-                      </div>
-                    )}
-                    {Boolean(order.priceBreakup?.discount) && (
-                      <div className="order-details__payment-row">
-                        <span>Discount</span>
-                        <span className="order-details__payment-positive">-{formatRupees(order.priceBreakup.discount)}</span>
-                      </div>
-                    )}
                     <div className="order-details__payment-row">
-                      <span>Shipping &amp; Handling</span>
+                      <span>{order.items ? `${order.items.length} Items` : `${productName}${spec ? ` (${spec})` : ''}`}</span>
+                      <span className="order-details__payment-item-total">
+                        {discount > 0 && <s className="order-details__payment-mrp">{formatRupees(itemPrice)}</s>}
+                        {formatRupees(itemPrice - discount)}
+                      </span>
+                    </div>
+                    <div className="order-details__payment-row">
+                      <span>Delivery &amp; Handling</span>
                       <span className="order-details__payment-positive">
                         {order.priceBreakup?.shipping ? formatRupees(order.priceBreakup.shipping) : 'FREE'}
                       </span>
                     </div>
                     <div className="order-details__payment-divider" />
                     <div className="order-details__payment-row order-details__payment-row--total">
-                      <span>Total Amount</span>
+                      <span>Total Bill</span>
                       <span>{formatRupees(order.priceBreakup?.total ?? order.amount)}</span>
                     </div>
                     <div className="order-details__payment-divider" />
@@ -352,9 +342,22 @@ export default function OrderDetails({ params }) {
                     </div>
                     <button className="order-details__get-invoice">
                       <FileTextIcon width="14" height="14" />
-                      Get Invoice
+                      Download Invoice / Credit Note
                     </button>
                   </div>
+
+                  {discount > 0 && (
+                    <div className="order-details__savings-block">
+                      <div className="order-details__savings-header">
+                        <span>Savings on this order</span>
+                        <span className="order-details__savings-badge">{formatRupees(discount)}</span>
+                      </div>
+                      <div className="order-details__savings-row">
+                        <span>Discount on MRP</span>
+                        <span>{formatRupees(discount)}</span>
+                      </div>
+                    </div>
+                  )}
 
                   {order.refund && (
                     <div className="order-details__refund-block">

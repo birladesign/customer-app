@@ -356,21 +356,77 @@
   color: var(--color-text-primary) !important;
 }
 
+.order-details__payment-item-total {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.order-details__payment-mrp {
+  font-weight: 400;
+  font-size: var(--text-caption-size);
+  color: var(--color-text-muted);
+  text-decoration: line-through;
+}
+
+.order-details__savings-block {
+  background: var(--color-accent-cyan-wash);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.order-details__savings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  font-size: var(--text-body-size);
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.order-details__savings-badge {
+  flex-shrink: 0;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  background: var(--color-navy-900);
+  color: var(--color-text-inverse);
+  font-size: var(--text-caption-size);
+  font-weight: 700;
+}
+
+.order-details__savings-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  font-size: var(--text-caption-size);
+  color: var(--color-text-secondary);
+}
+
+.order-details__savings-row span:last-child {
+  font-weight: 600;
+  color: var(--color-success);
+}
+
 .order-details__get-invoice {
-  align-self: flex-start;
+  align-self: stretch;
+  justify-content: center;
   display: inline-flex;
   align-items: center;
-  gap: var(--space-1);
+  gap: var(--space-2);
   margin-top: var(--space-1);
   border: none;
-  background: none;
-  padding: 0;
+  background: var(--color-bg-primary);
+  border-radius: var(--radius-full);
+  padding: var(--space-2) var(--space-3);
   font-family: inherit;
   font-size: var(--text-body-size);
   font-weight: 700;
-  letter-spacing: var(--text-label-tracking);
-  text-decoration: underline;
-  color: var(--color-action-red);
+  color: var(--color-navy-900);
   transition: transform 0.1s ease-out;
 }
 
