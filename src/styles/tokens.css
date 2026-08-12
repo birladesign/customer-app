@@ -10,7 +10,7 @@
   /* Dedicated to screen/nav-bar titles — deliberately not navy, since navy
      is this app's clickable-button color and a title should never read as
      tappable. */
-  --color-text-heading: #1f2126;
+  --color-text-heading: #1a1a1a;
   --color-text-secondary: #43648a;
   --color-text-muted: #6b7280;
   --color-text-inverse: #ffffff;

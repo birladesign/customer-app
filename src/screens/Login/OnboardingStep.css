@@ -18,7 +18,7 @@
   margin: 0 0 var(--space-1);
   font-size: 24px;
   font-weight: 700;
-  color: var(--color-text-primary);
+  color: var(--color-text-heading);
 }
 
 .onboarding-step__heading-block p {

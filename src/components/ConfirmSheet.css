@@ -2,7 +2,7 @@
   margin: 0 0 var(--space-2);
   font-size: var(--text-heading-size);
   font-weight: 700;
-  color: var(--color-text-primary);
+  color: var(--color-text-heading);
 }
 
 .confirm-sheet__body {
