@@ -10,13 +10,11 @@ const LEVER_CONFIRMATION = {
   return: 'Return booked',
 };
 
-export default function ExecutionStep({ order, leverId, refundMethod, onDone }) {
+export default function ExecutionStep({ order, leverId, onDone }) {
   const execution = getExecutionSteps(leverId);
   const refundNote =
     leverId === 'return'
-      ? refundMethod === 'wallet'
-        ? "Once the quality check is passed, we'll refund instantly to your TSC Wallet."
-        : "Once the quality check is passed, we'll refund to your original payment method within 2–5 business days."
+      ? "Once the quality check is passed, we'll refund to your original payment method within 2–5 business days."
       : `We'll keep you updated on ${order.product} right here and in My Orders.`;
 
   return (

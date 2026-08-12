@@ -1,57 +1,35 @@
 import { CURRENT_USER } from '../../data/profile.js';
-import { WalletIcon, ClockIcon, CheckIcon, MapPinIcon, PhoneIcon } from '../../components/icons.jsx';
+import { ClockIcon, MapPinIcon, PhoneIcon } from '../../components/icons.jsx';
 import './RefundMethodStep.css';
 
 function formatRupees(amount) {
   return `₹${amount.toLocaleString('en-IN')}`;
 }
 
-const METHODS = [
-  {
-    id: 'wallet',
-    icon: WalletIcon,
-    title: 'TSC Wallet',
-    badge: 'INSTANT',
-    body: (amount) => `${formatRupees(amount)} will be refunded to your TSC Wallet instantly after the quality check is passed.`,
-  },
-  {
-    id: 'original',
-    icon: ClockIcon,
-    title: 'Original Payment Mode',
-    badge: null,
-    body: (amount) => `${formatRupees(amount)} will be refunded to your original payment method within 2–5 business days after the quality check is passed.`,
-  },
-];
-
 // Only shown for the "Return for Refund" lever — repair/replace/sendPart
-// don't move money, so there's no refund method or pickup to confirm.
-export default function RefundMethodStep({ order, refundAmount, method, onSelectMethod, onSubmit }) {
+// don't move money, so there's no refund or pickup to confirm. Refunds only
+// ever go to the original payment method — no wallet — so this is a plain
+// confirmation, not a choice between options.
+export default function RefundMethodStep({ order, refundAmount, onSubmit }) {
   return (
     <div className="refund-method-step">
       <div className="refund-method-step__scroll">
-        <h2 className="refund-method-step__heading">How would you like to receive your refund?</h2>
+        <h2 className="refund-method-step__heading">How you'll receive your refund</h2>
         <div className="refund-method-step__options">
-          {METHODS.map(({ id, icon: Icon, title, badge, body }) => (
-            <button
-              key={id}
-              className={`refund-method-step__option${method === id ? ' refund-method-step__option--selected' : ''}`}
-              onClick={() => onSelectMethod(id)}
-            >
-              <span className="refund-method-step__option-icon">
-                <Icon width="18" height="18" />
+          <div className="refund-method-step__option">
+            <span className="refund-method-step__option-icon">
+              <ClockIcon width="18" height="18" />
+            </span>
+            <span className="refund-method-step__option-text">
+              <span className="refund-method-step__option-title-row">
+                <span className="refund-method-step__option-title">Original Payment Mode</span>
               </span>
-              <span className="refund-method-step__option-text">
-                <span className="refund-method-step__option-title-row">
-                  <span className="refund-method-step__option-title">{title}</span>
-                  {badge && <span className="refund-method-step__option-badge">{badge}</span>}
-                </span>
-                <span className="refund-method-step__option-body">{body(refundAmount)}</span>
+              <span className="refund-method-step__option-body">
+                {formatRupees(refundAmount)} will be refunded to your original payment method within 2–5 business
+                days after the quality check is passed.
               </span>
-              <span className="refund-method-step__radio" aria-hidden="true">
-                {method === id && <CheckIcon width="11" height="11" strokeWidth="3" />}
-              </span>
-            </button>
-          ))}
+            </span>
+          </div>
         </div>
 
         <h2 className="refund-method-step__heading">Confirm Pickup Details</h2>

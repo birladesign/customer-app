@@ -51,9 +51,6 @@ export default function ReturnReplaceFlow({ params }) {
   const [reason, setReason] = useState(null);
   const [photo, setPhoto] = useState(null);
   const [selectedLever, setSelectedLever] = useState(null);
-  // Defaults to the safest option — no assumption of a wallet balance —
-  // matching the reference flow's own default selection.
-  const [refundMethod, setRefundMethod] = useState('original');
   const directionRef = useRef(1);
 
   const stepKeys = selectedLever === 'return' ? STEPS_WITH_REFUND : STEPS_WITHOUT_REFUND;
@@ -142,16 +139,10 @@ export default function ReturnReplaceFlow({ params }) {
               />
             )}
             {currentKey === 'refundMethod' && (
-              <RefundMethodStep
-                order={target}
-                refundAmount={itemPrice}
-                method={refundMethod}
-                onSelectMethod={setRefundMethod}
-                onSubmit={() => goToStep(4)}
-              />
+              <RefundMethodStep order={target} refundAmount={itemPrice} onSubmit={() => goToStep(4)} />
             )}
             {currentKey === 'execution' && (
-              <ExecutionStep order={target} leverId={selectedLever} refundMethod={refundMethod} onDone={goBack} />
+              <ExecutionStep order={target} leverId={selectedLever} onDone={goBack} />
             )}
           </motion.div>
         </AnimatePresence>
