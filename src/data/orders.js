@@ -1129,4 +1129,205 @@ export const ORDERS = [
       currentIndex: 3,
     },
   },
+  // A larger cart (5 line items) than the 3-item bundle above, deliberately
+  // spread across every in-progress state at once (delivered, out for
+  // delivery, shipped, still packing) so LineItems/PrimaryItem get exercised
+  // at a size beyond the smallest interesting case.
+  {
+    id: 'TSC97500',
+    section: 'inProgress',
+    date: '02 Aug 2026',
+    product: 'Home Office & Bedroom Bundle (5 items)',
+    image: imgDeskAeroplus,
+    caption: '2 of 5 items delivered · 3 in progress',
+    actions: [{ label: 'Track Order', variant: 'secondary' }],
+    amount: 81186,
+    address: DEMO_ADDRESS,
+    payment: { method: 'UPI', status: 'Paid' },
+    priceBreakup: { itemPrice: 81186, shipping: 0, discount: 0, tax: 0, total: 81186 },
+    items: [
+      {
+        sku: 'TSC97500-1',
+        product: 'AeroPlus Adjustable Desk',
+        image: imgDeskAeroplus,
+        qty: 1,
+        price: 20999,
+        status: { dot: 'green', label: 'Delivered' },
+        caption: 'Delivered on 06 Aug 2026',
+        rating: 0,
+        tracker: { steps: ['Confirmed', 'Shipped', 'Delivered'], currentIndex: 2 },
+        timeline: {
+          steps: [
+            {
+              label: 'Confirmed',
+              timestamp: '02 Aug 2026, 10:05 AM',
+              updates: [{ text: 'Order has been confirmed', timestamp: '02 Aug 2026, 10:05 AM' }],
+            },
+            {
+              label: 'Shipped',
+              timestamp: '03 Aug 2026, 9:00 AM',
+              updates: [{ text: 'Item has been handed over to courier', timestamp: '03 Aug 2026, 9:00 AM' }],
+            },
+            {
+              label: 'Delivered',
+              timestamp: '06 Aug 2026, 3:00 PM',
+              updates: [
+                { text: 'Out for delivery', timestamp: '06 Aug 2026, 9:30 AM' },
+                { text: 'Delivered — signed for at the doorstep', timestamp: '06 Aug 2026, 3:00 PM' },
+              ],
+            },
+          ],
+          currentIndex: 2,
+        },
+      },
+      {
+        sku: 'TSC97500-2',
+        product: 'Stylux Ergonomic Office Chair',
+        image: imgChairStyluxErgonomic,
+        qty: 1,
+        price: 16999,
+        status: { dot: 'green', label: 'Delivered' },
+        caption: 'Delivered on 06 Aug 2026',
+        rating: 0,
+        tracker: { steps: ['Confirmed', 'Shipped', 'Delivered'], currentIndex: 2 },
+        timeline: {
+          steps: [
+            {
+              label: 'Confirmed',
+              timestamp: '02 Aug 2026, 10:05 AM',
+              updates: [{ text: 'Order has been confirmed', timestamp: '02 Aug 2026, 10:05 AM' }],
+            },
+            {
+              label: 'Shipped',
+              timestamp: '03 Aug 2026, 9:00 AM',
+              updates: [{ text: 'Packed with the rest of your order and handed to courier', timestamp: '03 Aug 2026, 9:00 AM' }],
+            },
+            {
+              label: 'Delivered',
+              timestamp: '06 Aug 2026, 3:00 PM',
+              updates: [{ text: 'Delivered together with your desk', timestamp: '06 Aug 2026, 3:00 PM' }],
+            },
+          ],
+          currentIndex: 2,
+        },
+      },
+      {
+        sku: 'TSC97500-3',
+        product: 'Smart Ortho Pro Mattress (Queen)',
+        image: imgMattressOrthoPro,
+        qty: 1,
+        price: 17990,
+        status: { dot: 'blue', label: 'Out for Delivery' },
+        caption: 'Arriving today',
+        tracker: { steps: ['Confirmed', 'Shipped', 'Out for Delivery', 'Delivered'], currentIndex: 2 },
+        timeline: {
+          steps: [
+            {
+              label: 'Confirmed',
+              timestamp: '02 Aug 2026, 10:05 AM',
+              updates: [{ text: 'Order has been confirmed', timestamp: '02 Aug 2026, 10:05 AM' }],
+            },
+            {
+              label: 'Shipped',
+              timestamp: '09 Aug 2026, 11:00 AM',
+              updates: [
+                { text: 'Item has been handed over to courier', timestamp: '09 Aug 2026, 11:00 AM' },
+                { text: 'Item has reached the courier facility in Gurugram, Haryana', timestamp: '09 Aug 2026, 4:20 PM' },
+              ],
+            },
+            {
+              label: 'Out for Delivery',
+              timestamp: '12 Aug 2026, 9:00 AM',
+              updates: [{ text: 'Out for delivery, arriving today', timestamp: '12 Aug 2026, 9:00 AM' }],
+            },
+            { label: 'Delivered', timestamp: null },
+          ],
+          currentIndex: 2,
+        },
+      },
+      {
+        sku: 'TSC97500-4',
+        product: 'Smart Cervical Pillow',
+        image: imgPillowCervical,
+        qty: 1,
+        price: 2199,
+        status: { dot: 'blue', label: 'Shipped' },
+        caption: 'ETA 13 Aug 2026',
+        tracker: { steps: ['Confirmed', 'Shipped', 'Delivered'], currentIndex: 1 },
+        timeline: {
+          steps: [
+            {
+              label: 'Confirmed',
+              timestamp: '02 Aug 2026, 10:05 AM',
+              updates: [{ text: 'Order has been confirmed', timestamp: '02 Aug 2026, 10:05 AM' }],
+            },
+            {
+              label: 'Shipped',
+              timestamp: '10 Aug 2026, 2:00 PM',
+              updates: [{ text: 'Item has been handed over to courier', timestamp: '10 Aug 2026, 2:00 PM' }],
+            },
+            { label: 'Delivered', timestamp: null },
+          ],
+          currentIndex: 1,
+        },
+      },
+      {
+        sku: 'TSC97500-5',
+        product: 'Elev8 Smart Adjustable Bed Frame',
+        image: imgBedElev8Adjustable,
+        qty: 1,
+        price: 22999,
+        status: { dot: 'blue', label: 'Confirmed · Packing' },
+        caption: 'Packed separately — ETA 14 Aug 2026',
+        tracker: { steps: ['Confirmed', 'Packing', 'Shipped', 'Delivered'], currentIndex: 1 },
+        timeline: {
+          steps: [
+            {
+              label: 'Confirmed',
+              timestamp: '02 Aug 2026, 10:05 AM',
+              updates: [{ text: 'Order has been confirmed', timestamp: '02 Aug 2026, 10:05 AM' }],
+            },
+            {
+              label: 'Packing',
+              timestamp: '11 Aug 2026, 10:00 AM',
+              updates: [{ text: 'Seller has started packing this item', timestamp: '11 Aug 2026, 10:00 AM' }],
+            },
+            { label: 'Shipped', timestamp: null },
+            { label: 'Delivered', timestamp: null },
+          ],
+          currentIndex: 1,
+        },
+      },
+    ],
+    timeline: {
+      steps: [
+        {
+          label: 'Order Confirmed',
+          timestamp: '02 Aug 2026, 10:05 AM',
+          updates: [{ text: 'Order has been confirmed', timestamp: '02 Aug 2026, 10:05 AM' }],
+        },
+        {
+          label: 'Processing',
+          timestamp: '02 Aug 2026, 3:00 PM',
+          updates: [{ text: 'Seller is preparing your items for shipment', timestamp: '02 Aug 2026, 3:00 PM' }],
+        },
+        {
+          label: 'Shipped',
+          timestamp: '03 Aug 2026, 9:00 AM',
+          description: 'Desk and chair shipped first',
+          updates: [{ text: 'Desk and chair shipment left the warehouse', timestamp: '03 Aug 2026, 9:00 AM' }],
+        },
+        {
+          label: 'Delivered',
+          timestamp: '06 Aug 2026, 3:00 PM',
+          description: '2 of 5 items delivered — mattress, pillow, and bed frame still in progress',
+          updates: [
+            { text: 'Desk and chair delivered — signed for at the doorstep', timestamp: '06 Aug 2026, 3:00 PM' },
+          ],
+        },
+        { label: 'All Items Delivered', timestamp: null },
+      ],
+      currentIndex: 3,
+    },
+  },
 ];
