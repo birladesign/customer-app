@@ -160,12 +160,6 @@ export default function Support({ params = {} }) {
           >
             Connect on call
           </button>
-          <button
-            className="support__quick-action"
-            onClick={() => openChat({ escalate: false, presetOrder: null, staleOrderId: null, resumeCase: null })}
-          >
-            Raise a New Case
-          </button>
         </div>
 
         {activeConversations.length > 0 && (

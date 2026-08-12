@@ -20,7 +20,7 @@ const STEP_TITLES = {
 };
 
 // Refund method + pickup confirmation only makes sense for "Return for
-// Refund" — repair/replace/sendPart never move money, so those levers skip
+// Refund" — replace/sendPart never move money, so those levers skip
 // straight from Options to Execution instead of carrying a dead step.
 const STEPS_WITH_REFUND = ['reason', 'evidence', 'options', 'refundMethod', 'execution'];
 const STEPS_WITHOUT_REFUND = ['reason', 'evidence', 'options', 'execution'];

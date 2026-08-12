@@ -113,7 +113,7 @@
   margin: 0;
   font-size: var(--text-heading-size);
   font-weight: 700;
-  color: var(--color-text-primary);
+  color: var(--color-text-heading);
 }
 
 .support__section-heading {
@@ -126,7 +126,7 @@
   margin: 0;
   font-size: var(--text-heading-size);
   font-weight: 700;
-  color: var(--color-text-primary);
+  color: var(--color-text-heading);
 }
 
 .support__see-all {

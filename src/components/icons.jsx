@@ -273,6 +273,16 @@ export function FileTextIcon(props) {
   );
 }
 
+export function DownloadIcon(props) {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" strokeWidth="2" {...base} {...props}>
+      <path d="M12 3v12" />
+      <polyline points="7 11 12 16 17 11" />
+      <path d="M4 18v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
+    </svg>
+  );
+}
+
 export function ClockIcon(props) {
   return (
     <svg width="12" height="12" viewBox="0 0 24 24" strokeWidth="2" {...base} {...props}>

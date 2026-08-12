@@ -19,6 +19,7 @@ import {
   CheckIcon,
   ClockIcon,
   FileTextIcon,
+  DownloadIcon,
   ShieldIcon,
   ExternalLinkIcon,
   HeadsetIcon,
@@ -353,8 +354,8 @@ export default function OrderDetails({ params }) {
                       <span>{order.payment.method} · {order.payment.status}</span>
                     </div>
                     <button className="order-details__get-invoice" disabled={!isFullyDelivered}>
-                      <FileTextIcon width="14" height="14" />
-                      Get Invoice
+                      <DownloadIcon width="14" height="14" />
+                      Download Invoice
                     </button>
                     {!isFullyDelivered && (
                       <p className="order-details__get-invoice-reason">Available once the order is delivered</p>

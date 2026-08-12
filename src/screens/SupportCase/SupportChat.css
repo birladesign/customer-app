@@ -48,8 +48,12 @@
   color: var(--color-warning);
 }
 
+/* Deliberately not --color-navy-900 — that's this app's clickable-button
+   color (see tokens.css), and a sent message is inert, never tappable.
+   --color-text-secondary keeps the "this is you" blue tone without reading
+   as a button next to the real navy buttons in the same view. */
 .support-chat__bubble--user {
-  background: var(--color-navy-900);
+  background: var(--color-text-secondary);
   color: var(--color-text-inverse);
   border-bottom-right-radius: var(--radius-xs);
 }
