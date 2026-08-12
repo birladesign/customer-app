@@ -17,7 +17,6 @@ import {
   ChevronRightIcon,
   CopyIcon,
   CheckIcon,
-  CloseIcon,
   ClockIcon,
   FileTextIcon,
   ShieldIcon,
@@ -463,83 +462,86 @@ export default function OrderDetails({ params }) {
         )}
 
         <div className="order-details__help-wrap">
-          <button
-            className="order-details__help-toggle"
-            onClick={() => setHelpSectionOpen((v) => !v)}
-            aria-expanded={helpSectionOpen}
-          >
+          <button className="order-details__help-toggle" onClick={() => setHelpSectionOpen(true)}>
             <span>Do you need help with the existing order?</span>
-            <ChevronRightIcon
-              className={`order-details__help-chevron${helpSectionOpen ? ' order-details__help-chevron--open' : ''}`}
-            />
+            <ChevronRightIcon className="order-details__help-chevron" />
           </button>
-          <AnimatePresence initial={false}>
-            {helpSectionOpen && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={reduceMotion ? DURATION_REDUCED : SPRING_STANDARD}
-                style={{ overflow: 'hidden' }}
-              >
-                <div className="order-details__help-actions">
-                  <button
-                    className="order-details__help-action"
-                    disabled={!editIntent.enabled}
-                    onClick={
-                      editIntent.enabled
-                        ? () =>
-                            navigate(
-                              'editOrder',
-                              order.items ? { orderId: order.id, sku: primaryItem.sku } : { orderId: order.id }
-                            )
-                        : undefined
-                    }
-                  >
-                    <EditIcon width="15" height="15" />
-                    <span>Edit Order</span>
-                  </button>
-                  {!editIntent.enabled && <p className="order-details__help-action-reason">{editIntent.reason}</p>}
-
-                  {!order.items && (
-                    <>
-                      <button
-                        className="order-details__help-action"
-                        disabled={!returnIntent?.enabled}
-                        onClick={returnIntent?.enabled ? () => navigate('returnReplace', { orderId: order.id }) : undefined}
-                      >
-                        <ExternalLinkIcon width="14" height="14" />
-                        <span>Return or Replace</span>
-                      </button>
-                      {!returnIntent?.enabled && (
-                        <p className="order-details__help-action-reason">{returnIntent?.reason}</p>
-                      )}
-                    </>
-                  )}
-
-                  <button
-                    className="order-details__help-action"
-                    disabled={!cancelIntent?.enabled}
-                    onClick={cancelIntent?.enabled ? openCancelFlow : undefined}
-                  >
-                    <CloseIcon width="14" height="14" />
-                    <span>Cancel Order</span>
-                  </button>
-                  {!cancelIntent?.enabled && <p className="order-details__help-action-reason">{cancelIntent?.reason}</p>}
-
-                  <button
-                    className="order-details__help-action"
-                    onClick={() => switchTab('support', { openChat: true, orderId: order.id })}
-                  >
-                    <HeadsetIcon width="15" height="15" />
-                    <span>Contact Support</span>
-                  </button>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
       </main>
+
+      <BottomSheet open={helpSectionOpen} onClose={() => setHelpSectionOpen(false)}>
+        <h2 className="confirm-sheet__title">Need help with this order?</h2>
+        <div className="order-details__help-actions">
+          <button
+            className="order-details__help-action"
+            disabled={!editIntent.enabled}
+            onClick={
+              editIntent.enabled
+                ? () => {
+                    setHelpSectionOpen(false);
+                    navigate('editOrder', order.items ? { orderId: order.id, sku: primaryItem.sku } : { orderId: order.id });
+                  }
+                : undefined
+            }
+          >
+            <EditIcon width="15" height="15" />
+            <span>Edit Order</span>
+          </button>
+          {!editIntent.enabled && <p className="order-details__help-action-reason">{editIntent.reason}</p>}
+
+          {!order.items && (
+            <>
+              <button
+                className="order-details__help-action"
+                disabled={!returnIntent?.enabled}
+                onClick={
+                  returnIntent?.enabled
+                    ? () => {
+                        setHelpSectionOpen(false);
+                        navigate('returnReplace', { orderId: order.id });
+                      }
+                    : undefined
+                }
+              >
+                <ExternalLinkIcon width="14" height="14" />
+                <span>Return or Replace</span>
+              </button>
+              {!returnIntent?.enabled && <p className="order-details__help-action-reason">{returnIntent?.reason}</p>}
+            </>
+          )}
+
+          <button
+            className="order-details__help-action"
+            onClick={() => {
+              setHelpSectionOpen(false);
+              switchTab('support', { openChat: true, orderId: order.id });
+            }}
+          >
+            <HeadsetIcon width="15" height="15" />
+            <span>Contact Support</span>
+          </button>
+        </div>
+
+        <button
+          className="order-details__help-sheet-cancel"
+          disabled={!cancelIntent?.enabled}
+          onClick={
+            cancelIntent?.enabled
+              ? () => {
+                  setHelpSectionOpen(false);
+                  openCancelFlow();
+                }
+              : undefined
+          }
+        >
+          Cancel Order
+        </button>
+        {!cancelIntent?.enabled && (
+          <p className="order-details__help-action-reason order-details__help-action-reason--center">
+            {cancelIntent?.reason}
+          </p>
+        )}
+      </BottomSheet>
 
       <ConfirmSheet
         open={confirmingCancel}

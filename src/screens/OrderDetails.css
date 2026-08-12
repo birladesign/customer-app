@@ -647,15 +647,9 @@
 .order-details__help-chevron {
   flex-shrink: 0;
   color: var(--color-text-muted);
-  transition: transform 0.2s var(--ease-standard);
-}
-
-.order-details__help-chevron--open {
-  transform: rotate(90deg);
 }
 
 .order-details__help-actions {
-  padding: 0 var(--space-4) var(--space-4);
   display: flex;
   flex-direction: column;
 }
@@ -688,6 +682,36 @@
   margin: 0 0 var(--space-1);
   font-size: var(--text-caption-size);
   color: var(--color-text-muted);
+}
+
+.order-details__help-action-reason--center {
+  margin: var(--space-1) 0 0;
+  text-align: center;
+}
+
+/* Cancelling is rare and irreversible, unlike Edit/Return/Contact Support
+   above — kept as a small text link, not a list row of equal weight. */
+.order-details__help-sheet-cancel {
+  display: block;
+  width: 100%;
+  margin-top: var(--space-4);
+  border: none;
+  background: none;
+  padding: var(--space-2);
+  font-family: inherit;
+  font-size: var(--text-body-size);
+  font-weight: 600;
+  color: var(--color-action-red);
+  text-align: center;
+  transition: transform 0.1s ease-out;
+}
+
+.order-details__help-sheet-cancel:active {
+  transform: scale(0.97);
+}
+
+.order-details__help-sheet-cancel:disabled {
+  color: var(--color-disabled-text);
 }
 
 .order-details__cancel-prompt {
@@ -763,6 +787,7 @@
   .order-details__get-invoice:active,
   .order-details__help-toggle:active,
   .order-details__help-action:active,
+  .order-details__help-sheet-cancel:active,
   .order-details__technician-call:active,
   .order-details__cancel-reason:active,
   .order-details__cancel-continue:not(:disabled):active {
