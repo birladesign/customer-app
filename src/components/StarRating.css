@@ -1,0 +1,67 @@
+.star-rating {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.star-rating__label {
+  font-size: var(--text-body-size);
+  color: var(--color-text-primary);
+  transition: color 0.15s var(--ease-standard);
+}
+
+.star-rating__label--confirmed {
+  color: var(--color-success);
+  font-weight: 600;
+}
+
+.star-rating__stars {
+  display: inline-flex;
+  gap: 2px;
+  margin-right: -6px; /* offset the star buttons' own padding so the row's edge still aligns */
+}
+
+.star-rating__star-btn {
+  border: none;
+  background: none;
+  padding: 6px;
+  line-height: 0;
+  color: var(--color-disabled-text);
+  transition: transform 0.1s ease-out, color 0.15s var(--ease-standard);
+}
+
+.star-rating__star-btn--filled {
+  color: var(--color-rating-gold);
+}
+
+.star-rating__star-btn:active {
+  transform: scale(0.8);
+}
+
+/* A newly-filled star pops once to confirm the tap registered — a single
+   quick beat, not a distracting bounce loop. */
+@keyframes star-rating-pop {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.22);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.star-rating--confirmed .star-rating__star-btn--filled {
+  animation: star-rating-pop 0.3s var(--ease-standard);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .star-rating__star-btn:active {
+    transform: none;
+  }
+  .star-rating--confirmed .star-rating__star-btn--filled {
+    animation: none;
+  }
+}

@@ -1,8 +1,8 @@
-import { useState } from 'react';
 import { splitProductSpec } from '../data/orders.js';
 import { getItemIntents } from '../data/intents.js';
 import Tracker from './Tracker.jsx';
-import { FileTextIcon, ShieldIcon, ExternalLinkIcon, StarIcon } from './icons.jsx';
+import StarRating from './StarRating.jsx';
+import { FileTextIcon, ShieldIcon, ExternalLinkIcon } from './icons.jsx';
 import './PrimaryItem.css';
 
 const STATUS_COLOR = {
@@ -23,16 +23,6 @@ function formatRupees(amount) {
 export default function PrimaryItem({ item, onTrack, onReturn, onRate }) {
   const { name, spec } = splitProductSpec(item.product);
   const intents = getItemIntents(item);
-  // Confirms the tap actually registered — a rating is a "completion" event
-  // (Apple's four feedback kinds), and filling a star silently isn't enough
-  // on its own to read as confirmed.
-  const [justRated, setJustRated] = useState(false);
-
-  function handleRate(value) {
-    onRate(item, value);
-    setJustRated(true);
-    setTimeout(() => setJustRated(false), 1800);
-  }
 
   return (
     <div className="primary-item">
@@ -65,23 +55,12 @@ export default function PrimaryItem({ item, onTrack, onReturn, onRate }) {
         </button>
 
         {typeof item.rating === 'number' && (
-          <div className="primary-item__rate">
-            <span className={`primary-item__rate-label${justRated ? ' primary-item__rate-label--confirmed' : ''}`}>
-              {justRated ? 'Thanks for rating!' : 'Rate this item'}
-            </span>
-            <span className="primary-item__stars">
-              {Array.from({ length: 5 }, (_, i) => (
-                <button
-                  key={i}
-                  className="primary-item__star-btn"
-                  onClick={() => handleRate(i + 1)}
-                  aria-label={`Rate ${item.product} ${i + 1} out of 5 stars`}
-                >
-                  <StarIcon filled={i < item.rating} />
-                </button>
-              ))}
-            </span>
-          </div>
+          <StarRating
+            className="primary-item__rate"
+            value={item.rating}
+            onRate={(value) => onRate(item, value)}
+            itemName={item.product}
+          />
         )}
 
         <div className="primary-item__actions">

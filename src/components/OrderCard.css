@@ -234,20 +234,6 @@
   cursor: not-allowed;
 }
 
-.order-card__rating {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: var(--text-body-size);
-  color: var(--color-text-primary);
-}
-
-.order-card__stars {
-  display: inline-flex;
-  gap: 2px;
-  color: #f5a623;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .order-card__action:not(:disabled):active,
   .order-card__id:active,

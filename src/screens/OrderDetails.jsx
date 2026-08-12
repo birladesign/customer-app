@@ -9,6 +9,7 @@ import Timeline from '../components/Timeline.jsx';
 import DetailedTracking from '../components/DetailedTracking.jsx';
 import LineItems from '../components/LineItems.jsx';
 import PrimaryItem from '../components/PrimaryItem.jsx';
+import StarRating from '../components/StarRating.jsx';
 import ConfirmSheet from '../components/ConfirmSheet.jsx';
 import BottomSheet from '../components/BottomSheet.jsx';
 import {
@@ -21,8 +22,8 @@ import {
   FileTextIcon,
   ShieldIcon,
   ExternalLinkIcon,
-  StarIcon,
   HelpCircleIcon,
+  HeadsetIcon,
   MailIcon,
   PhoneIcon,
   UserIcon,
@@ -51,7 +52,7 @@ function formatRupees(amount) {
 }
 
 export default function OrderDetails({ params }) {
-  const { goBack, navigate } = useNavigation();
+  const { goBack, navigate, switchTab } = useNavigation();
   const [copied, setCopied] = useState(false);
   // Payment/shipping/cancel info is relevant on first glance, not tucked
   // behind a click — starts open, but stays collapsible for anyone who wants
@@ -82,6 +83,10 @@ export default function OrderDetails({ params }) {
   // object in place — order.items is a plain module-level array, so a
   // direct mutation wouldn't trigger a re-render the way this does.
   const [itemRatings, setItemRatings] = useState({});
+  // Single-item orders carry their rating on the order itself, not per-item —
+  // same local-state-over-mutation reasoning as itemRatings above. Starts
+  // unset and falls back to order.rating until the customer actually rates.
+  const [orderRatingOverride, setOrderRatingOverride] = useState(null);
   const reduceMotion = useReducedMotion();
   const order = ORDERS.find((o) => o.id === params.orderId);
 
@@ -192,6 +197,8 @@ export default function OrderDetails({ params }) {
   function handleRateItem(item, value) {
     setItemRatings((prev) => ({ ...prev, [item.sku]: value }));
   }
+
+  const orderRating = orderRatingOverride ?? order.rating;
 
   const displayItems = order.items?.map((item) =>
     itemRatings[item.sku] != null ? { ...item, rating: itemRatings[item.sku] } : item
@@ -431,17 +438,16 @@ export default function OrderDetails({ params }) {
               </div>
             )}
 
-            {typeof order.rating === 'number' && (
+            {typeof orderRating === 'number' && (
               <div className="order-details__rating">
                 <img className="order-details__rating-image" src={order.image} alt="" />
-                <div>
-                  <p className="order-details__rating-heading">Rate {productName}</p>
-                  <span className="order-details__rating-stars">
-                    {Array.from({ length: 5 }, (_, i) => (
-                      <StarIcon key={i} filled={i < order.rating} />
-                    ))}
-                  </span>
-                </div>
+                <StarRating
+                  className="order-details__rating-control"
+                  value={orderRating}
+                  onRate={setOrderRatingOverride}
+                  idleLabel={`Rate ${productName}`}
+                  itemName={productName}
+                />
               </div>
             )}
           </>
@@ -519,6 +525,14 @@ export default function OrderDetails({ params }) {
                     <span>Cancel Order</span>
                   </button>
                   {!cancelIntent?.enabled && <p className="order-details__help-action-reason">{cancelIntent?.reason}</p>}
+
+                  <button
+                    className="order-details__help-action"
+                    onClick={() => switchTab('support', { openChat: true, orderId: order.id })}
+                  >
+                    <HeadsetIcon width="15" height="15" />
+                    <span>Contact Support</span>
+                  </button>
                 </div>
               </motion.div>
             )}
