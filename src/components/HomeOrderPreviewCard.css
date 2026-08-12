@@ -46,11 +46,28 @@
   white-space: nowrap;
 }
 
+.home-order-preview-card__status-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: 2px;
+}
+
 .home-order-preview-card__status {
-  margin: 2px 0 0;
+  margin: 0;
   font-size: var(--text-body-size);
-  color: var(--color-info-blue);
-  font-weight: 500;
+  font-weight: 600;
+}
+
+.home-order-preview-card__badge {
+  background: var(--color-navy-900);
+  color: var(--color-text-inverse);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: var(--text-label-tracking);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
 }
 
 .home-order-preview-card__chevron {
