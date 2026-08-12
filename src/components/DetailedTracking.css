@@ -68,8 +68,8 @@
 
 .detailed-tracking__step--done .detailed-tracking__dot,
 .detailed-tracking__step--done .detailed-tracking__line {
-  background: var(--color-accent-cyan);
-  color: var(--color-navy-900);
+  background: var(--color-success);
+  color: var(--color-text-inverse);
 }
 
 .detailed-tracking__step--done .detailed-tracking__label {

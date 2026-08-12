@@ -67,12 +67,12 @@
 }
 
 .timeline__step--done .timeline__dot {
-  background: var(--color-accent-cyan);
-  color: var(--color-navy-900);
+  background: var(--color-success);
+  color: var(--color-text-inverse);
 }
 
 .timeline__step--done .timeline__line {
-  background: var(--color-accent-cyan);
+  background: var(--color-success);
 }
 
 .timeline__step--done .timeline__label {

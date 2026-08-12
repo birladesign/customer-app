@@ -86,11 +86,13 @@
   --spring-response: 0.35s;
   --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
 
-  /* Glassmorphism fallbacks for browsers that do not support prefers-reduced-transparency media query.
-     A light navy tint (not pure white) so the glass reads as darker and
-     matches the same navy-tinted shadow language used everywhere else. */
-  --glass-bg: rgba(224, 228, 236, 0.75);
-  --glass-blur: blur(20px) saturate(180%);
+  /* Shared by every sticky topbar, the bottom tab bar, and every bottom
+     sheet — a light navy tint (not pure white) so the glass reads as
+     darker and matches the same navy-tinted shadow language used
+     everywhere else. Kept deliberately subtle: a thin bar is a chip, not
+     a "big surface," and doesn't earn a heavy frosted-glass treatment. */
+  --glass-bg: rgba(224, 228, 236, 0.9);
+  --glass-blur: blur(6px) saturate(110%);
 }
 
 @media (prefers-reduced-transparency: reduce) {
