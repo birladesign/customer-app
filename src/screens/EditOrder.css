@@ -25,7 +25,7 @@
   letter-spacing: var(--text-heading-tracking);
   line-height: var(--text-heading-leading);
   font-weight: 700;
-  color: var(--color-text-primary);
+  color: var(--color-text-heading);
 }
 
 .edit-order__icon-btn {

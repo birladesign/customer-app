@@ -22,7 +22,6 @@ import {
   FileTextIcon,
   ShieldIcon,
   ExternalLinkIcon,
-  HelpCircleIcon,
   HeadsetIcon,
   MailIcon,
   PhoneIcon,
@@ -112,6 +111,13 @@ export default function OrderDetails({ params }) {
   const returnIntent = intents.find((i) => i.key === 'returnReplace');
   const warrantyIntent = intents.find((i) => i.key === 'warranty');
   const cancelIntent = intents.find((i) => i.key === 'cancel');
+  // The invoice only exists once the order has actually shipped out — same
+  // "available after delivery" window as Warranty, just also true for a
+  // multi-item order once every line item (not just the order's headline
+  // item) has arrived.
+  const isFullyDelivered = order.items
+    ? order.items.every((item) => item.status.label === 'Delivered')
+    : Boolean(warrantyIntent?.enabled);
 
   function openCancelFlow() {
     setCancelStep('reason');
@@ -347,10 +353,13 @@ export default function OrderDetails({ params }) {
                       <span>Payment Method</span>
                       <span>{order.payment.method} · {order.payment.status}</span>
                     </div>
-                    <button className="order-details__get-invoice">
+                    <button className="order-details__get-invoice" disabled={!isFullyDelivered}>
                       <FileTextIcon width="14" height="14" />
-                      Download Invoice / Credit Note
+                      Get Invoice
                     </button>
+                    {!isFullyDelivered && (
+                      <p className="order-details__get-invoice-reason">Available once the order is delivered</p>
+                    )}
                   </div>
 
                   {discount > 0 && (
@@ -459,15 +468,7 @@ export default function OrderDetails({ params }) {
             onClick={() => setHelpSectionOpen((v) => !v)}
             aria-expanded={helpSectionOpen}
           >
-            <span className="order-details__help-icon">
-              <HelpCircleIcon />
-            </span>
-            <span className="order-details__help-text">
-              <span className="order-details__help-heading">Do you need help with the existing order?</span>
-              <span className="order-details__help-subtext">
-                {order.items ? 'Edit or cancel this order' : 'Edit, return, or cancel this order'}
-              </span>
-            </span>
+            <span>Do you need help with the existing order?</span>
             <ChevronRightIcon
               className={`order-details__help-chevron${helpSectionOpen ? ' order-details__help-chevron--open' : ''}`}
             />

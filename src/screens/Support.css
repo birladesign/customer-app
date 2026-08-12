@@ -30,7 +30,7 @@
   letter-spacing: var(--text-heading-tracking);
   line-height: var(--text-heading-leading);
   font-weight: 700;
-  color: var(--color-text-primary);
+  color: var(--color-text-heading);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

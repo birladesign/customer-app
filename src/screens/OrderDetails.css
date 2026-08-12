@@ -25,7 +25,7 @@
   letter-spacing: var(--text-heading-tracking);
   line-height: var(--text-heading-leading);
   font-weight: 700;
-  color: var(--color-text-primary);
+  color: var(--color-text-heading);
 }
 
 .order-details__icon-btn {
@@ -434,6 +434,17 @@
   transform: scale(0.97);
 }
 
+.order-details__get-invoice:disabled {
+  color: var(--color-disabled-text);
+}
+
+.order-details__get-invoice-reason {
+  margin: 0;
+  text-align: center;
+  font-size: var(--text-caption-size);
+  color: var(--color-text-muted);
+}
+
 .order-details__refund-block {
   background: var(--color-success-tint);
   border-radius: var(--radius-md);
@@ -602,61 +613,35 @@
   font-weight: 600;
 }
 
+/* Mirrors the Bill Summary disclosure — a plain card, not a highlighted
+   one, so this doesn't outrank the rest of the page. Edit and Cancel are
+   both rare, one-off requests, and even here they stay a tap away (behind
+   the arrow) rather than being named upfront or sitting open by default. */
 .order-details__help-wrap {
-  background: var(--color-accent-cyan-wash);
-  border-radius: var(--radius-md);
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
   overflow: hidden;
 }
 
-/* Edit and Cancel are both rare, one-off requests — this is the one place on
-   the page that surfaces them, and even here they stay a tap away rather
-   than sitting open by default. */
 .order-details__help-toggle {
   width: 100%;
   display: flex;
-  gap: var(--space-3);
   align-items: center;
+  justify-content: space-between;
   border: none;
   background: none;
   padding: var(--space-4);
   font-family: inherit;
+  font-size: var(--text-heading-size);
+  font-weight: 600;
+  color: var(--color-text-primary);
   text-align: left;
   transition: transform 0.1s ease-out;
 }
 
 .order-details__help-toggle:active {
   transform: scale(0.99);
-}
-
-.order-details__help-icon {
-  flex-shrink: 0;
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-full);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--color-bg-primary);
-  color: var(--color-navy-900);
-}
-
-.order-details__help-text {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.order-details__help-heading {
-  font-size: var(--text-product-size);
-  font-weight: 600;
-  color: var(--color-text-primary);
-}
-
-.order-details__help-subtext {
-  margin-top: 2px;
-  font-size: var(--text-body-size);
-  color: var(--color-text-muted);
 }
 
 .order-details__help-chevron {
