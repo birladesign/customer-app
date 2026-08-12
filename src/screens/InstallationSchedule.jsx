@@ -1,0 +1,201 @@
+import { useState } from 'react';
+import { ORDERS, splitProductSpec } from '../data/orders.js';
+import { useNavigation } from '../navigation/NavigationContext.jsx';
+import ConfirmSheet from '../components/ConfirmSheet.jsx';
+import { ChevronLeftIcon, CalendarIcon, ClockIcon, UserIcon } from '../components/icons.jsx';
+import './InstallationSchedule.css';
+
+// No real availability backend in this prototype — a fixed near-term picker,
+// same "handful of options, not a rules engine" approach as CANCEL_REASONS.
+const DATE_OPTIONS = [
+  { value: '12 Aug 2026', day: 'Tue', label: '12 Aug' },
+  { value: '13 Aug 2026', day: 'Wed', label: '13 Aug' },
+  { value: '14 Aug 2026', day: 'Thu', label: '14 Aug' },
+  { value: '15 Aug 2026', day: 'Fri', label: '15 Aug' },
+  { value: '16 Aug 2026', day: 'Sat', label: '16 Aug' },
+];
+
+const TIME_WINDOWS = ['9 AM – 11 AM', '11 AM – 1 PM', '2 PM – 4 PM', '4 PM – 6 PM'];
+
+const DEFAULT_TECHNICIAN = { name: 'Rajesh Kumar', phone: '+919876543210', phoneDisplay: '+91 98765 43210' };
+
+export default function InstallationSchedule({ params }) {
+  const { goBack } = useNavigation();
+  const order = ORDERS.find((o) => o.id === params.orderId);
+  const wasConfirmed = order?.installationStatus === 'confirmed';
+  // "Reschedule" (from the order card) jumps straight to the picker; "View
+  // Slot" opens on the read-only current appointment first, matching each
+  // button's own stated intent instead of always landing on the same screen.
+  const [pickerOpen, setPickerOpen] = useState(!wasConfirmed || Boolean(params.reschedule));
+  const [selectedDate, setSelectedDate] = useState(order?.installationSlot?.date ?? DATE_OPTIONS[0].value);
+  const [selectedWindow, setSelectedWindow] = useState(order?.installationSlot?.window ?? TIME_WINDOWS[0]);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
+  if (!order) {
+    return (
+      <div className="installation-schedule">
+        <header className="installation-schedule__topbar">
+          <button className="installation-schedule__icon-btn" onClick={goBack} aria-label="Back">
+            <ChevronLeftIcon />
+          </button>
+          <h1>Installation Slot</h1>
+          <span className="installation-schedule__icon-btn-spacer" />
+        </header>
+        <p className="installation-schedule__not-found">Order not found.</p>
+      </div>
+    );
+  }
+
+  const { name: productName } = splitProductSpec(order.product);
+  // Once a slot exists at all, any further pick is a reschedule of it —
+  // otherwise this is the very first confirmation of the proposed default.
+  const isReschedule = wasConfirmed;
+  const isUnchanged =
+    wasConfirmed && order.installationSlot?.date === selectedDate && order.installationSlot?.window === selectedWindow;
+
+  function handleConfirm() {
+    const slotText = `${selectedDate}, ${selectedWindow}`;
+    const technician = order.technician ?? DEFAULT_TECHNICIAN;
+
+    Object.assign(order, {
+      installationStatus: 'confirmed',
+      installationSlot: { date: selectedDate, window: selectedWindow },
+      technician,
+      status: { dot: 'blue', label: 'Installation Scheduled' },
+      caption: `Technician visit: ${slotText}`,
+      actions: [
+        { label: 'View Slot', variant: 'secondary' },
+        { label: 'Reschedule', variant: 'secondary' },
+      ],
+    });
+
+    // Rescheduling revises the existing milestone rather than adding a new
+    // one — otherwise the entry would land after the still-pending
+    // "Installation Completed" placeholder and put the log out of order.
+    const step = order.timeline?.steps[order.timeline.currentIndex];
+    if (step) {
+      step.label = 'Installation Scheduled';
+      step.description = slotText;
+      step.updates = [
+        ...(step.updates ?? []),
+        isReschedule
+          ? { text: `Rescheduled — visit slot confirmed: ${slotText}` }
+          : { text: `Technician ${technician.name} assigned` },
+        { text: `Visit slot confirmed: ${slotText}` },
+      ];
+    }
+
+    setConfirmOpen(false);
+    goBack();
+  }
+
+  return (
+    <div className="installation-schedule">
+      <header className="installation-schedule__topbar">
+        <button className="installation-schedule__icon-btn" onClick={goBack} aria-label="Back">
+          <ChevronLeftIcon />
+        </button>
+        <h1>Installation Slot</h1>
+        <span className="installation-schedule__icon-btn-spacer" />
+      </header>
+
+      <main className="installation-schedule__content">
+        <div className="installation-schedule__product-card">
+          <img className="installation-schedule__image" src={order.image} alt={order.product} />
+          <div className="installation-schedule__product-text">
+            <p className="installation-schedule__product">{productName}</p>
+            <p className="installation-schedule__order-id">Order {order.id}</p>
+          </div>
+        </div>
+
+        {!pickerOpen ? (
+          <>
+            <div className="installation-schedule__current">
+              <span className="installation-schedule__current-badge">Confirmed</span>
+              <div className="installation-schedule__current-row">
+                <CalendarIcon width="16" height="16" />
+                <span>{order.installationSlot.date}</span>
+              </div>
+              <div className="installation-schedule__current-row">
+                <ClockIcon width="14" height="14" />
+                <span>{order.installationSlot.window}</span>
+              </div>
+              {order.technician && (
+                <div className="installation-schedule__current-row">
+                  <UserIcon width="16" height="16" />
+                  <span>{order.technician.name}</span>
+                </div>
+              )}
+            </div>
+            <button className="installation-schedule__reschedule-link" onClick={() => setPickerOpen(true)}>
+              Reschedule Appointment
+            </button>
+          </>
+        ) : (
+          <>
+            {order.installationStatus === 'pending' && (
+              <div className="installation-schedule__proposed-banner">
+                <span className="installation-schedule__proposed-badge">Proposed for you</span>
+                <p>
+                  We've suggested a slot within 48 hours of delivery. Confirm it below, or choose another time.
+                </p>
+              </div>
+            )}
+
+            <section className="installation-schedule__section">
+              <p className="installation-schedule__section-heading">Choose a Date</p>
+              <div className="installation-schedule__date-row">
+                {DATE_OPTIONS.map((d) => (
+                  <button
+                    key={d.value}
+                    className={`installation-schedule__date-chip${
+                      selectedDate === d.value ? ' installation-schedule__date-chip--selected' : ''
+                    }`}
+                    onClick={() => setSelectedDate(d.value)}
+                  >
+                    <span className="installation-schedule__date-day">{d.day}</span>
+                    <span className="installation-schedule__date-label">{d.label}</span>
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            <section className="installation-schedule__section">
+              <p className="installation-schedule__section-heading">Choose a Time</p>
+              <div className="installation-schedule__window-row">
+                {TIME_WINDOWS.map((w) => (
+                  <button
+                    key={w}
+                    className={`installation-schedule__window-chip${
+                      selectedWindow === w ? ' installation-schedule__window-chip--selected' : ''
+                    }`}
+                    onClick={() => setSelectedWindow(w)}
+                  >
+                    {w}
+                  </button>
+                ))}
+              </div>
+            </section>
+          </>
+        )}
+      </main>
+
+      {pickerOpen && (
+        <div className="installation-schedule__footer">
+          <button className="installation-schedule__confirm" disabled={isUnchanged} onClick={() => setConfirmOpen(true)}>
+            {isReschedule ? 'Confirm New Slot' : 'Confirm Appointment'}
+          </button>
+        </div>
+      )}
+
+      <ConfirmSheet
+        open={confirmOpen}
+        title={isReschedule ? 'Confirm the new slot?' : 'Confirm this appointment?'}
+        body={`Technician visit on ${selectedDate}, ${selectedWindow}.`}
+        confirmLabel={isReschedule ? 'Confirm New Slot' : 'Confirm Appointment'}
+        onConfirm={handleConfirm}
+        onClose={() => setConfirmOpen(false)}
+      />
+    </div>
+  );
+}

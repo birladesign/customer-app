@@ -305,6 +305,12 @@ export default function OrderDetails({ params }) {
               <PhoneIcon width="14" height="14" />
               Call
             </a>
+            <button
+              className="order-details__technician-reschedule"
+              onClick={() => navigate('installationSchedule', { orderId: order.id, reschedule: true })}
+            >
+              Reschedule
+            </button>
           </div>
         )}
 

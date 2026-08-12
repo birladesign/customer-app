@@ -83,6 +83,19 @@ export default function OrderCard({ order }) {
   // if the customer taps through after rating from the list.
   const [rating, setRating] = useState(order.rating);
 
+  // Installation is the one order-card action with a real destination so
+  // far — everything else on this card stays present-but-inert until it has
+  // one too, same discipline as the rest of this prototype.
+  function getActionHandler(label) {
+    if (label === 'Schedule Installation' || label === 'Reschedule') {
+      return () => navigate('installationSchedule', { orderId: order.id, reschedule: label === 'Reschedule' });
+    }
+    if (label === 'View Slot') {
+      return () => navigate('installationSchedule', { orderId: order.id });
+    }
+    return undefined;
+  }
+
   function openDetails() {
     navigate('orderDetails', { orderId: order.id });
   }
@@ -156,7 +169,7 @@ export default function OrderCard({ order }) {
         {visibleActions.length > 0 && (
           <div className="order-card__actions">
             {visibleActions.map((a) => (
-              <ActionButton key={a.label} {...a} />
+              <ActionButton key={a.label} {...a} onClick={getActionHandler(a.label)} />
             ))}
           </div>
         )}

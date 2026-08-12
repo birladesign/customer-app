@@ -15,6 +15,7 @@ import Invoices from '../screens/Profile/Invoices.jsx';
 import Requests from '../screens/Profile/Requests.jsx';
 import OrderDetails from '../screens/OrderDetails.jsx';
 import EditOrder from '../screens/EditOrder.jsx';
+import InstallationSchedule from '../screens/InstallationSchedule.jsx';
 import ReturnReplaceFlow from '../screens/ReturnReplace/ReturnReplaceFlow.jsx';
 import './ScreenStack.css';
 
@@ -32,6 +33,7 @@ const SCREENS = {
   requests: Requests,
   orderDetails: OrderDetails,
   editOrder: EditOrder,
+  installationSchedule: InstallationSchedule,
   returnReplace: ReturnReplaceFlow,
 };
 
@@ -46,7 +48,7 @@ export default function ScreenStack() {
   prevDepthRef.current = stack.length;
 
   const CurrentScreen = SCREENS[current.screen];
-  const screenKey = `${stack.length}-${current.screen}`;
+  const screenKey = current.key;
 
   const enterX = direction > 0 ? '100%' : '-30%';
   const enterOpacity = direction > 0 ? 1 : 0.6;

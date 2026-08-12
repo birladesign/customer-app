@@ -506,7 +506,7 @@ export const ORDERS = [
         { label: 'Installation', date: '12 Aug' },
         { label: 'Complete' },
       ],
-      currentIndex: 0,
+      currentIndex: 1,
     },
   },
   {
