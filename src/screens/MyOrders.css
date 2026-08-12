@@ -46,6 +46,26 @@
   color: var(--color-text-primary);
 }
 
+.my-orders__help-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: rgba(26, 43, 88, 0.06);
+  border-radius: var(--radius-full);
+  padding: var(--space-2) var(--space-3);
+  font-family: inherit;
+  font-size: var(--text-caption-size);
+  font-weight: 600;
+  color: var(--color-navy-900);
+  transition: transform 0.1s ease-out;
+}
+
+.my-orders__help-btn:active {
+  transform: scale(0.96);
+}
+
 .my-orders__list {
   flex: 1;
   padding: var(--space-4);
@@ -87,5 +107,11 @@
   letter-spacing: var(--text-caption-tracking);
   line-height: var(--text-caption-leading);
   max-width: 260px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .my-orders__help-btn:active {
+    transform: none;
+  }
 }
 

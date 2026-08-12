@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
 import { SECTIONS, ORDERS, PROACTIVE_PROMPT, parseOrderDate } from '../data/orders.js';
+import { useNavigation } from '../navigation/NavigationContext.jsx';
 import OrderCard from '../components/OrderCard.jsx';
 import ProactiveCard from '../components/ProactiveCard.jsx';
 import TabBar from '../components/TabBar.jsx';
 import SearchAndFilterBar from '../components/SearchAndFilterBar.jsx';
-import { InboxIcon } from '../components/icons.jsx';
+import { InboxIcon, HelpCircleIcon } from '../components/icons.jsx';
 import './MyOrders.css';
 
 const TABS = [
@@ -13,6 +14,7 @@ const TABS = [
 ];
 
 export default function MyOrders() {
+  const { switchTab } = useNavigation();
   const [activeTab, setActiveTab] = useState('all');
   const [query, setQuery] = useState('');
 
@@ -54,6 +56,10 @@ export default function MyOrders() {
           <div className="my-orders__topbar-left">
             <h1>My Orders</h1>
           </div>
+          <button className="my-orders__help-btn" onClick={() => switchTab('support', { openChat: true })}>
+            <HelpCircleIcon width="14" height="14" />
+            Need Help
+          </button>
         </header>
 
         <SearchAndFilterBar query={query} onQueryChange={setQuery} />
