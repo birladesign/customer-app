@@ -690,7 +690,8 @@
 }
 
 /* Cancelling is rare and irreversible, unlike Edit/Return/Contact Support
-   above — kept as a small text link, not a list row of equal weight. */
+   above — kept as a quiet text link, not a list row or a red button;
+   red is reserved for the moment cancellation is actually confirmed. */
 .order-details__help-sheet-cancel {
   display: block;
   width: 100%;
@@ -701,7 +702,7 @@
   font-family: inherit;
   font-size: var(--text-body-size);
   font-weight: 600;
-  color: var(--color-action-red);
+  color: var(--color-text-muted);
   text-align: center;
   transition: transform 0.1s ease-out;
 }

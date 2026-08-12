@@ -534,7 +534,7 @@ export default function OrderDetails({ params }) {
               : undefined
           }
         >
-          Cancel Order
+          Want to cancel order?
         </button>
         {!cancelIntent?.enabled && (
           <p className="order-details__help-action-reason order-details__help-action-reason--center">
