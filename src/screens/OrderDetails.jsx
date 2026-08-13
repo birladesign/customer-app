@@ -256,63 +256,111 @@ export default function OrderDetails({ params }) {
               </div>
             )}
           </>
-        ) : (
-          <div className="order-details__product-card">
-            <img className="order-details__image" src={order.image} alt={order.product} />
-            <div className="order-details__product-text">
-              <p className="order-details__product">{productName}</p>
-              {spec && <p className="order-details__spec">{spec}</p>}
+        ) : null}
+
+        {/* One card for everything "about this order right now" — product,
+            id/status, tracking, technician, warranty, rating — instead of a
+            separate box per fact. Each direct child gets an automatic
+            hairline divider from the next (see the `> * + *` rule in CSS),
+            so which sections exist can vary freely without any manual
+            divider bookkeeping here. */}
+        <div className="order-details__summary-card">
+          {!order.items && (
+            <div className="order-details__product-row">
+              <img className="order-details__image" src={order.image} alt={order.product} />
+              <div className="order-details__product-text">
+                <p className="order-details__product">{productName}</p>
+                {spec && <p className="order-details__spec">{spec}</p>}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        <div className="order-details__id-row">
-          <div>
-            <p className="order-details__id-label">Order ID</p>
-            <button className="order-details__id" onClick={handleCopy}>
-              {copied ? <CheckIcon width="13" height="13" strokeWidth="3" /> : <CopyIcon width="13" height="13" />}
-              <span>{order.id}</span>
-            </button>
-          </div>
-          <span className="order-details__status-pill" style={{ background: pill.bg, color: pill.color }}>
-            {status.label}
-          </span>
-        </div>
-
-        {order.timeline && (
-          <div className="order-details__card">
-            <Timeline steps={order.timeline.steps} currentIndex={order.timeline.currentIndex} />
-            <button className="order-details__tracking-link" onClick={() => openTracking('Tracking Updates', order.timeline)}>
-              <span className="order-details__tracking-link-icon">
-                <FileTextIcon width="14" height="14" />
-              </span>
-              <span className="order-details__tracking-link-label">Tracking Updates</span>
-              <ChevronRightIcon className="order-details__tracking-link-chevron" aria-hidden="true" />
-            </button>
-          </div>
-        )}
-
-        {order.technician && (
-          <div className="order-details__technician-card">
-            <span className="order-details__technician-icon">
-              <UserIcon width="18" height="18" />
+          <div className="order-details__id-row">
+            <div>
+              <p className="order-details__id-label">Order ID</p>
+              <button className="order-details__id" onClick={handleCopy}>
+                {copied ? <CheckIcon width="13" height="13" strokeWidth="3" /> : <CopyIcon width="13" height="13" />}
+                <span>{order.id}</span>
+              </button>
+            </div>
+            <span className="order-details__status-pill" style={{ background: pill.bg, color: pill.color }}>
+              {status.label}
             </span>
-            <div className="order-details__technician-text">
-              <p className="order-details__technician-label">Your Technician</p>
-              <p className="order-details__technician-name">{order.technician.name}</p>
-            </div>
-            <a className="order-details__technician-call" href={`tel:${order.technician.phone}`}>
-              <PhoneIcon width="14" height="14" />
-              Call
-            </a>
-            <button
-              className="order-details__technician-reschedule"
-              onClick={() => navigate('installationSchedule', { orderId: order.id, reschedule: true })}
-            >
-              Reschedule
-            </button>
           </div>
-        )}
+
+          {order.timeline && (
+            <div className="order-details__timeline-block">
+              <Timeline steps={order.timeline.steps} currentIndex={order.timeline.currentIndex} />
+              <button className="order-details__tracking-link" onClick={() => openTracking('Tracking Updates', order.timeline)}>
+                <span className="order-details__tracking-link-icon">
+                  <FileTextIcon width="14" height="14" />
+                </span>
+                <span className="order-details__tracking-link-label">Tracking Updates</span>
+                <ChevronRightIcon className="order-details__tracking-link-chevron" aria-hidden="true" />
+              </button>
+            </div>
+          )}
+
+          {order.technician && (
+            <div className="order-details__technician-row">
+              <span className="order-details__technician-icon">
+                <UserIcon width="18" height="18" />
+              </span>
+              <div className="order-details__technician-text">
+                <p className="order-details__technician-label">Your Technician</p>
+                <p className="order-details__technician-name">{order.technician.name}</p>
+              </div>
+              <a className="order-details__technician-call" href={`tel:${order.technician.phone}`}>
+                <PhoneIcon width="14" height="14" />
+                Call
+              </a>
+              <button
+                className="order-details__technician-reschedule"
+                onClick={() => navigate('installationSchedule', { orderId: order.id, reschedule: true })}
+              >
+                Reschedule
+              </button>
+            </div>
+          )}
+
+          {/* Multi-item orders get these scoped per line item inside
+              LineItems/PrimaryItem instead — a single order-level
+              Warranty/Rate doesn't make sense once each SKU has its own
+              delivery state and eligibility. */}
+          {!order.items &&
+            (warrantyIntent?.enabled ? (
+              <button className="order-details__warranty-row">
+                <span className="order-details__warranty-icon">
+                  <ShieldIcon />
+                </span>
+                <span className="order-details__warranty-label">Warranty Details</span>
+                <ExternalLinkIcon className="order-details__warranty-external" />
+              </button>
+            ) : (
+              <div className="order-details__warranty-row order-details__warranty-row--disabled">
+                <span className="order-details__warranty-icon">
+                  <ShieldIcon />
+                </span>
+                <span className="order-details__warranty-text">
+                  <span className="order-details__warranty-label">Warranty Details</span>
+                  <span className="order-details__warranty-reason">{warrantyIntent?.reason}</span>
+                </span>
+              </div>
+            ))}
+
+          {!order.items && typeof orderRating === 'number' && (
+            <div className="order-details__rating">
+              <img className="order-details__rating-image" src={order.image} alt="" />
+              <StarRating
+                className="order-details__rating-control"
+                value={orderRating}
+                onRate={setOrderRatingOverride}
+                idleLabel={`Rate ${productName}`}
+                itemName={productName}
+              />
+            </div>
+          )}
+        </div>
 
         <div className="order-details__disclosure-wrap">
           <button
@@ -427,46 +475,6 @@ export default function OrderDetails({ params }) {
             )}
           </AnimatePresence>
         </div>
-
-        {/* Multi-item orders get these scoped per line item inside LineItems
-            instead — a single order-level Warranty/Rate/Return doesn't make
-            sense once each SKU has its own delivery state and eligibility. */}
-        {!order.items && (
-          <>
-            {warrantyIntent?.enabled ? (
-              <button className="order-details__warranty-row">
-                <span className="order-details__warranty-icon">
-                  <ShieldIcon />
-                </span>
-                <span className="order-details__warranty-label">Warranty Details</span>
-                <ExternalLinkIcon className="order-details__warranty-external" />
-              </button>
-            ) : (
-              <div className="order-details__warranty-row order-details__warranty-row--disabled">
-                <span className="order-details__warranty-icon">
-                  <ShieldIcon />
-                </span>
-                <span className="order-details__warranty-text">
-                  <span className="order-details__warranty-label">Warranty Details</span>
-                  <span className="order-details__warranty-reason">{warrantyIntent?.reason}</span>
-                </span>
-              </div>
-            )}
-
-            {typeof orderRating === 'number' && (
-              <div className="order-details__rating">
-                <img className="order-details__rating-image" src={order.image} alt="" />
-                <StarRating
-                  className="order-details__rating-control"
-                  value={orderRating}
-                  onRate={setOrderRatingOverride}
-                  idleLabel={`Rate ${productName}`}
-                  itemName={productName}
-                />
-              </div>
-            )}
-          </>
-        )}
 
         <div className="order-details__help-wrap">
           <button className="order-details__help-toggle" onClick={() => setHelpSectionOpen(true)}>

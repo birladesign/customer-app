@@ -59,14 +59,31 @@
   gap: var(--space-4);
 }
 
-.order-details__product-card {
-  display: flex;
-  gap: var(--space-3);
-  align-items: center;
+/* One card for everything "about this order right now" — product,
+   id/status, tracking, technician, warranty, rating — instead of a
+   separate box per fact. Every direct child gets an automatic hairline
+   divider from the next, so which sections exist can vary freely
+   (single vs. multi-item, technician or not, rated or not) with zero
+   manual divider bookkeeping. */
+.order-details__summary-card {
   background: var(--color-bg-primary);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  padding: var(--space-3);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+}
+
+.order-details__summary-card > * + * {
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+
+.order-details__product-row {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
 }
 
 .order-details__image {
@@ -137,11 +154,9 @@
   white-space: nowrap;
 }
 
-.order-details__card {
-  background: var(--color-bg-primary);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-card);
-  padding: var(--space-4);
+.order-details__timeline-block {
+  display: flex;
+  flex-direction: column;
 }
 
 .order-details__other-items {
@@ -203,14 +218,10 @@
   color: var(--color-navy-900);
 }
 
-.order-details__technician-card {
+.order-details__technician-row {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  background: var(--color-bg-primary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: var(--space-3);
 }
 
 .order-details__technician-icon {
@@ -330,13 +341,19 @@
   padding: 0 var(--space-4) var(--space-4);
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+}
+
+/* Each direct child (payment/savings/refund/shipping) is its own section —
+   a hairline divider between them reads as clearly as a separate tinted
+   box would, without stacking colored panels inside an already-bordered
+   card. */
+.order-details__disclosure-body > * + * {
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
 }
 
 .order-details__payment-block {
-  background: var(--color-accent-cyan-wash);
-  border-radius: var(--radius-md);
-  padding: var(--space-3);
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
@@ -387,9 +404,6 @@
 }
 
 .order-details__savings-block {
-  background: var(--color-accent-cyan-wash);
-  border-radius: var(--radius-md);
-  padding: var(--space-3);
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
@@ -436,8 +450,8 @@
   align-items: center;
   gap: var(--space-2);
   margin-top: var(--space-1);
-  border: none;
-  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  background: none;
   border-radius: var(--radius-full);
   padding: var(--space-2) var(--space-3);
   font-family: inherit;
@@ -463,9 +477,6 @@
 }
 
 .order-details__refund-block {
-  background: var(--color-success-tint);
-  border-radius: var(--radius-md);
-  padding: var(--space-3);
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
@@ -535,19 +546,14 @@
   align-items: center;
   gap: var(--space-3);
   border: none;
-  background: var(--color-accent-cyan-wash);
-  border-radius: var(--radius-md);
-  padding: var(--space-3);
+  background: none;
+  padding: 0;
   text-align: left;
   transition: transform 0.1s ease-out;
 }
 
 .order-details__warranty-row:active {
   transform: scale(0.99);
-}
-
-.order-details__warranty-row--disabled {
-  background: var(--color-disabled-bg);
 }
 
 .order-details__warranty-icon {
@@ -558,11 +564,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--color-bg-primary);
+  background: var(--color-accent-cyan-wash);
   color: var(--color-navy-900);
 }
 
 .order-details__warranty-row--disabled .order-details__warranty-icon {
+  background: var(--color-disabled-bg);
   color: var(--color-disabled-text);
 }
 
@@ -601,9 +608,6 @@
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  padding: var(--space-3) 0;
-  border-top: 1px solid var(--color-border);
-  border-bottom: 1px solid var(--color-border);
 }
 
 .order-details__rating-image {
