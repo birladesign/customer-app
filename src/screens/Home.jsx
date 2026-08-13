@@ -3,7 +3,7 @@ import { ORDERS, parseOrderDate } from '../data/orders.js';
 import { CURRENT_USER, NOTIFICATIONS } from '../data/profile.js';
 import { PROMO_BANNERS } from '../data/home.js';
 import PromoCarousel from '../components/PromoCarousel.jsx';
-import HomeOrderPreviewCard from '../components/HomeOrderPreviewCard.jsx';
+import OrderCard from '../components/OrderCard.jsx';
 import Avatar from '../components/Avatar.jsx';
 import Logo from '../components/Logo.jsx';
 import { BellIcon } from '../components/icons.jsx';
@@ -13,7 +13,7 @@ export default function Home() {
   const { switchTab, navigate } = useNavigation();
   const ongoingOrders = ORDERS.filter((o) => o.homeTracker)
     .sort((a, b) => parseOrderDate(b.date) - parseOrderDate(a.date))
-    .slice(0, 3);
+    .slice(0, 5);
   const hasUnreadNotifications = NOTIFICATIONS.some((n) => !n.read);
 
   return (
@@ -44,7 +44,7 @@ export default function Home() {
             </div>
             <div className="home__order-list">
               {ongoingOrders.map((order) => (
-                <HomeOrderPreviewCard key={order.id} order={order} />
+                <OrderCard key={order.id} order={order} />
               ))}
             </div>
           </section>
