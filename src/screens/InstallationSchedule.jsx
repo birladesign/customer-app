@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ORDERS, splitProductSpec } from '../data/orders.js';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
 import ConfirmSheet from '../components/ConfirmSheet.jsx';
-import { ChevronLeftIcon, CalendarIcon, ClockIcon, UserIcon } from '../components/icons.jsx';
+import { ChevronLeftIcon, CalendarIcon, ClockIcon, UserIcon, CheckIcon, PhoneIcon } from '../components/icons.jsx';
 import './InstallationSchedule.css';
 
 // No real availability backend in this prototype — a fixed near-term picker,
@@ -20,7 +20,14 @@ const TIME_WINDOWS = ['9 AM – 11 AM', '11 AM – 1 PM', '2 PM – 4 PM', '4 PM
 const DEFAULT_TECHNICIAN = { name: 'Rajesh Kumar', phone: '+919876543210', phoneDisplay: '+91 98765 43210' };
 
 export default function InstallationSchedule({ params }) {
-  const { goBack } = useNavigation();
+  const { goBack, setHideTabBar } = useNavigation();
+  // A booking sub-flow, not a tab destination — the tab bar competing with
+  // the sticky Confirm button at the bottom reads as two different "you are
+  // here" signals at once. Same pattern as Support's full-screen chat.
+  useEffect(() => {
+    setHideTabBar(true);
+    return () => setHideTabBar(false);
+  }, [setHideTabBar]);
   const order = ORDERS.find((o) => o.id === params.orderId);
   const wasConfirmed = order?.installationStatus === 'confirmed';
   // "Reschedule" (from the order card) jumps straight to the picker; "View
@@ -30,6 +37,12 @@ export default function InstallationSchedule({ params }) {
   const [selectedDate, setSelectedDate] = useState(order?.installationSlot?.date ?? DATE_OPTIONS[0].value);
   const [selectedWindow, setSelectedWindow] = useState(order?.installationSlot?.window ?? TIME_WINDOWS[0]);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  // The journey shouldn't just dump the customer back on My Orders the
+  // instant they confirm — a booking earns its own acknowledgment, the same
+  // way Return/Replace's ExecutionStep confirms before "Back to Order
+  // Details." This renders in place of the picker; goBack() only fires once
+  // they actually tap Done.
+  const [bookingConfirmed, setBookingConfirmed] = useState(false);
 
   if (!order) {
     return (
@@ -86,7 +99,7 @@ export default function InstallationSchedule({ params }) {
     }
 
     setConfirmOpen(false);
-    goBack();
+    setBookingConfirmed(true);
   }
 
   return (
@@ -108,7 +121,45 @@ export default function InstallationSchedule({ params }) {
           </div>
         </div>
 
-        {!pickerOpen ? (
+        {bookingConfirmed ? (
+          <>
+            <div className="installation-schedule__success">
+              <span className="installation-schedule__success-icon">
+                <CheckIcon width="20" height="20" strokeWidth="3" />
+              </span>
+              <p className="installation-schedule__success-title">
+                {isReschedule ? 'New Slot Confirmed' : 'Appointment Confirmed'}
+              </p>
+              <p className="installation-schedule__success-body">
+                We'll see you on {selectedDate}, {selectedWindow}.
+              </p>
+            </div>
+
+            <div className="installation-schedule__current">
+              <div className="installation-schedule__current-row">
+                <CalendarIcon width="16" height="16" />
+                <span>{selectedDate}</span>
+              </div>
+              <div className="installation-schedule__current-row">
+                <ClockIcon width="14" height="14" />
+                <span>{selectedWindow}</span>
+              </div>
+              {order.technician && (
+                <div className="installation-schedule__current-row">
+                  <UserIcon width="16" height="16" />
+                  <span>{order.technician.name}</span>
+                </div>
+              )}
+            </div>
+
+            {order.technician && (
+              <a className="installation-schedule__success-call" href={`tel:${order.technician.phone}`}>
+                <PhoneIcon width="14" height="14" />
+                Call {order.technician.name}
+              </a>
+            )}
+          </>
+        ) : !pickerOpen ? (
           <>
             <div className="installation-schedule__current">
               <span className="installation-schedule__current-badge">Confirmed</span>
@@ -180,12 +231,20 @@ export default function InstallationSchedule({ params }) {
         )}
       </main>
 
-      {pickerOpen && (
+      {bookingConfirmed ? (
         <div className="installation-schedule__footer">
-          <button className="installation-schedule__confirm" disabled={isUnchanged} onClick={() => setConfirmOpen(true)}>
-            {isReschedule ? 'Confirm New Slot' : 'Confirm Appointment'}
+          <button className="installation-schedule__confirm" onClick={goBack}>
+            Done
           </button>
         </div>
+      ) : (
+        pickerOpen && (
+          <div className="installation-schedule__footer">
+            <button className="installation-schedule__confirm" disabled={isUnchanged} onClick={() => setConfirmOpen(true)}>
+              {isReschedule ? 'Confirm New Slot' : 'Confirm Appointment'}
+            </button>
+          </div>
+        )
       )}
 
       <ConfirmSheet

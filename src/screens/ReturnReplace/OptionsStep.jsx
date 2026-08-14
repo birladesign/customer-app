@@ -17,14 +17,7 @@ export default function OptionsStep({ order, reason, selectedLever, onSelectLeve
             className={`options-step__card${selectedLever === option.id ? ' options-step__card--selected' : ''}`}
             onClick={() => onSelectLever(option.id)}
           >
-            <div className="options-step__card-header">
-              <span className="options-step__card-label">{option.label}</span>
-              {option.tag && (
-                <span className={`options-step__tag options-step__tag--${option.id === 'return' ? 'last' : 'recommended'}`}>
-                  {option.tag}
-                </span>
-              )}
-            </div>
+            <span className="options-step__card-label">{option.label}</span>
             <p className="options-step__card-description">{option.description}</p>
             <div className="options-step__card-footer">
               <span className="options-step__charge">{option.chargeLabel}</span>

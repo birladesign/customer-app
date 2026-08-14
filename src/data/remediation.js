@@ -25,25 +25,25 @@ export function getRemediationOptions(order, reason) {
   switch (reason) {
     case 'Missing parts':
       return [
-        { id: 'sendPart', label: LEVER_LABELS.sendPart, tag: 'Recommended', chargeLabel: 'No charge', description: 'We ship the missing part directly — no need to send anything back.', needsApproval: false, ...base },
-        { id: 'return', label: LEVER_LABELS.return, tag: 'Last resort', chargeLabel: 'Refund to original payment', description: 'Return the full item for a refund instead.', needsApproval: true, ...base },
+        { id: 'sendPart', label: LEVER_LABELS.sendPart, chargeLabel: 'No charge', description: 'We ship the missing part directly — no need to send anything back.', needsApproval: false, ...base },
+        { id: 'return', label: LEVER_LABELS.return, chargeLabel: 'Refund to original payment', description: 'Return the full item for a refund instead.', needsApproval: true, ...base },
       ];
     case 'Damaged':
     case 'Defective / Not working':
       return [
-        { id: 'replace', label: LEVER_LABELS.replace, tag: 'Recommended', chargeLabel: 'No charge', description: 'We collect the damaged unit and ship a new one in the same visit.', needsApproval: false, ...base },
-        { id: 'return', label: LEVER_LABELS.return, tag: 'Last resort', chargeLabel: 'Refund to original payment', description: 'Return the item for a full refund.', needsApproval: true, ...base },
+        { id: 'replace', label: LEVER_LABELS.replace, chargeLabel: 'No charge', description: 'We collect the damaged unit and ship a new one in the same visit.', needsApproval: false, ...base },
+        { id: 'return', label: LEVER_LABELS.return, chargeLabel: 'Refund to original payment', description: 'Return the item for a full refund.', needsApproval: true, ...base },
       ];
     case 'Wrong size or model':
       return [
-        { id: 'replace', label: LEVER_LABELS.replace, tag: 'Recommended', chargeLabel: 'No charge', description: "We'll swap it for the right size or model.", needsApproval: false, ...base },
-        { id: 'return', label: LEVER_LABELS.return, tag: 'Last resort', chargeLabel: 'Refund to original payment', description: 'Return the item for a full refund.', needsApproval: true, ...base },
+        { id: 'replace', label: LEVER_LABELS.replace, chargeLabel: 'No charge', description: "We'll swap it for the right size or model.", needsApproval: false, ...base },
+        { id: 'return', label: LEVER_LABELS.return, chargeLabel: 'Refund to original payment', description: 'Return the item for a full refund.', needsApproval: true, ...base },
       ];
     case 'Discomfort / Not as expected':
     default:
       return [
-        { id: 'replace', label: LEVER_LABELS.replace, tag: 'Recommended', chargeLabel: 'No charge', description: 'Try a different variant of this product instead.', needsApproval: false, ...base },
-        { id: 'return', label: LEVER_LABELS.return, tag: 'Last resort', chargeLabel: 'Refund to original payment', description: 'Return the item for a full refund.', needsApproval: true, ...base },
+        { id: 'replace', label: LEVER_LABELS.replace, chargeLabel: 'No charge', description: 'Try a different variant of this product instead.', needsApproval: false, ...base },
+        { id: 'return', label: LEVER_LABELS.return, chargeLabel: 'Refund to original payment', description: 'Return the item for a full refund.', needsApproval: true, ...base },
       ];
   }
 }

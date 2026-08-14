@@ -800,31 +800,56 @@
 .order-details__cancel-reasons {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
   margin-bottom: var(--space-4);
 }
 
+.order-details__cancel-reasons > * + * {
+  border-top: 1px solid var(--color-border);
+}
+
 .order-details__cancel-reason {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
   text-align: left;
-  border: 1px solid rgba(26, 43, 88, 0.1);
-  background: var(--color-bg-primary);
-  border-radius: var(--radius-md);
+  border: none;
+  background: none;
   padding: var(--space-3) var(--space-4);
   font-family: inherit;
   font-size: var(--text-product-size);
   font-weight: 500;
   color: var(--color-text-primary);
-  transition: transform 0.1s ease-out, background 0.15s var(--ease-standard), color 0.15s var(--ease-standard);
+  transition: background 0.15s var(--ease-standard);
 }
 
 .order-details__cancel-reason:active {
-  transform: scale(0.98);
+  background: rgba(26, 43, 88, 0.04);
 }
 
-.order-details__cancel-reason--selected {
-  background: var(--color-navy-900);
+.order-details__cancel-reason-radio {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-full);
+  border: 2px solid var(--color-border);
+  position: relative;
+  transition: border-color 0.15s var(--ease-standard);
+}
+
+.order-details__cancel-reason--selected .order-details__cancel-reason-radio {
   border-color: var(--color-navy-900);
-  color: var(--color-text-inverse);
+}
+
+.order-details__cancel-reason--selected .order-details__cancel-reason-radio::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border-radius: var(--radius-full);
+  background: var(--color-navy-900);
 }
 
 .order-details__cancel-continue {
@@ -866,7 +891,6 @@
   .order-details__help-sheet-cancel:active,
   .order-details__technician-call:active,
   .order-details__technician-reschedule:active,
-  .order-details__cancel-reason:active,
   .order-details__cancel-continue:not(:disabled):active {
     transform: none;
   }

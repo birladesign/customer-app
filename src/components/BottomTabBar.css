@@ -1,33 +1,14 @@
 .bottom-tab-bar {
   position: absolute;
-  left: var(--space-4);
-  right: var(--space-4);
-  bottom: calc(var(--space-4) + env(safe-area-inset-bottom));
+  left: 0;
+  right: 0;
+  bottom: 0;
   z-index: 20;
   display: flex;
   align-items: center;
-  padding: var(--space-2);
-  border-radius: 28px;
-  /* Deliberately its own, more opaque material than the shared --glass-bg
-     topbar/sheet chip — this pill floats over both the pale app background
-     and white cards, so it needs enough weight to read as elevated against
-     either, not blend into whichever is currently behind it. */
-  background: rgba(255, 255, 255, 0.88);
-  backdrop-filter: blur(20px) saturate(160%);
-  -webkit-backdrop-filter: blur(20px) saturate(160%);
-  border: 1px solid var(--color-border);
-  box-shadow:
-    0 20px 40px -10px rgba(26, 43, 88, 0.32),
-    0 6px 14px rgba(26, 43, 88, 0.14),
-    inset 0 1px 0 rgba(255, 255, 255, 0.9);
-}
-
-@media (prefers-reduced-transparency: reduce) {
-  .bottom-tab-bar {
-    background: rgba(255, 255, 255, 0.98);
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-  }
+  padding: var(--space-2) 0 calc(var(--space-2) + env(safe-area-inset-bottom));
+  background: var(--color-bg-primary);
+  border-top: 1px solid var(--color-border);
 }
 
 .bottom-tab-bar__tab {
@@ -47,38 +28,19 @@
   font-weight: 600;
   letter-spacing: var(--text-label-tracking);
   color: var(--color-text-muted);
-  transition: color 0.15s var(--ease-standard), transform 0.1s ease-out;
-}
-
-.bottom-tab-bar__tab--active {
-  color: var(--color-navy-900);
-  font-weight: 700;
+  transition: transform 0.1s ease-out;
 }
 
 .bottom-tab-bar__tab:active {
   transform: scale(0.92);
 }
 
-/* Sized to the tab's own flex:1 column via inset, never to the label's
-   content width — this is what lets it slide between tabs of different
-   label widths without stretching/squashing along the way. */
-.bottom-tab-bar__indicator {
-  position: absolute;
-  inset: 2px 4px;
-  border-radius: 20px;
-  background: var(--color-accent-cyan-wash);
-  z-index: 0;
-}
-
 .bottom-tab-bar__icon {
-  position: relative;
-  z-index: 1;
   display: inline-flex;
 }
 
 .bottom-tab-bar__label {
   position: relative;
-  z-index: 1;
 }
 
 .bottom-tab-bar__badge {

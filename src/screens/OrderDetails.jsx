@@ -609,14 +609,17 @@ export default function OrderDetails({ params }) {
       <BottomSheet open={cancelStep === 'reason'} onClose={closeCancelFlow}>
         <h2 className="confirm-sheet__title">Why are you cancelling?</h2>
         <p className="order-details__cancel-prompt">This helps us route it correctly.</p>
-        <div className="order-details__cancel-reasons">
+        <div className="order-details__cancel-reasons" role="radiogroup">
           {CANCEL_REASONS.map((reason) => (
             <button
               key={reason}
               className={`order-details__cancel-reason${cancelReason === reason ? ' order-details__cancel-reason--selected' : ''}`}
               onClick={() => selectCancelReason(reason)}
+              role="radio"
+              aria-checked={cancelReason === reason}
             >
-              {reason}
+              <span className="order-details__cancel-reason-radio" aria-hidden="true" />
+              <span>{reason}</span>
             </button>
           ))}
         </div>

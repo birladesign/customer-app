@@ -48,9 +48,11 @@
   --space-4: 16px;
   --space-6: 24px;
 
-  /* Persistent bottom tab bar — reserved space for screen content padding;
-     the bar itself adds env(safe-area-inset-bottom) on top of this in CSS. */
-  --bottom-tab-bar-height: 72px;
+  /* Persistent bottom tab bar — reserved space for screen content padding.
+     Docked flush to the screen edge (not floating), so this is just the
+     bar's own visible height; its safe-area-inset-bottom padding is inside
+     that dock and doesn't add to what content needs to clear. */
+  --bottom-tab-bar-height: 68px;
 
   /* Type family */
   --font-family: 'Montserrat', sans-serif;

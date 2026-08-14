@@ -92,6 +92,78 @@
   color: var(--color-text-muted);
 }
 
+.edit-order__success {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  background: rgba(5, 150, 105, 0.08);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+}
+
+.edit-order__success-icon {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  background: var(--color-success);
+  color: var(--color-text-inverse);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.edit-order__success-title {
+  margin: 0;
+  font-size: var(--text-product-size);
+  font-weight: 700;
+  color: var(--color-text-heading);
+}
+
+.edit-order__success-body {
+  margin: 4px 0 0;
+  font-size: var(--text-caption-size);
+  color: var(--color-text-muted);
+}
+
+/* Called out on its own, separate from the qty/size/total summary below —
+   a changed delivery address is a bigger deal than a changed quantity, and
+   deserves to be seen rather than folded into a plain data row. */
+.edit-order__address-updated {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  background: var(--color-accent-cyan-wash);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+}
+
+.edit-order__address-updated-icon {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  background: var(--color-bg-primary);
+  color: var(--color-navy-900);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.edit-order__address-updated-label {
+  margin: 0;
+  font-size: var(--text-caption-size);
+  font-weight: 700;
+  color: var(--color-navy-900);
+  letter-spacing: var(--text-label-tracking);
+}
+
+.edit-order__address-updated-value {
+  margin: 2px 0 0;
+  font-size: var(--text-body-size);
+  color: var(--color-text-primary);
+}
+
 .edit-order__section {
   display: flex;
   flex-direction: column;
