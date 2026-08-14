@@ -142,17 +142,26 @@ export function classifyCase(laneKey, escalate) {
 }
 
 // Mocked dedup (PRD HO-03) — only checked against cases this flow itself
-// created.
-export function findOpenCaseForOrder(orderId, laneKey) {
+// created. Keyed on itemSku too (not just orderId+lane) so two different
+// damaged line items in the same multi-item order never look like
+// duplicates of each other — null itemSku (order-level, or a single-item
+// order) only matches another order-level case, never a specific item.
+export function findOpenCaseForOrder(orderId, laneKey, itemSku = null) {
   if (!orderId) return null;
-  return USER_CASES.find((c) => c.orderId === orderId && c.lane === laneKey && c.status === 'open') ?? null;
+  return (
+    USER_CASES.find(
+      (c) => c.orderId === orderId && c.lane === laneKey && (c.itemSku ?? null) === itemSku && c.status === 'open'
+    ) ?? null
+  );
 }
 
 // Called exactly once, from the chat's submit handler — never from render —
 // so the generated id is stable across re-renders. `messages` carries the
 // transcript so far, so a ticket opened later from "Active Conversations"
-// can replay exactly what was said.
-export function createCase({ lane, order, description, hasPhoto, escalate, messages }) {
+// can replay exactly what was said. `item` is the specific line item a
+// multi-item order's case is about (null for a single-item order, or when
+// the customer meant the whole order rather than one item in it).
+export function createCase({ lane, order, item, description, hasPhoto, escalate, messages }) {
   const laneMeta = CASE_LANES.find((l) => l.key === lane);
   const { classification, status, slaLabel } = classifyCase(lane, escalate);
   const record = {
@@ -161,6 +170,8 @@ export function createCase({ lane, order, description, hasPhoto, escalate, messa
     laneLabel: laneMeta?.label ?? 'Something Else',
     orderId: order?.id ?? null,
     orderProduct: order?.product ?? null,
+    itemSku: item?.sku ?? null,
+    itemProduct: item?.product ?? null,
     description,
     hasPhoto: Boolean(hasPhoto),
     escalated: Boolean(escalate),

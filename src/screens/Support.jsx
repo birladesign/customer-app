@@ -19,7 +19,6 @@ import './Support.css';
 
 const CHAT_INTRO = {
   chat: "We'll connect you with a specialist over chat. First, what's this about?",
-  call: "We'll arrange a callback. First, what's this about?",
 };
 
 // A cross-tab deep link (My Orders' "Need Help", Order Details' "Get Help")
@@ -154,12 +153,6 @@ export default function Support({ params = {} }) {
           >
             Chat with us
           </button>
-          <button
-            className="support__quick-action"
-            onClick={() => openChat({ escalate: true, presetOrder: null, staleOrderId: null, resumeCase: null, intro: CHAT_INTRO.call })}
-          >
-            Connect on call
-          </button>
         </div>
 
         {activeConversations.length > 0 && (
@@ -178,7 +171,7 @@ export default function Support({ params = {} }) {
                   <span className="support__conversation-text">
                     <span className="support__conversation-title">
                       {c.laneLabel}
-                      {c.orderProduct ? ` · ${c.orderProduct}` : ''}
+                      {(c.itemProduct ?? c.orderProduct) ? ` · ${c.itemProduct ?? c.orderProduct}` : ''}
                     </span>
                     <span className="support__conversation-date">{formatConversationDate(c.createdAt)}</span>
                   </span>

@@ -76,6 +76,25 @@ function ChatMessage({ msg }) {
         </div>
       )}
 
+      {msg.items && (
+        <div className="support-chat__orders">
+          {msg.allowSkipItem && (
+            <button className="support-chat__order-skip" onClick={() => msg.onSelectItem(null)}>
+              The whole order
+            </button>
+          )}
+          {msg.items.map((it) => (
+            <button key={it.sku} className="support-chat__order-row" onClick={() => msg.onSelectItem(it)}>
+              <img className="support-chat__order-thumb" src={it.image} alt="" />
+              <span className="support-chat__order-text">
+                <span className="support-chat__order-product">{it.product}</span>
+                <span className="support-chat__order-meta">{it.status?.label}</span>
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+
       {msg.chips && (
         <div className="support-chat__chips">
           {msg.chips.map((chip) => (
@@ -107,9 +126,10 @@ export default function SupportChat({ escalate, presetOrder, staleOrderId, resum
   const pendingPromptRef = useRef(null);
 
   const [messages, setMessages] = useState(() => resumeCase?.messages ?? []);
-  const [stage, setStage] = useState(resumeCase ? 'followup' : 'lane'); // lane | order | describe | confirm | followup
+  const [stage, setStage] = useState(resumeCase ? 'followup' : 'lane'); // lane | order | item | describe | confirm | followup
   const [lane, setLane] = useState(null);
   const [order, setOrder] = useState(null);
+  const [item, setItem] = useState(null);
   const [draft, setDraft] = useState('');
   const [photoFile, setPhotoFile] = useState(null);
   const fileInputRef = useRef(null);
@@ -121,7 +141,7 @@ export default function SupportChat({ escalate, presetOrder, staleOrderId, resum
   }
 
   function pushBot(partial) {
-    if (partial.chips || partial.orders) pendingPromptRef.current = partial;
+    if (partial.chips || partial.orders || partial.items) pendingPromptRef.current = partial;
     setMessages((m) => [...m, { id: nextId(), from: 'bot', ...partial }]);
   }
 
@@ -158,12 +178,29 @@ export default function SupportChat({ escalate, presetOrder, staleOrderId, resum
     if (caseIdRef.current) updateCaseMessages(caseIdRef.current, messages);
   }, [messages]);
 
+  // Item-level granularity only earns its keep where a case is almost
+  // always about one specific product, not the whole shipment: a damaged
+  // or missing item (logistics), a technician visit for one piece
+  // (installation), or a return/replace, which needs a real sku to hand
+  // off to the Return & Replace wizard. Payments/refunds and general
+  // questions stay order-level — asking "which item?" for a billing
+  // question would just be friction with no payoff.
+  const ITEM_SCOPED_LANES = new Set(['logistics', 'tech', 'returns']);
+
+  function needsItemStep(selectedLane, selectedOrder) {
+    return Boolean(selectedOrder?.items?.length > 1) && ITEM_SCOPED_LANES.has(selectedLane.key);
+  }
+
   function handleSelectLane(selectedLane) {
     pushUser({ text: selectedLane.label });
     setLane(selectedLane);
 
     if (selectedLane.redirectsTo) {
       if (presetOrder && isReturnEligible(presetOrder)) {
+        if (needsItemStep(selectedLane, presetOrder)) {
+          askForItem(selectedLane, presetOrder);
+          return;
+        }
         navigate(selectedLane.redirectsTo, { orderId: presetOrder.id });
         return;
       }
@@ -174,6 +211,10 @@ export default function SupportChat({ escalate, presetOrder, staleOrderId, resum
     if (presetOrder) {
       setOrder(presetOrder);
       pushBot({ text: `Got it — this is about ${presetOrder.product} (${presetOrder.id}).` });
+      if (needsItemStep(selectedLane, presetOrder)) {
+        askForItem(selectedLane, presetOrder);
+        return;
+      }
       askToDescribe(selectedLane, presetOrder);
       return;
     }
@@ -216,19 +257,48 @@ export default function SupportChat({ escalate, presetOrder, staleOrderId, resum
 
   function handleSelectOrder(selectedLane, selectedOrder) {
     pushUser({ text: selectedOrder ? `${selectedOrder.product} (${selectedOrder.id})` : 'Not related to an order' });
+    setOrder(selectedOrder);
+    if (selectedOrder) onOrderSelected?.(selectedOrder);
+
+    if (needsItemStep(selectedLane, selectedOrder)) {
+      askForItem(selectedLane, selectedOrder);
+      return;
+    }
 
     if (selectedLane.redirectsTo && selectedOrder) {
       navigate(selectedLane.redirectsTo, { orderId: selectedOrder.id });
       return;
     }
 
-    setOrder(selectedOrder);
-    if (selectedOrder) onOrderSelected?.(selectedOrder);
     askToDescribe(selectedLane, selectedOrder);
   }
 
-  function askToDescribe(selectedLane, selectedOrder) {
-    const existingCase = findOpenCaseForOrder(selectedOrder?.id, selectedLane.key);
+  function askForItem(selectedLane, selectedOrder) {
+    pushBot({
+      text: 'Which item is this about?',
+      items: selectedOrder.items,
+      // Returns must resolve to one real line item — the wizard it hands
+      // off to needs a sku — so "the whole order" isn't offered there.
+      allowSkipItem: !selectedLane.redirectsTo,
+      onSelectItem: (selectedItem) => handleSelectItem(selectedLane, selectedOrder, selectedItem),
+    });
+    setStage('item');
+  }
+
+  function handleSelectItem(selectedLane, selectedOrder, selectedItem) {
+    pushUser({ text: selectedItem ? selectedItem.product : 'The whole order' });
+    setItem(selectedItem);
+
+    if (selectedLane.redirectsTo) {
+      navigate(selectedLane.redirectsTo, { orderId: selectedOrder.id, sku: selectedItem?.sku });
+      return;
+    }
+
+    askToDescribe(selectedLane, selectedOrder, selectedItem);
+  }
+
+  function askToDescribe(selectedLane, selectedOrder, selectedItem = null) {
+    const existingCase = findOpenCaseForOrder(selectedOrder?.id, selectedLane.key, selectedItem?.sku ?? null);
     if (existingCase) {
       pushBot({
         text: `You already have an open case (${existingCase.id}) for this. You can view it, or keep going to file a new one.`,
@@ -249,8 +319,20 @@ export default function SupportChat({ escalate, presetOrder, staleOrderId, resum
     const pending = pendingPromptRef.current;
     pushBot({ text: "We hear you — let's sort this out first." });
     if (pending) {
-      const { text: pendingText, chips, orders, allowSkip, onSelectOrder, tone, moreCount, onViewAll } = pending;
-      pushBot({ text: pendingText, chips, orders, allowSkip, onSelectOrder, tone, moreCount, onViewAll });
+      const {
+        text: pendingText,
+        chips,
+        orders,
+        allowSkip,
+        onSelectOrder,
+        tone,
+        moreCount,
+        onViewAll,
+        items,
+        allowSkipItem,
+        onSelectItem,
+      } = pending;
+      pushBot({ text: pendingText, chips, orders, allowSkip, onSelectOrder, tone, moreCount, onViewAll, items, allowSkipItem, onSelectItem });
     }
   }
 
@@ -293,7 +375,7 @@ export default function SupportChat({ escalate, presetOrder, staleOrderId, resum
   }
 
   function handleSubmit() {
-    const record = createCase({ lane: lane.key, order, description: draft, hasPhoto: Boolean(photoFile), escalate, messages });
+    const record = createCase({ lane: lane.key, order, item, description: draft, hasPhoto: Boolean(photoFile), escalate, messages });
     caseIdRef.current = record.id;
     pushBot({
       text: 'Case filed.',
