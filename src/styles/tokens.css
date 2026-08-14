@@ -4,7 +4,9 @@
 :root {
   /* Color */
   --color-bg-primary: #ffffff;
-  --color-bg-app: #f3f6fb;
+  /* Was #f3f6fb — the blue channel led the other two by enough to read as a
+     tinted page rather than a neutral one. Same lightness, flatter cast. */
+  --color-bg-app: #f4f4f6;
   --color-navy-900: #1a2b58;
   --color-text-primary: #1a2b58;
   /* Dedicated to screen/nav-bar titles — deliberately not navy, since navy

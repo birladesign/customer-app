@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { ORDERS, splitProductSpec, getOrderStatus } from '../data/orders.js';
+import { ORDERS, splitProductSpec, getOrderStatus, getShipmentInfo } from '../data/orders.js';
 import { getOrderIntents, getEditEligibility } from '../data/intents.js';
 import { CURRENT_USER } from '../data/profile.js';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
@@ -27,6 +27,7 @@ import {
   PhoneIcon,
   UserIcon,
   EditIcon,
+  TruckIcon,
 } from '../components/icons.jsx';
 import './OrderDetails.css';
 
@@ -75,6 +76,9 @@ export default function OrderDetails({ params }) {
   // that item's "Track This Item" link. Kept separate from trackingOpen so
   // the sheet's exit animation doesn't lose its content mid-close.
   const [trackingTarget, setTrackingTarget] = useState(null);
+  // Separate from `copied` (the Order ID's own) so copying one doesn't
+  // flash the checkmark on the other.
+  const [awbCopied, setAwbCopied] = useState(false);
   // Single-open accordion for line items, mirroring a native list disclosure —
   // expanding one item retracts whichever was open before.
   const [openItemSku, setOpenItemSku] = useState(null);
@@ -191,9 +195,27 @@ export default function OrderDetails({ params }) {
     setTimeout(() => setCopied(false), 1200);
   }
 
-  function openTracking(title, timeline) {
-    setTrackingTarget({ title, steps: timeline.steps, currentIndex: timeline.currentIndex });
+  // shipmentKey is the order id for the order's own aggregate timeline, or
+  // a line item's `sku` for that item's own shipment — getShipmentInfo
+  // resolves either the same way (see data/orders.js).
+  function openTracking(title, timeline, shipmentKey) {
+    setTrackingTarget({
+      title,
+      steps: timeline.steps,
+      currentIndex: timeline.currentIndex,
+      shipment: getShipmentInfo(shipmentKey),
+    });
     setTrackingOpen(true);
+  }
+
+  async function handleCopyAwb(awb) {
+    try {
+      await navigator.clipboard.writeText(awb);
+    } catch {
+      // Clipboard API unavailable — the checkmark still confirms the tap.
+    }
+    setAwbCopied(true);
+    setTimeout(() => setAwbCopied(false), 1200);
   }
 
   function toggleItem(sku) {
@@ -236,7 +258,7 @@ export default function OrderDetails({ params }) {
           <>
             <PrimaryItem
               item={primaryItem}
-              onTrack={(item) => openTracking(item.product, item.timeline)}
+              onTrack={(item) => openTracking(item.product, item.timeline, item.sku)}
               onReturn={(item) => navigate('returnReplace', { orderId: order.id, sku: item.sku })}
               onRate={handleRateItem}
             />
@@ -249,7 +271,7 @@ export default function OrderDetails({ params }) {
                   items={otherItems}
                   openSku={openItemSku}
                   onToggle={toggleItem}
-                  onTrack={(item) => openTracking(item.product, item.timeline)}
+                  onTrack={(item) => openTracking(item.product, item.timeline, item.sku)}
                   onReturn={(item) => navigate('returnReplace', { orderId: order.id, sku: item.sku })}
                   onRate={handleRateItem}
                 />
@@ -258,12 +280,12 @@ export default function OrderDetails({ params }) {
           </>
         ) : null}
 
-        {/* One card for everything "about this order right now" — product,
-            id/status, tracking, technician, warranty, rating — instead of a
-            separate box per fact. Each direct child gets an automatic
-            hairline divider from the next (see the `> * + *` rule in CSS),
-            so which sections exist can vary freely without any manual
-            divider bookkeeping here. */}
+        {/* One card for everything about this order — product, id/status,
+            tracking, technician, warranty, rating, billing, and how to get
+            help — instead of a separate box per fact. Each direct child
+            gets an automatic hairline divider from the next (see the
+            `> * + *` rule in CSS), so which sections exist can vary freely
+            without any manual divider bookkeeping here. */}
         <div className="order-details__summary-card">
           {!order.items && (
             <div className="order-details__product-row">
@@ -282,6 +304,14 @@ export default function OrderDetails({ params }) {
                 {copied ? <CheckIcon width="13" height="13" strokeWidth="3" /> : <CopyIcon width="13" height="13" />}
                 <span>{order.id}</span>
               </button>
+              {/* The one-line plain-language summary ("Arriving today by 6
+                  PM", "Delivered on 15 May 2026"...) every order already
+                  carries for its My Orders card — surfaced here too instead
+                  of making someone piece it together from the timeline
+                  steps below. Kept inside this column (not a sibling of the
+                  row) so it reads as part of the same status line, not a
+                  new divided section. */}
+              {order.caption && <p className="order-details__caption">{order.caption}</p>}
             </div>
             <span className="order-details__status-pill" style={{ background: pill.bg, color: pill.color }}>
               {status.label}
@@ -291,7 +321,10 @@ export default function OrderDetails({ params }) {
           {order.timeline && (
             <div className="order-details__timeline-block">
               <Timeline steps={order.timeline.steps} currentIndex={order.timeline.currentIndex} />
-              <button className="order-details__tracking-link" onClick={() => openTracking('Tracking Updates', order.timeline)}>
+              <button
+                className="order-details__tracking-link"
+                onClick={() => openTracking('Tracking Updates', order.timeline, order.id)}
+              >
                 <span className="order-details__tracking-link-icon">
                   <FileTextIcon width="14" height="14" />
                 </span>
@@ -360,21 +393,25 @@ export default function OrderDetails({ params }) {
               />
             </div>
           )}
-        </div>
 
-        <div className="order-details__disclosure-wrap">
-          <button
-            className="order-details__disclosure"
-            onClick={() => setDetailsOpen((v) => !v)}
-            aria-expanded={detailsOpen}
-          >
-            <span>Bill Summary</span>
-            <ChevronRightIcon
-              className={`order-details__disclosure-chevron${detailsOpen ? ' order-details__disclosure-chevron--open' : ''}`}
-            />
-          </button>
-          <AnimatePresence initial={false}>
-            {detailsOpen && (
+          {/* Bill Summary and the help toggle used to be their own separate
+              cards below this one — folded in here instead, so "everything
+              about this order" (status, billing, and how to get help with
+              it) reads as one card with dividers, not three stacked boxes
+              repeating the same border/shadow. */}
+          <div className="order-details__disclosure-wrap">
+            <button
+              className="order-details__disclosure"
+              onClick={() => setDetailsOpen((v) => !v)}
+              aria-expanded={detailsOpen}
+            >
+              <span>Bill Summary</span>
+              <ChevronRightIcon
+                className={`order-details__disclosure-chevron${detailsOpen ? ' order-details__disclosure-chevron--open' : ''}`}
+              />
+            </button>
+            <AnimatePresence initial={false}>
+              {detailsOpen && (
               <motion.div
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: 'auto', opacity: 1 }}
@@ -448,6 +485,9 @@ export default function OrderDetails({ params }) {
                     <div className="order-details__shipping-block">
                       <div className="order-details__shipping-row">
                         <p className="order-details__shipping-label">Delivery Address</p>
+                        <p className="order-details__shipping-name">
+                          {CURRENT_USER.firstName} {CURRENT_USER.lastName}
+                        </p>
                         <p className="order-details__shipping-value">{order.address}</p>
                       </div>
                       <div className="order-details__shipping-divider" />
@@ -472,11 +512,10 @@ export default function OrderDetails({ params }) {
 
                 </div>
               </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+              )}
+            </AnimatePresence>
+          </div>
 
-        <div className="order-details__help-wrap">
           <button className="order-details__help-toggle" onClick={() => setHelpSectionOpen(true)}>
             <span>Do you need help with the existing order?</span>
             <ChevronRightIcon className="order-details__help-chevron" />
@@ -605,6 +644,27 @@ export default function OrderDetails({ params }) {
       {trackingTarget && (
         <BottomSheet open={trackingOpen} onClose={() => setTrackingOpen(false)}>
           <h2 className="order-details__tracking-sheet-title">{trackingTarget.title}</h2>
+          {/* Only exists once a courier has actually picked this up — same
+              "no AWB before dispatch" reasoning as the real thing. */}
+          {trackingTarget.shipment && (
+            <div className="order-details__tracking-sheet-shipment">
+              <span className="order-details__tracking-sheet-shipment-icon">
+                <TruckIcon width="16" height="16" />
+              </span>
+              <div className="order-details__tracking-sheet-shipment-text">
+                <span className="order-details__tracking-sheet-shipment-courier">
+                  Shipped via {trackingTarget.shipment.courier}
+                </span>
+                <button
+                  className="order-details__tracking-sheet-shipment-awb"
+                  onClick={() => handleCopyAwb(trackingTarget.shipment.awb)}
+                >
+                  {awbCopied ? <CheckIcon width="12" height="12" strokeWidth="3" /> : <CopyIcon width="12" height="12" />}
+                  <span>AWB {trackingTarget.shipment.awb}</span>
+                </button>
+              </div>
+            </div>
+          )}
           <div className="order-details__tracking-sheet-body">
             <DetailedTracking steps={trackingTarget.steps} currentIndex={trackingTarget.currentIndex} />
           </div>

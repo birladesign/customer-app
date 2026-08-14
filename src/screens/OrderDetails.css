@@ -154,6 +154,12 @@
   white-space: nowrap;
 }
 
+.order-details__caption {
+  margin: 4px 0 0;
+  font-size: var(--text-body-size);
+  color: var(--color-text-secondary);
+}
+
 .order-details__timeline-block {
   display: flex;
   flex-direction: column;
@@ -297,15 +303,63 @@
   color: var(--color-text-heading);
 }
 
+.order-details__tracking-sheet-shipment {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+  padding: var(--space-3);
+  background: var(--color-accent-cyan-wash);
+  border-radius: var(--radius-md);
+}
+
+.order-details__tracking-sheet-shipment-icon {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg-primary);
+  color: var(--color-navy-900);
+}
+
+.order-details__tracking-sheet-shipment-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.order-details__tracking-sheet-shipment-courier {
+  font-size: var(--text-body-size);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.order-details__tracking-sheet-shipment-awb {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: none;
+  background: none;
+  padding: 0;
+  font-family: inherit;
+  font-size: var(--text-caption-size);
+  color: var(--color-text-secondary);
+  transition: transform 0.1s ease-out;
+}
+
+.order-details__tracking-sheet-shipment-awb:active {
+  transform: scale(0.96);
+}
+
 .order-details__tracking-sheet-body {
   max-height: 60vh;
   overflow-y: auto;
 }
 
 .order-details__disclosure-wrap {
-  background: var(--color-bg-primary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
   overflow: hidden;
 }
 
@@ -316,7 +370,7 @@
   justify-content: space-between;
   border: none;
   background: none;
-  padding: var(--space-4);
+  padding: var(--space-2) 0;
   font-family: inherit;
   font-size: var(--text-heading-size);
   font-weight: 600;
@@ -338,7 +392,7 @@
 }
 
 .order-details__disclosure-body {
-  padding: 0 var(--space-4) var(--space-4);
+  padding: var(--space-4) 0 0;
   display: flex;
   flex-direction: column;
 }
@@ -519,6 +573,13 @@
   letter-spacing: var(--text-label-tracking);
 }
 
+.order-details__shipping-name {
+  margin: 0;
+  font-size: var(--text-body-size);
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
 .order-details__shipping-value {
   margin: 0;
   font-size: var(--text-body-size);
@@ -634,17 +695,10 @@
   font-weight: 600;
 }
 
-/* Mirrors the Bill Summary disclosure — a plain card, not a highlighted
-   one, so this doesn't outrank the rest of the page. Edit and Cancel are
-   both rare, one-off requests, and even here they stay a tap away (behind
-   the arrow) rather than being named upfront or sitting open by default. */
-.order-details__help-wrap {
-  background: var(--color-bg-primary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-}
-
+/* Folded into the summary card as its last row (see OrderDetails.jsx) —
+   Edit and Cancel are both rare, one-off requests, and even here they stay
+   a tap away (behind the arrow) rather than being named upfront or sitting
+   open by default. */
 .order-details__help-toggle {
   width: 100%;
   display: flex;
@@ -652,7 +706,7 @@
   justify-content: space-between;
   border: none;
   background: none;
-  padding: var(--space-4);
+  padding: var(--space-2) 0;
   font-family: inherit;
   font-size: var(--text-heading-size);
   font-weight: 600;
