@@ -1,5 +1,6 @@
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { SPRING_GESTURE } from '../motion.js';
+import { CloseIcon } from './icons.jsx';
 import './BottomSheet.css';
 
 // Shared overlay/drag/spring shell for every bottom sheet in the app
@@ -37,6 +38,9 @@ export default function BottomSheet({ open, onClose, children }) {
             exit={{ y: '100%' }}
             transition={reduceMotion ? { duration: 0.2 } : SPRING_GESTURE}
           >
+            <button className="bottom-sheet__close" onClick={onClose} aria-label="Close">
+              <CloseIcon width="14" height="14" />
+            </button>
             <div className="bottom-sheet__grabber" aria-hidden="true" />
             {children}
           </motion.div>

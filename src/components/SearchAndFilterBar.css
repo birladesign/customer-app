@@ -1,7 +1,7 @@
 .search-bar {
   display: flex;
   gap: var(--space-2);
-  padding: var(--space-3) var(--space-4);
+  padding: var(--space-2) var(--space-4);
 }
 
 .search-bar__input-wrap {
@@ -23,7 +23,7 @@
   flex: 1;
   border: none;
   background: none;
-  padding: var(--space-3) 0;
+  padding: var(--space-2) 0;
   font-size: var(--text-product-size);
   letter-spacing: var(--text-product-tracking);
   font-family: inherit;

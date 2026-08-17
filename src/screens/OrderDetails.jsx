@@ -126,6 +126,10 @@ export default function OrderDetails({ params }) {
   const { name: productName, spec } = splitProductSpec(scopedItem ? scopedItem.product : order.product);
   const status = scopedItem ? scopedItem.status : getOrderStatus(order);
   const pill = STATUS_PILL[status.dot] ?? STATUS_PILL.muted;
+  // A closed order has nothing left to edit — unlike the "locked once it
+  // ships" case, which still explains itself, this one doesn't even offer
+  // the option disabled-with-reason.
+  const isClosedOrder = order.section === 'closed';
   const intents = getOrderIntents(order);
   const returnIntent = intents.find((i) => i.key === 'returnReplace');
   const warrantyIntent = intents.find((i) => i.key === 'warranty');
@@ -364,25 +368,6 @@ export default function OrderDetails({ params }) {
             )}
           </>
         ) : null}
-
-        {shipmentSiblings.length > 0 && (
-          <div className="order-details__other-items">
-            <p className="order-details__other-items-heading">
-              Other Items in This Shipment ({shipmentSiblings.length})
-            </p>
-            <LineItems
-              items={shipmentSiblings.map((sibling) => ({
-                sku: sibling.id,
-                product: sibling.product,
-                image: sibling.image,
-                qty: sibling.qty,
-                status: sibling.status,
-                price: sibling.amount,
-              }))}
-              onMoreDetails={(item) => navigate('orderDetails', { orderId: item.sku })}
-            />
-          </div>
-        )}
 
         {/* One card for everything about this order — product, id/status,
             tracking, technician, warranty, rating, billing, and how to get
@@ -644,6 +629,25 @@ export default function OrderDetails({ params }) {
           </div>
         </div>
 
+        {shipmentSiblings.length > 0 && (
+          <div className="order-details__other-items">
+            <p className="order-details__other-items-heading">
+              Other Items in This Shipment ({shipmentSiblings.length})
+            </p>
+            <LineItems
+              items={shipmentSiblings.map((sibling) => ({
+                sku: sibling.id,
+                product: sibling.product,
+                image: sibling.image,
+                qty: sibling.qty,
+                status: sibling.status,
+                price: sibling.amount,
+              }))}
+              onMoreDetails={(item) => navigate('orderDetails', { orderId: item.sku })}
+            />
+          </div>
+        )}
+
         <button className="order-details__help-toggle" onClick={() => setHelpSectionOpen(true)}>
           <span>Do you need help with the existing order?</span>
           <ChevronRightIcon className="order-details__help-chevron" />
@@ -653,29 +657,33 @@ export default function OrderDetails({ params }) {
       <BottomSheet open={helpSectionOpen} onClose={() => setHelpSectionOpen(false)}>
         <h2 className="confirm-sheet__title">Need help with this order?</h2>
         <div className="order-details__help-actions">
-          <button
-            className="order-details__help-action"
-            disabled={!editIntent.enabled}
-            onClick={
-              editIntent.enabled
-                ? () => {
-                    setHelpSectionOpen(false);
-                    navigate(
-                      'editOrder',
-                      scopedItem
-                        ? { orderId: order.id, sku: scopedItem.sku }
-                        : order.items
-                        ? { orderId: order.id, sku: primaryItem.sku }
-                        : { orderId: order.id }
-                    );
-                  }
-                : undefined
-            }
-          >
-            <EditIcon width="15" height="15" />
-            <span>Edit Order</span>
-          </button>
-          {!editIntent.enabled && <p className="order-details__help-action-reason">{editIntent.reason}</p>}
+          {!isClosedOrder && (
+            <>
+              <button
+                className="order-details__help-action"
+                disabled={!editIntent.enabled}
+                onClick={
+                  editIntent.enabled
+                    ? () => {
+                        setHelpSectionOpen(false);
+                        navigate(
+                          'editOrder',
+                          scopedItem
+                            ? { orderId: order.id, sku: scopedItem.sku }
+                            : order.items
+                            ? { orderId: order.id, sku: primaryItem.sku }
+                            : { orderId: order.id }
+                        );
+                      }
+                    : undefined
+                }
+              >
+                <EditIcon width="15" height="15" />
+                <span>Edit Order</span>
+              </button>
+              {!editIntent.enabled && <p className="order-details__help-action-reason">{editIntent.reason}</p>}
+            </>
+          )}
 
           {(!order.items || scopedItem) && (
             <>

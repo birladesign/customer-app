@@ -13,6 +13,7 @@
    needs to be most readable. Glass is for thin chrome (topbars, the tab
    bar); a sheet this full of content earns an opaque, legible ground. */
 .bottom-sheet {
+  position: relative;
   background: var(--color-bg-primary);
   width: 100%;
   max-width: 430px;
@@ -20,6 +21,29 @@
   padding: var(--space-2) var(--space-4) var(--space-6);
   box-shadow: 0 -8px 30px rgba(26, 43, 88, 0.18);
   touch-action: none;
+}
+
+/* Floats half over the sheet's top edge, centered — a persistent, always-
+   reachable close affordance independent of the drag-to-dismiss gesture. */
+.bottom-sheet__close {
+  position: absolute;
+  top: -44px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--radius-full);
+  background: rgba(17, 24, 39, 0.5);
+  color: var(--color-text-inverse);
+  transition: transform 0.1s ease-out;
+}
+
+.bottom-sheet__close:active {
+  transform: translateX(-50%) scale(0.92);
 }
 
 .bottom-sheet__grabber {
