@@ -518,7 +518,7 @@
   transform: scale(0.97);
 }
 
-.order-details__get-invoice:disabled {
+.order-details__get-invoice--disabled {
   color: var(--color-disabled-text);
 }
 
@@ -526,7 +526,20 @@
   margin: 0;
   text-align: center;
   font-size: var(--text-caption-size);
-  color: var(--color-text-muted);
+  color: var(--color-action-red);
+  animation: order-details-invoice-reason-in 0.15s var(--ease-standard);
+}
+
+@keyframes order-details-invoice-reason-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .order-details__get-invoice-reason {
+    animation: none;
+  }
 }
 
 .order-details__refund-block {

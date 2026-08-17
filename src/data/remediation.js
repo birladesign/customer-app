@@ -26,7 +26,6 @@ export function getRemediationOptions(order, reason) {
     case 'Missing parts':
       return [
         { id: 'sendPart', label: LEVER_LABELS.sendPart, chargeLabel: 'No charge', description: 'We ship the missing part directly — no need to send anything back.', needsApproval: false, ...base },
-        { id: 'return', label: LEVER_LABELS.return, chargeLabel: 'Refund to original payment', description: 'Return the full item for a refund instead.', needsApproval: true, ...base },
       ];
     case 'Damaged':
     case 'Defective / Not working':

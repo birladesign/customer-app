@@ -90,6 +90,10 @@ export default function OrderDetails({ params }) {
   // same local-state-over-mutation reasoning as itemRatings above. Starts
   // unset and falls back to order.rating until the customer actually rates.
   const [orderRatingOverride, setOrderRatingOverride] = useState(null);
+  // The invoice-not-ready reason used to sit permanently under the button —
+  // now it only surfaces as a brief inline notice on an actual tap, same
+  // flash-then-revert timing as the copy checkmarks elsewhere on this page.
+  const [invoiceNotice, setInvoiceNotice] = useState(false);
   const reduceMotion = useReducedMotion();
   const order = ORDERS.find((o) => o.id === params.orderId);
   // Scopes the whole page to one line item within a multi-item order —
@@ -225,6 +229,15 @@ export default function OrderDetails({ params }) {
     }
     setAwbCopied(true);
     setTimeout(() => setAwbCopied(false), 1200);
+  }
+
+  // Not disabled at the DOM level — a real <button disabled> can't be tapped
+  // at all, which is exactly what stops it from ever explaining itself. This
+  // stays tappable so an early attempt gets a reason instead of just nothing.
+  function handleInvoiceClick() {
+    if (isFullyDelivered) return;
+    setInvoiceNotice(true);
+    setTimeout(() => setInvoiceNotice(false), 2000);
   }
 
   function toggleItem(sku) {
@@ -474,12 +487,18 @@ export default function OrderDetails({ params }) {
                       <span>Payment Method</span>
                       <span>{order.payment.method} · {order.payment.status}</span>
                     </div>
-                    <button className="order-details__get-invoice" disabled={!isFullyDelivered}>
+                    <button
+                      className={`order-details__get-invoice${!isFullyDelivered ? ' order-details__get-invoice--disabled' : ''}`}
+                      aria-disabled={!isFullyDelivered}
+                      onClick={handleInvoiceClick}
+                    >
                       <DownloadIcon width="14" height="14" />
                       Download Invoice
                     </button>
-                    {!isFullyDelivered && (
-                      <p className="order-details__get-invoice-reason">Available once the order is delivered</p>
+                    {invoiceNotice && (
+                      <p className="order-details__get-invoice-reason" role="alert">
+                        Available once the order is delivered
+                      </p>
                     )}
                   </div>
 
