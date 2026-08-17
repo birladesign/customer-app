@@ -74,7 +74,7 @@ function CopyOrderId({ id }) {
 export default function OrderCard({ order }) {
   const { banner, badge, product, caption, savings, refundNote, disabledReason, actions } = order;
   const status = getOrderStatus(order);
-  const { navigate } = useNavigation();
+  const { navigate, switchTab } = useNavigation();
   const BannerIcon = banner ? BANNER_ICON[banner.icon] : null;
   const { name: productName, spec } = splitProductSpec(product);
   const visibleActions = actions.filter((a) => !a.label.startsWith('Track'));
@@ -83,15 +83,18 @@ export default function OrderCard({ order }) {
   // if the customer taps through after rating from the list.
   const [rating, setRating] = useState(order.rating);
 
-  // Installation is the one order-card action with a real destination so
-  // far — everything else on this card stays present-but-inert until it has
-  // one too, same discipline as the rest of this prototype.
+  // Only actions with a real destination get a handler here — everything
+  // else on this card stays present-but-inert until it has one too, same
+  // discipline as the rest of this prototype.
   function getActionHandler(label) {
     if (label === 'Schedule Installation' || label === 'Reschedule') {
       return () => navigate('installationSchedule', { orderId: order.id, reschedule: label === 'Reschedule' });
     }
     if (label === 'View Slot') {
       return () => navigate('installationSchedule', { orderId: order.id });
+    }
+    if (label === 'Report an Issue') {
+      return () => switchTab('support', { openChat: true, orderId: order.id });
     }
     return undefined;
   }

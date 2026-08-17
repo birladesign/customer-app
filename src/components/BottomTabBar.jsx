@@ -1,5 +1,4 @@
 import { useNavigation } from '../navigation/NavigationContext.jsx';
-import { ORDERS } from '../data/orders.js';
 import { HouseIcon, HouseFilledIcon, PackageIcon, PackageFilledIcon, HeadsetIcon, HeadsetFilledIcon } from './icons.jsx';
 import './BottomTabBar.css';
 
@@ -12,17 +11,13 @@ const TABS = [
 // A fixed, full-width bar docked to the bottom edge — not a floating pill.
 // The active tab has exactly one signal: its icon swaps to the filled
 // variant. No sliding capsule, no label recoloring, no scale bump — the
-// icon fill is the whole story. My Orders also carries a small dot when
-// something in there needs the customer's attention, the same badge
-// language as Home's bell.
+// icon fill is the whole story.
 //
 // Present on every screen, pushed or not — only hidden while there's no
 // tab context at all (login/onboarding).
 export default function BottomTabBar() {
   const { activeTab, switchTab, hideTabBar } = useNavigation();
   if (!activeTab || hideTabBar) return null;
-
-  const hasOrdersNeedingAttention = ORDERS.some((o) => o.section === 'needsAttention');
 
   return (
     <nav className="bottom-tab-bar">
@@ -38,9 +33,6 @@ export default function BottomTabBar() {
           >
             <span className="bottom-tab-bar__icon">
               <TabIcon width="20" height="20" strokeWidth={2} />
-              {key === 'orders' && hasOrdersNeedingAttention && (
-                <span className="bottom-tab-bar__badge" aria-hidden="true" />
-              )}
             </span>
             <span className="bottom-tab-bar__label">{label}</span>
           </button>

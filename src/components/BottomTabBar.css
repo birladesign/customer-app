@@ -12,7 +12,6 @@
 }
 
 .bottom-tab-bar__tab {
-  position: relative;
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -37,21 +36,6 @@
 
 .bottom-tab-bar__icon {
   display: inline-flex;
-}
-
-.bottom-tab-bar__label {
-  position: relative;
-}
-
-.bottom-tab-bar__badge {
-  position: absolute;
-  top: -2px;
-  right: -3px;
-  width: 7px;
-  height: 7px;
-  border-radius: var(--radius-full);
-  background: var(--color-action-red);
-  border: 1.5px solid var(--color-bg-primary);
 }
 
 @media (prefers-reduced-motion: reduce) {

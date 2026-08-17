@@ -84,7 +84,21 @@ const POST_BOOKING_COPY = {
   },
 };
 
-export function getPostBookingUpdate(leverId) {
+// A needsApproval lever (currently only Return for Refund) hasn't actually
+// started moving yet at this point — a human reviews it next, so jumping
+// straight to the execution tracker's first step (e.g. "Pickup Scheduled")
+// would claim progress that hasn't happened. This is its own terminal state
+// instead, matching ApprovalPendingStep's own "Request Sent" copy.
+const APPROVAL_PENDING_UPDATE = {
+  label: 'Return Request Created',
+  trackerSteps: ['Request Created', 'Under Review', 'Approved'],
+  description: "We've sent your request for review — we'll notify you once it's approved.",
+  actions: [{ label: 'Track Return', variant: 'secondary' }],
+  overrideReason: 'A return request is already awaiting approval for this order',
+};
+
+export function getPostBookingUpdate(leverId, needsApproval) {
+  if (needsApproval) return APPROVAL_PENDING_UPDATE;
   const stepLabels = getExecutionSteps(leverId).steps.map((s) => s.label);
   const label = leverId === 'return' ? `Return ${stepLabels[0]}` : stepLabels[0];
   return { label, trackerSteps: stepLabels, ...POST_BOOKING_COPY[leverId] };

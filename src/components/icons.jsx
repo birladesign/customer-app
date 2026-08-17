@@ -228,18 +228,18 @@ export function TruckIcon(props) {
 
 export function PackageIcon(props) {
   return (
-    <svg width="15" height="15" viewBox="0 0 24 24" strokeWidth="2" {...base} {...props}>
-      <path d="M21 8 12 3 3 8l9 5 9-5Z" />
-      <path d="M3 8v8l9 5 9-5V8" />
-      <line x1="12" y1="13" x2="12" y2="21" />
+    <svg width="20" height="20" viewBox="0 0 24 24" strokeWidth="2" {...base} {...props}>
+      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" />
+      <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+      <line x1="12" y1="22.08" x2="12" y2="12" />
     </svg>
   );
 }
 
 export function PackageFilledIcon(props) {
   return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" stroke="none" {...props}>
-      <path d="M12 3 21 8v8l-9 5-9-5V8l9-5Z" />
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none" {...props}>
+      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" />
     </svg>
   );
 }

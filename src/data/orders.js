@@ -439,12 +439,7 @@ export const ORDERS = [
     technician: { name: 'Rajesh Kumar', phone: '+919876543210', phoneDisplay: '+91 98765 43210' },
     installationStatus: 'confirmed',
     installationSlot: { date: '06 Aug 2026', window: '10 AM – 12 PM' },
-    // Viewing the booked slot is a passive look, not a decision — same
-    // reasoning as the Track buttons, so no dark CTA here either.
-    actions: [
-      { label: 'View Slot', variant: 'secondary' },
-      { label: 'Reschedule', variant: 'secondary' },
-    ],
+    actions: [],
     amount: 44999,
     address: DEMO_ADDRESS,
     payment: { method: 'EMI', status: 'Paid' },

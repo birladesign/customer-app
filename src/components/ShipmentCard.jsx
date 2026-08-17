@@ -79,7 +79,6 @@ export default function ShipmentCard({ orders }) {
               <span className="order-card__status-label" style={{ color: DOT_COLOR[status.dot] }}>
                 {status.label}
               </span>
-              <span className="order-card__pill-badge">{orders.length} units</span>
             </div>
             <p className="order-card__product">{productName}</p>
             {spec && (

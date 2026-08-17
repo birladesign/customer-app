@@ -81,7 +81,7 @@ export default function ReturnReplaceFlow({ params }) {
   // OrderDetails' handleCancelOrder/handlePutOnHold, so My Orders and Order
   // Details both reflect the booked journey the moment we navigate back.
   function handleJourneyComplete() {
-    const update = getPostBookingUpdate(selectedLever);
+    const update = getPostBookingUpdate(selectedLever, needsApproval);
     const newStatus = { dot: 'blue', label: update.label };
 
     if (item) {
