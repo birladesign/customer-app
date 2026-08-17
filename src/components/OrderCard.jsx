@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { splitProductSpec, getOrderStatus } from '../data/orders.js';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
-import { CopyIcon, CheckIcon, ChevronRightIcon, ZapIcon, AlertTriangleIcon, WalletIcon, CheckCircleIcon } from './icons.jsx';
+import { CopyIcon, CheckIcon, ChevronRightIcon, WalletIcon, CheckCircleIcon } from './icons.jsx';
 import StarRating from './StarRating.jsx';
 import './OrderCard.css';
 
@@ -10,11 +10,6 @@ const DOT_COLOR = {
   blue: 'var(--color-info-blue)',
   green: 'var(--color-success)',
   muted: 'var(--color-text-muted)',
-};
-
-const BANNER_ICON = {
-  zap: ZapIcon,
-  alert: AlertTriangleIcon,
 };
 
 function ActionButton({ label, variant, onClick }) {
@@ -75,7 +70,6 @@ export default function OrderCard({ order }) {
   const { banner, badge, product, caption, savings, refundNote, disabledReason, actions } = order;
   const status = getOrderStatus(order);
   const { navigate, switchTab } = useNavigation();
-  const BannerIcon = banner ? BANNER_ICON[banner.icon] : null;
   const { name: productName, spec } = splitProductSpec(product);
   const visibleActions = actions.filter((a) => !a.label.startsWith('Track'));
   // No backend in this prototype — mutate the shared order object in place
@@ -125,13 +119,6 @@ export default function OrderCard({ order }) {
         }
       }}
     >
-      {banner && (
-        <div className="order-card__banner">
-          {BannerIcon && <BannerIcon className="order-card__banner-icon" />}
-          {banner.text}
-        </div>
-      )}
-
       <div className="order-card__body">
         <div className="order-card__header">
           <CopyOrderId id={order.id} />
@@ -141,16 +128,12 @@ export default function OrderCard({ order }) {
         <div className="order-card__main">
           <img className="order-card__image" src={order.image} alt={product} />
           <div className="order-card__details">
-            {(!banner || badge) && (
-              <div className="order-card__status-row">
-                {!banner && (
-                  <span className="order-card__status-label" style={{ color: DOT_COLOR[status.dot] }}>
-                    {status.label}
-                  </span>
-                )}
-                {badge && <span className="order-card__pill-badge">{badge}</span>}
-              </div>
-            )}
+            <div className="order-card__status-row">
+              <span className="order-card__status-label" style={{ color: DOT_COLOR[status.dot] }}>
+                {status.label}
+              </span>
+              {badge && <span className="order-card__pill-badge">{badge}</span>}
+            </div>
             <p className="order-card__product">{productName}</p>
             {(order.qty || spec) && (
               <p className="order-card__variant">

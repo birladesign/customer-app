@@ -15,21 +15,6 @@
   border: 1px solid var(--color-action-red-tint);
 }
 
-.order-card__banner {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--color-action-red);
-  font-size: var(--text-label-size);
-  font-weight: 700;
-  letter-spacing: var(--text-label-tracking);
-  padding: var(--space-3) var(--space-4) 0;
-}
-
-.order-card__banner-icon {
-  flex-shrink: 0;
-}
-
 .order-card__body {
   padding: var(--space-4);
   display: flex;
