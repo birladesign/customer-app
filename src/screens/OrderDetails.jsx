@@ -331,22 +331,6 @@ export default function OrderDetails({ params }) {
       </header>
 
       <main className="order-details__content">
-        {openCase && (
-          <button
-            className="order-details__ticket-banner"
-            onClick={() => switchTab('support', { resumeCaseId: openCase.id })}
-          >
-            <span className="order-details__ticket-banner-icon">
-              <HeadsetIcon width="16" height="16" />
-            </span>
-            <span className="order-details__ticket-banner-text">
-              <span className="order-details__ticket-banner-title">Support Ticket {openCase.id}</span>
-              <span className="order-details__ticket-banner-sub">{openCase.slaLabel}</span>
-            </span>
-            <ChevronRightIcon className="order-details__ticket-banner-chevron" aria-hidden="true" />
-          </button>
-        )}
-
         {order.items && !scopedItem ? (
           <>
             <PrimaryItem
@@ -628,6 +612,22 @@ export default function OrderDetails({ params }) {
             </AnimatePresence>
           </div>
         </div>
+
+        {openCase && (
+          <button
+            className="order-details__ticket-banner"
+            onClick={() => switchTab('support', { resumeCaseId: openCase.id })}
+          >
+            <span className="order-details__ticket-banner-icon">
+              <HeadsetIcon width="16" height="16" />
+            </span>
+            <span className="order-details__ticket-banner-text">
+              <span className="order-details__ticket-banner-title">Support Ticket {openCase.id}</span>
+              <span className="order-details__ticket-banner-sub">{openCase.slaLabel}</span>
+            </span>
+            <ChevronRightIcon className="order-details__ticket-banner-chevron" aria-hidden="true" />
+          </button>
+        )}
 
         {shipmentSiblings.length > 0 && (
           <div className="order-details__other-items">
