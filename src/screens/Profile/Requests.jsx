@@ -13,7 +13,7 @@ const STATUS_PILL = {
 };
 
 export default function Requests() {
-  const { goBack } = useNavigation();
+  const { goBack, navigate } = useNavigation();
   const orders = getRequestOrders();
   const openCount = orders.filter((o) => o.section !== 'closed').length;
   const resolvedCount = orders.filter((o) => o.section === 'closed').length;
@@ -45,7 +45,11 @@ export default function Requests() {
           orders.map((order) => {
             const pill = STATUS_PILL[order.section === 'closed' ? 'resolved' : 'open'];
             return (
-              <div className="requests__card" key={order.id}>
+              <button
+                className="requests__card"
+                key={order.id}
+                onClick={() => navigate('requestDetail', { orderId: order.id })}
+              >
                 <div className="requests__card-top">
                   <div className="requests__id-row">
                     <p className="requests__id">{order.id}</p>
@@ -62,7 +66,7 @@ export default function Requests() {
                 <div className="requests__sla">
                   <strong>Next SLA:</strong> {order.banner?.text ?? "We'll update you as soon as there's progress."}
                 </div>
-              </div>
+              </button>
             );
           })
         )}

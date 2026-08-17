@@ -153,11 +153,24 @@ export default function InstallationSchedule({ params }) {
             </div>
 
             {order.technician && (
-              <a className="installation-schedule__success-call" href={`tel:${order.technician.phone}`}>
+              <p className="installation-schedule__technician-contact">
                 <PhoneIcon width="14" height="14" />
-                Call {order.technician.name}
-              </a>
+                {order.technician.name} ·{' '}
+                <a href={`tel:${order.technician.phone}`}>
+                  {order.technician.phoneDisplay ?? order.technician.phone}
+                </a>
+              </p>
             )}
+
+            <button
+              className="installation-schedule__reschedule-link"
+              onClick={() => {
+                setBookingConfirmed(false);
+                setPickerOpen(true);
+              }}
+            >
+              Update Slot
+            </button>
           </>
         ) : !pickerOpen ? (
           <>

@@ -126,23 +126,20 @@
   color: var(--color-text-muted);
 }
 
-.installation-schedule__success-call {
+.installation-schedule__technician-contact {
   align-self: center;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  border-radius: var(--radius-full);
-  padding: var(--space-2) var(--space-4);
-  background: var(--color-navy-900);
-  color: var(--color-text-inverse);
+  margin: 0;
   font-size: var(--text-body-size);
-  font-weight: 700;
-  text-decoration: none;
-  transition: transform 0.1s ease-out;
+  color: var(--color-text-secondary);
 }
 
-.installation-schedule__success-call:active {
-  transform: scale(0.96);
+.installation-schedule__technician-contact a {
+  color: var(--color-navy-900);
+  font-weight: 700;
+  text-decoration: underline;
 }
 
 .installation-schedule__current {
@@ -348,7 +345,6 @@
   .installation-schedule__reschedule-link:active,
   .installation-schedule__date-chip:active,
   .installation-schedule__window-chip:active,
-  .installation-schedule__success-call:active,
   .installation-schedule__confirm:not(:disabled):active {
     transform: none;
   }
