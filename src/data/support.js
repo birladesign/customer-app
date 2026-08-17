@@ -292,6 +292,18 @@ export function getActiveConversations() {
   return [...USER_CASES].filter((c) => c.status === 'open').sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 }
 
+// Order Details' "you already have a ticket open for this" banner. Pass
+// itemSku to scope to one line item's own case (exact match, including
+// null for an order-level case); omit it to surface the order's most
+// recent open case regardless of which item it's about — used by the
+// unscoped, whole-order view of a multi-item order.
+export function getOpenCaseForOrder(orderId, itemSku) {
+  if (!orderId) return null;
+  const open = USER_CASES.filter((c) => c.orderId === orderId && c.status === 'open');
+  if (itemSku !== undefined) return open.find((c) => (c.itemSku ?? null) === itemSku) ?? null;
+  return [...open].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0] ?? null;
+}
+
 // Order picker helper for the chat's order step — Returns is filtered to
 // return-eligible orders, other order-requiring lanes show everything.
 export function getOrdersForLane(laneKey) {
