@@ -368,7 +368,7 @@ export default function SupportChat({ escalate, presetOrder, staleOrderId, resum
       chips: [
         {
           key: 'submit',
-          label: 'Submit Case',
+          label: 'Submit Request',
           onClick: () => handleSubmit({ lane: selectedLane, order: selectedOrder, item: selectedItem }),
         },
         { key: 'edit', label: 'Keep Editing', onClick: () => setStage('describe') },
@@ -425,7 +425,7 @@ export default function SupportChat({ escalate, presetOrder, staleOrderId, resum
       pushBot({
         text: 'Ready to submit this case?',
         chips: [
-          { key: 'submit', label: 'Submit Case', onClick: handleSubmit },
+          { key: 'submit', label: 'Submit Request', onClick: handleSubmit },
           { key: 'edit', label: 'Keep Editing', onClick: () => setStage('describe') },
         ],
       });
