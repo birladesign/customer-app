@@ -86,6 +86,9 @@ export default function ShipmentCard({ orders }) {
                 <span>{spec}</span>
               </p>
             )}
+            <p className="order-card__caption">
+              All {orders.length} units {status.dot === 'green' ? 'delivered' : 'arriving'} together on {first.date}
+            </p>
           </div>
           <ChevronRightIcon
             className={`order-card__chevron${expanded ? ' shipment-card__chevron--open' : ''}`}
@@ -105,7 +108,17 @@ export default function ShipmentCard({ orders }) {
                 navigate('orderDetails', { orderId: order.id });
               }}
             >
-              <span className="shipment-card__unit-id">{order.id}</span>
+              <span className="shipment-card__unit-text">
+                <span className="shipment-card__unit-id">{order.id}</span>
+                {/* Each unit keeps its own status rather than repeating the
+                    shipment's — they travel and are delivered together, but
+                    a return/warranty claim on one unit is per-order, so this
+                    is the one place that has to stay live per unit, not
+                    inherited from the group above. */}
+                <span className="shipment-card__unit-status" style={{ color: DOT_COLOR[order.status.dot] }}>
+                  {order.status.label}
+                </span>
+              </span>
               <ChevronRightIcon className="shipment-card__unit-chevron" aria-hidden="true" />
             </button>
           ))}

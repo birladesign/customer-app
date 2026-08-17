@@ -5,6 +5,7 @@ import {
   FAQ_ITEMS,
   FAQ_CATEGORIES,
   CONTACT,
+  USER_CASES,
   getActiveConversations,
   getOrdersForHelp,
   getRefundBannerLabel,
@@ -21,9 +22,14 @@ const CHAT_INTRO = {
   chat: "We'll connect you with a specialist over chat. First, what's this about?",
 };
 
-// A cross-tab deep link (My Orders' "Need Help", Order Details' "Get Help")
-// hands the chat its starting state via switchTab params.
+// A cross-tab deep link (My Orders' "Need Help", Order Details' "Get Help",
+// Order Details' "Support Ticket" banner) hands the chat its starting state
+// via switchTab params.
 function initialChatConfig(params) {
+  if (params.resumeCaseId) {
+    const resumeCase = USER_CASES.find((c) => c.id === params.resumeCaseId) ?? null;
+    if (resumeCase) return { escalate: resumeCase.escalated, presetOrder: null, staleOrderId: null, resumeCase };
+  }
   if (!params.openChat) return null;
   const presetOrder = params.orderId ? ORDERS.find((o) => o.id === params.orderId) : null;
   const staleOrderId = params.orderId && !presetOrder ? params.orderId : null;
@@ -84,6 +90,7 @@ export default function Support({ params = {} }) {
   const [chatOrderId, setChatOrderId] = useState(
     () => initialChatConfig(params)?.presetOrder?.id ?? initialChatConfig(params)?.resumeCase?.orderId ?? null
   );
+  const [showAllConversations, setShowAllConversations] = useState(false);
 
   // The bottom tab bar has no place in a conversation — Support stays at its
   // tab root the whole time (chat is just local state, not a pushed route),
@@ -127,6 +134,7 @@ export default function Support({ params = {} }) {
   }
 
   const activeConversations = getActiveConversations();
+  const visibleConversations = showAllConversations ? activeConversations : activeConversations.slice(0, 2);
   const helpOrders = getOrdersForHelp(3);
 
   const q = query.trim().toLowerCase();
@@ -151,9 +159,16 @@ export default function Support({ params = {} }) {
       <main className="support__content">
         {activeConversations.length > 0 && (
           <section className="support__section">
-            <h2>Active Conversations</h2>
+            <div className="support__section-heading">
+              <h2>Active Conversations</h2>
+              {activeConversations.length > 2 && (
+                <button className="support__see-all" onClick={() => setShowAllConversations((v) => !v)}>
+                  {showAllConversations ? 'Show Less' : 'See All'}
+                </button>
+              )}
+            </div>
             <div className="support__conversation-list">
-              {activeConversations.map((c) => (
+              {visibleConversations.map((c) => (
                 <button
                   key={c.id}
                   className="support__conversation-row"
