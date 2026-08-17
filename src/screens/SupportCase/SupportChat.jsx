@@ -9,7 +9,7 @@ import {
   getOrderStatus,
 } from '../../data/support.js';
 import { useObjectUrlPreview } from '../../hooks/useObjectUrlPreview.js';
-import { CopyIcon, CheckIcon, CameraIcon, CloseIcon } from '../../components/icons.jsx';
+import { CopyIcon, CheckIcon, CameraIcon, CloseIcon, ArrowUpIcon } from '../../components/icons.jsx';
 import './SupportChat.css';
 
 const MIN_LENGTH = 10;
@@ -504,8 +504,8 @@ export default function SupportChat({ escalate, presetOrder, staleOrderId, resum
               }
             }}
           />
-          <button className="support-chat__send" disabled={!draft.trim()} onClick={handleSend}>
-            Send
+          <button className="support-chat__send" disabled={!draft.trim()} onClick={handleSend} aria-label="Send">
+            <ArrowUpIcon width="16" height="16" />
           </button>
         </div>
       </div>

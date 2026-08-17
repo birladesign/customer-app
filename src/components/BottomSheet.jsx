@@ -41,7 +41,6 @@ export default function BottomSheet({ open, onClose, children }) {
             <button className="bottom-sheet__close" onClick={onClose} aria-label="Close">
               <CloseIcon width="14" height="14" />
             </button>
-            <div className="bottom-sheet__grabber" aria-hidden="true" />
             {children}
           </motion.div>
         </motion.div>

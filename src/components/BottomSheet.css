@@ -18,7 +18,7 @@
   width: 100%;
   max-width: 430px;
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  padding: var(--space-2) var(--space-4) var(--space-6);
+  padding: var(--space-4) var(--space-4) var(--space-6);
   box-shadow: 0 -8px 30px rgba(26, 43, 88, 0.18);
   touch-action: none;
 }
@@ -44,12 +44,4 @@
 
 .bottom-sheet__close:active {
   transform: translateX(-50%) scale(0.92);
-}
-
-.bottom-sheet__grabber {
-  width: 36px;
-  height: 4px;
-  border-radius: var(--radius-full);
-  background: rgba(26, 43, 88, 0.15);
-  margin: var(--space-2) auto var(--space-3);
 }

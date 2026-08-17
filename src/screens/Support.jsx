@@ -11,7 +11,7 @@ import {
   getRefundBannerLabel,
   getOrderStatus,
 } from '../data/support.js';
-import { ORDERS } from '../data/orders.js';
+import { ORDERS, splitProductSpec } from '../data/orders.js';
 import { SPRING_STANDARD, DURATION_REDUCED } from '../motion.js';
 import SearchAndFilterBar from '../components/SearchAndFilterBar.jsx';
 import {
@@ -190,7 +190,8 @@ export default function Support({ params = {} }) {
             <div className="support__conversation-list">
               {visibleConversations.map((c) => {
                 const LaneIcon = LANE_ICON[c.lane] ?? HelpCircleIcon;
-                const product = c.itemProduct ?? c.orderProduct;
+                const rawProduct = c.itemProduct ?? c.orderProduct;
+                const product = rawProduct ? splitProductSpec(rawProduct).name : null;
                 return (
                   <button
                     key={c.id}
