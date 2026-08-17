@@ -694,10 +694,9 @@
   font-weight: 600;
 }
 
-/* Folded into the summary card as its last row (see OrderDetails.jsx) —
-   Edit and Cancel are both rare, one-off requests, and even here they stay
-   a tap away (behind the arrow) rather than being named upfront or sitting
-   open by default. */
+/* Sits below the summary card, not inside it — Edit and Cancel are both
+   rare, one-off requests, and even here they stay a tap away (behind the
+   arrow) rather than being named upfront or sitting open by default. */
 .order-details__help-toggle {
   width: 100%;
   display: flex;
@@ -707,9 +706,9 @@
   background: none;
   padding: var(--space-2) 0;
   font-family: inherit;
-  font-size: var(--text-heading-size);
+  font-size: var(--text-product-size);
   font-weight: 600;
-  color: var(--color-text-primary);
+  color: #1a1a1a;
   text-align: left;
   transition: transform 0.1s ease-out;
 }

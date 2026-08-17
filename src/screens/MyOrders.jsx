@@ -11,7 +11,7 @@ import './MyOrders.css';
 
 const TABS = [
   { key: 'all', label: 'All' },
-  ...SECTIONS.filter((s) => s.tabKey === 'active' || s.tabKey === 'closed').map((s) => ({ key: s.tabKey, label: s.tabLabel })),
+  ...SECTIONS.filter((s) => s.tabKey === 'active').map((s) => ({ key: s.tabKey, label: s.tabLabel })),
 ];
 
 // Orders sharing a shipmentId travelled together as multiple units of one SKU;

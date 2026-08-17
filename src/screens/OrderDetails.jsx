@@ -515,12 +515,12 @@ export default function OrderDetails({ params }) {
               )}
             </AnimatePresence>
           </div>
-
-          <button className="order-details__help-toggle" onClick={() => setHelpSectionOpen(true)}>
-            <span>Do you need help with the existing order?</span>
-            <ChevronRightIcon className="order-details__help-chevron" />
-          </button>
         </div>
+
+        <button className="order-details__help-toggle" onClick={() => setHelpSectionOpen(true)}>
+          <span>Do you need help with the existing order?</span>
+          <ChevronRightIcon className="order-details__help-chevron" />
+        </button>
       </main>
 
       <BottomSheet open={helpSectionOpen} onClose={() => setHelpSectionOpen(false)}>
