@@ -38,13 +38,32 @@ function CopyShipmentId({ id }) {
   );
 }
 
+// One row in a shipment's expanded unit list — shared by the same-SKU and
+// multi-product cards below so every unit, regardless of shipment type,
+// shows its own product image rather than a plain text-only row.
+function ShipmentUnitRow({ image, alt, title, meta, status, onClick }) {
+  return (
+    <button className="shipment-card__product" onClick={onClick}>
+      <img className="shipment-card__product-image" src={image} alt={alt} />
+      <div className="shipment-card__product-details">
+        <span className="shipment-card__product-status" style={{ color: DOT_COLOR[status.dot] }}>
+          {status.label}
+        </span>
+        <p className="shipment-card__product-name">{title}</p>
+        {meta && <p className="shipment-card__product-meta">{meta}</p>}
+      </div>
+      <ChevronRightIcon className="shipment-card__unit-chevron" aria-hidden="true" />
+    </button>
+  );
+}
+
 // Several units of the same SKU that travelled together under one shipmentId.
 // They share a status and a date, so repeating a full OrderCard per unit says
 // "Delivered" three times and reads as three unrelated purchases. This shows
 // the shipment once, using the same order-card chrome as every other card in
 // the list, with the unit count in place of a badge and the individual order
-// IDs revealed on tap — each still opens its own Order Details, since returns
-// and warranty are per-unit.
+// IDs (each with its own product image and status) revealed on tap — each
+// still opens its own Order Details, since returns and warranty are per-unit.
 function SameProductShipmentCard({ orders, first }) {
   const { navigate } = useNavigation();
   const [expanded, setExpanded] = useState(false);
@@ -97,29 +116,24 @@ function SameProductShipmentCard({ orders, first }) {
       </div>
 
       {expanded && (
-        <div className="shipment-card__units">
+        <div className="shipment-card__units shipment-card__units--products">
           {orders.map((order) => (
-            <button
+            // Each unit keeps its own status rather than repeating the
+            // shipment's — they travel and are delivered together, but a
+            // return/warranty claim on one unit is per-order, so this is the
+            // one place that has to stay live per unit, not inherited from
+            // the group above.
+            <ShipmentUnitRow
               key={order.id}
-              className="shipment-card__unit"
+              image={order.image}
+              alt={first.product}
+              title={order.id}
+              status={order.status}
               onClick={(e) => {
                 e.stopPropagation();
                 navigate('orderDetails', { orderId: order.id });
               }}
-            >
-              <span className="shipment-card__unit-text">
-                <span className="shipment-card__unit-id">{order.id}</span>
-                {/* Each unit keeps its own status rather than repeating the
-                    shipment's — they travel and are delivered together, but
-                    a return/warranty claim on one unit is per-order, so this
-                    is the one place that has to stay live per unit, not
-                    inherited from the group above. */}
-                <span className="shipment-card__unit-status" style={{ color: DOT_COLOR[order.status.dot] }}>
-                  {order.status.label}
-                </span>
-              </span>
-              <ChevronRightIcon className="shipment-card__unit-chevron" aria-hidden="true" />
-            </button>
+            />
           ))}
         </div>
       )}
@@ -155,28 +169,23 @@ function MultiProductShipmentCard({ orders, first }) {
       <div className="shipment-card__units shipment-card__units--products">
         {orders.map((order) => {
           const { name, spec } = splitProductSpec(order.product);
+          const meta = order.qty || spec ? (
+            <>
+              {order.qty && <span>Qty: {order.qty}</span>}
+              {order.qty && spec && <span className="order-card__variant-dot" aria-hidden="true" />}
+              {spec && <span>{spec}</span>}
+            </>
+          ) : null;
           return (
-            <button
+            <ShipmentUnitRow
               key={order.id}
-              className="shipment-card__product"
+              image={order.image}
+              alt={order.product}
+              title={name}
+              meta={meta}
+              status={order.status}
               onClick={() => navigate('orderDetails', { orderId: order.id })}
-            >
-              <img className="shipment-card__product-image" src={order.image} alt={order.product} />
-              <div className="shipment-card__product-details">
-                <span className="shipment-card__product-status" style={{ color: DOT_COLOR[order.status.dot] }}>
-                  {order.status.label}
-                </span>
-                <p className="shipment-card__product-name">{name}</p>
-                {(order.qty || spec) && (
-                  <p className="shipment-card__product-meta">
-                    {order.qty && <span>Qty: {order.qty}</span>}
-                    {order.qty && spec && <span className="order-card__variant-dot" aria-hidden="true" />}
-                    {spec && <span>{spec}</span>}
-                  </p>
-                )}
-              </div>
-              <ChevronRightIcon className="shipment-card__unit-chevron" aria-hidden="true" />
-            </button>
+            />
           );
         })}
       </div>
