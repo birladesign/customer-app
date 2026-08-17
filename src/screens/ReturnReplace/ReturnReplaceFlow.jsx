@@ -176,7 +176,9 @@ export default function ReturnReplaceFlow({ params }) {
             {currentKey === 'refundMethod' && (
               <RefundMethodStep order={target} refundAmount={itemPrice} onSubmit={() => goToStep(4)} />
             )}
-            {currentKey === 'execution' && needsApproval && <ApprovalPendingStep onDone={handleJourneyComplete} />}
+            {currentKey === 'execution' && needsApproval && (
+              <ApprovalPendingStep order={target} refundAmount={itemPrice} reason={reason} onDone={handleJourneyComplete} />
+            )}
             {currentKey === 'execution' && !needsApproval && (
               <ExecutionStep order={target} leverId={selectedLever} onDone={handleJourneyComplete} />
             )}
