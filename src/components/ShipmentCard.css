@@ -30,10 +30,21 @@
   background: rgba(26, 43, 88, 0.04);
 }
 
+.shipment-card__unit-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 .shipment-card__unit-id {
   font-size: var(--text-body-size);
   font-weight: 600;
   color: var(--color-text-primary);
+}
+
+.shipment-card__unit-status {
+  font-size: var(--text-caption-size);
+  font-weight: 600;
 }
 
 .shipment-card__unit-chevron {
