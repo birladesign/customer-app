@@ -31,7 +31,6 @@ import imgPillowCervical from '../assets/pillow-cervical.jpg';
 export const SECTIONS = [
   { key: 'needsAttention', label: 'Needs Attention', tabKey: 'action', tabLabel: 'Action' },
   { key: 'inProgress', label: 'In Progress', tabKey: 'active', tabLabel: 'Active' },
-  { key: 'rto', label: 'Return to Origin', tabKey: 'rto', tabLabel: 'RTO' },
   { key: 'deliveredDone', label: 'Delivered & Done', tabKey: 'done', tabLabel: 'Done' },
   { key: 'closed', label: 'Closed', tabKey: 'closed', tabLabel: 'Closed' },
 ];
@@ -893,7 +892,7 @@ export const ORDERS = [
   // origin, one already refunded, so the RTO tab shows both live states.
   {
     id: 'TSC80215',
-    section: 'rto',
+    section: 'inProgress',
     date: '10 Aug 2026',
     image: imgMattressOrthoRoyale,
     banner: { icon: 'alert', text: 'Delivery Failed' },
@@ -948,7 +947,7 @@ export const ORDERS = [
   },
   {
     id: 'TSC77320',
-    section: 'rto',
+    section: 'closed',
     date: '20 Jun 2026',
     image: imgChairElitePremium,
     status: { dot: 'green', label: 'RTO Completed — Refund Processed' },
