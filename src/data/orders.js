@@ -130,50 +130,7 @@ export function getShipmentInfo(key) {
 }
 
 export const ORDERS = [
-  {
-    id: 'TSC92401',
-    section: 'needsAttention',
-    date: '28 Jul 2026',
-    image: imgMattressOrthoPro,
-    banner: { icon: 'zap', text: 'Expires in 2 days' },
-    status: { dot: 'red', label: 'On Hold — Decision Needed' },
-    product: 'Smart Ortho Pro Mattress (Queen)',
-    caption: 'Held since 01 Aug 2026 · Expires 05 Aug 2026',
-    actions: [
-      { label: 'Keep Order', variant: 'primary' },
-      { label: 'Manage Order', variant: 'secondary-danger' },
-    ],
-    amount: 16990,
-    address: DEMO_ADDRESS,
-    payment: { method: 'UPI', status: 'Paid' },
-    priceBreakup: { itemPrice: 17990, shipping: 0, discount: 1000, tax: 0, total: 16990 },
-    timeline: {
-      steps: [
-        {
-          label: 'Order Confirmed',
-          timestamp: '28 Jul 2026, 10:14 AM',
-          updates: [
-            { text: 'Order has been confirmed', timestamp: '28 Jul 2026, 10:14 AM' },
-            { text: 'We are processing your order', timestamp: '28 Jul 2026, 1:30 PM' },
-          ],
-        },
-        {
-          label: 'Packed',
-          timestamp: '30 Jul 2026, 2:40 PM',
-          updates: [{ text: 'Item has been packed and is ready for dispatch', timestamp: '30 Jul 2026, 2:40 PM' }],
-        },
-        {
-          label: 'On Hold',
-          timestamp: '01 Aug 2026, 9:00 AM',
-          description: 'Awaiting your decision',
-          updates: [{ text: 'Order paused at your request before dispatch', timestamp: '01 Aug 2026, 9:00 AM' }],
-        },
-        { label: 'Shipped', timestamp: null },
-        { label: 'Delivered', timestamp: null },
-      ],
-      currentIndex: 2,
-    },
-  },
+
   {
     id: 'TSC89203',
     section: 'needsAttention',
