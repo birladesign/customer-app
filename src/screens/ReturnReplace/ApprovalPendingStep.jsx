@@ -22,7 +22,7 @@ export default function ApprovalPendingStep({ order, refundAmount, reason, onDon
           <CheckIcon width="18" height="18" strokeWidth="3" />
         </span>
         <div>
-          <p className="execution-step__confirm-title">Return request accepted</p>
+          <p className="execution-step__confirm-title">Return request created</p>
           <p className="execution-step__confirm-body">Our agent will connect with you soon.</p>
         </div>
       </div>

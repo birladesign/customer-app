@@ -13,7 +13,7 @@ import {
 import { ORDERS } from '../data/orders.js';
 import { SPRING_STANDARD, DURATION_REDUCED } from '../motion.js';
 import SearchAndFilterBar from '../components/SearchAndFilterBar.jsx';
-import { HouseIcon, ChevronDownIcon, ChevronRightIcon, ChevronLeftIcon, PackageIcon } from '../components/icons.jsx';
+import { ChevronDownIcon, ChevronRightIcon, ChevronLeftIcon } from '../components/icons.jsx';
 import SupportChat from './SupportCase/SupportChat.jsx';
 import './Support.css';
 
@@ -139,22 +139,16 @@ export default function Support({ params = {} }) {
   return (
     <div className="support">
       <header className="support__topbar">
-        <button className="support__icon-btn" onClick={() => switchTab('home')} aria-label="Home">
-          <HouseIcon width="18" height="18" />
-        </button>
         <h1>Support</h1>
+        <button
+          className="support__chat-btn"
+          onClick={() => openChat({ escalate: true, presetOrder: null, staleOrderId: null, resumeCase: null, intro: CHAT_INTRO.chat })}
+        >
+          Chat with us
+        </button>
       </header>
 
       <main className="support__content">
-        <div className="support__quick-actions">
-          <button
-            className="support__quick-action"
-            onClick={() => openChat({ escalate: true, presetOrder: null, staleOrderId: null, resumeCase: null, intro: CHAT_INTRO.chat })}
-          >
-            Chat with us
-          </button>
-        </div>
-
         {activeConversations.length > 0 && (
           <section className="support__section">
             <h2>Active Conversations</h2>
@@ -165,15 +159,15 @@ export default function Support({ params = {} }) {
                   className="support__conversation-row"
                   onClick={() => openChat({ escalate: c.escalated, presetOrder: null, staleOrderId: null, resumeCase: c })}
                 >
-                  <span className="support__conversation-icon">
-                    <PackageIcon width="18" height="18" />
-                  </span>
                   <span className="support__conversation-text">
                     <span className="support__conversation-title">
                       {c.laneLabel}
                       {(c.itemProduct ?? c.orderProduct) ? ` · ${c.itemProduct ?? c.orderProduct}` : ''}
                     </span>
-                    <span className="support__conversation-date">{formatConversationDate(c.createdAt)}</span>
+                    <span className="support__conversation-date">
+                      {c.orderId ? `${c.orderId} · ` : ''}
+                      {formatConversationDate(c.createdAt)}
+                    </span>
                   </span>
                   <ChevronRightIcon className="support__conversation-chevron" aria-hidden="true" />
                 </button>

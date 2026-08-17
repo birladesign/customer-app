@@ -185,6 +185,98 @@ export function createCase({ lane, order, item, description, hasPhoto, escalate,
   return record;
 }
 
+// Demo-only seed data — a fresh session shouldn't open to an empty "Active
+// Conversations" list, so a handful of plausible open tickets are pre-loaded
+// here, the same way ORDERS ships pre-seeded rather than empty. Transcripts
+// are plain text only (no chips/orders/items) since those carry live
+// onClick closures that can't exist for data that was never actually typed
+// through the chat — resuming one of these just replays history and drops
+// straight into the normal "followup" free-text mode.
+function seedCase({ lane, orderId, orderProduct, itemSku, itemProduct, escalate, createdAt, transcript }) {
+  const laneMeta = CASE_LANES.find((l) => l.key === lane);
+  const { classification, status, slaLabel } = classifyCase(lane, escalate);
+  return {
+    id: generateCaseId('CMP'),
+    lane,
+    laneLabel: laneMeta?.label ?? 'Something Else',
+    orderId,
+    orderProduct,
+    itemSku: itemSku ?? null,
+    itemProduct: itemProduct ?? null,
+    description: transcript[transcript.length - 1]?.text ?? '',
+    hasPhoto: false,
+    escalated: Boolean(escalate),
+    status,
+    classification,
+    slaLabel,
+    createdAt,
+    messages: transcript.map((m, i) => ({ id: i + 1, ...m })),
+  };
+}
+
+USER_CASES.push(
+  seedCase({
+    lane: 'logistics',
+    orderId: 'TSC89203',
+    orderProduct: 'Elev8 Smart Adjustable Bed Frame',
+    escalate: true,
+    createdAt: '2026-08-16T09:20:00.000Z',
+    transcript: [
+      { from: 'bot', text: "We'll connect you with a specialist. First, what's this about?" },
+      { from: 'user', text: 'Delivery & Logistics' },
+      { from: 'user', text: 'Elev8 Smart Adjustable Bed Frame (TSC89203)' },
+      { from: 'bot', text: 'Tell us what happened — type your message below.' },
+      { from: 'user', text: 'The bed frame arrived with a visible dent on one side panel.' },
+    ],
+  }),
+  seedCase({
+    lane: 'logistics',
+    orderId: 'TSC97821',
+    orderProduct: 'Smart Ortho Hybrid Pocketed Spring Mattress (Queen)',
+    escalate: false,
+    createdAt: '2026-08-15T14:05:00.000Z',
+    transcript: [
+      { from: 'bot', text: 'Hi! What can we help with?' },
+      { from: 'user', text: 'Delivery & Logistics' },
+      { from: 'user', text: 'Smart Ortho Hybrid Pocketed Spring Mattress (Queen) (TSC97821)' },
+      { from: 'bot', text: 'Tell us what happened — type your message below.' },
+      { from: 'user', text: 'Mattress cover is torn on the corner, looks like transit damage.' },
+    ],
+  }),
+  seedCase({
+    lane: 'tech',
+    orderId: 'TSC96210',
+    orderProduct: 'Elev8 Smart Adjustable Bed Frame',
+    escalate: false,
+    createdAt: '2026-08-16T18:40:00.000Z',
+    transcript: [
+      { from: 'bot', text: 'Hi! What can we help with?' },
+      { from: 'user', text: 'Installation & Technician' },
+      { from: 'user', text: 'Elev8 Smart Adjustable Bed Frame (TSC96210)' },
+      { from: 'bot', text: 'Tell us what happened — type your message below.' },
+      { from: 'user', text: "Need to reschedule the installation slot — 12 Aug doesn't work anymore." },
+    ],
+  }),
+  seedCase({
+    lane: 'logistics',
+    orderId: 'TSC94500',
+    orderProduct: 'Bedroom Refresh Bundle (3 items)',
+    itemSku: 'TSC94500-3',
+    itemProduct: 'Elev8 Smart Adjustable Bed Frame',
+    escalate: false,
+    createdAt: '2026-08-13T11:00:00.000Z',
+    transcript: [
+      { from: 'bot', text: 'Hi! What can we help with?' },
+      { from: 'user', text: 'Delivery & Logistics' },
+      { from: 'user', text: 'Bedroom Refresh Bundle (3 items) (TSC94500)' },
+      { from: 'bot', text: 'Which item is this about?' },
+      { from: 'user', text: 'Elev8 Smart Adjustable Bed Frame' },
+      { from: 'bot', text: 'Tell us what happened — type your message below.' },
+      { from: 'user', text: 'One of the three items — the bed frame — is still showing as shipped, not delivered.' },
+    ],
+  })
+);
+
 // The chat is the only writer — re-saves the full transcript onto its case
 // record every time the conversation grows, so resuming it later (from
 // "Active Conversations") replays exactly what was said, including anything
