@@ -13,6 +13,7 @@ import AddAddress from '../screens/Profile/AddAddress.jsx';
 import Notifications from '../screens/Profile/Notifications.jsx';
 import Invoices from '../screens/Profile/Invoices.jsx';
 import Requests from '../screens/Profile/Requests.jsx';
+import RequestDetail from '../screens/Profile/RequestDetail.jsx';
 import OrderDetails from '../screens/OrderDetails.jsx';
 import EditOrder from '../screens/EditOrder.jsx';
 import InstallationSchedule from '../screens/InstallationSchedule.jsx';
@@ -31,6 +32,7 @@ const SCREENS = {
   notifications: Notifications,
   invoices: Invoices,
   requests: Requests,
+  requestDetail: RequestDetail,
   orderDetails: OrderDetails,
   editOrder: EditOrder,
   installationSchedule: InstallationSchedule,

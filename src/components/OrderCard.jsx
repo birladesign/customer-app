@@ -96,6 +96,9 @@ export default function OrderCard({ order }) {
     if (label === 'Report an Issue') {
       return () => switchTab('support', { openChat: true, orderId: order.id });
     }
+    if (label === 'Manage Return') {
+      return () => navigate('requestDetail', { orderId: order.id });
+    }
     return undefined;
   }
 
