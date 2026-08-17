@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { ORDERS, splitProductSpec, getOrderStatus, getShipmentInfo } from '../data/orders.js';
 import { getOrderIntents, getEditEligibility, getItemIntents } from '../data/intents.js';
+import { getOpenCaseForOrder } from '../data/support.js';
 import { CURRENT_USER } from '../data/profile.js';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
 import { SPRING_STANDARD, DURATION_REDUCED } from '../motion.js';
@@ -79,9 +80,6 @@ export default function OrderDetails({ params }) {
   // Separate from `copied` (the Order ID's own) so copying one doesn't
   // flash the checkmark on the other.
   const [awbCopied, setAwbCopied] = useState(false);
-  // Single-open accordion for line items, mirroring a native list disclosure —
-  // expanding one item retracts whichever was open before.
-  const [openItemSku, setOpenItemSku] = useState(null);
   // Item ratings live in local state rather than mutating the shared item
   // object in place — order.items is a plain module-level array, so a
   // direct mutation wouldn't trigger a re-render the way this does.
@@ -240,10 +238,6 @@ export default function OrderDetails({ params }) {
     setTimeout(() => setInvoiceNotice(false), 2000);
   }
 
-  function toggleItem(sku) {
-    setOpenItemSku((current) => (current === sku ? null : sku));
-  }
-
   function handleRateItem(item, value) {
     setItemRatings((prev) => ({ ...prev, [item.sku]: value }));
   }
@@ -266,6 +260,10 @@ export default function OrderDetails({ params }) {
   const discount = scopedItem ? 0 : order.priceBreakup?.discount ?? 0;
   const technician = scopedItem?.technician ?? order.technician;
   const effectiveTimeline = scopedItem ? scopedItem.timeline : order.timeline;
+  // Surfaces an already-open case for this order (or, when viewing one line
+  // item of a multi-item order, that item specifically) so raising a ticket
+  // and coming back here doesn't look like nothing happened.
+  const openCase = getOpenCaseForOrder(order.id, scopedItem ? scopedItem.sku : order.items ? undefined : null);
 
   return (
     <div className="order-details">
@@ -278,6 +276,22 @@ export default function OrderDetails({ params }) {
       </header>
 
       <main className="order-details__content">
+        {openCase && (
+          <button
+            className="order-details__ticket-banner"
+            onClick={() => switchTab('support', { resumeCaseId: openCase.id })}
+          >
+            <span className="order-details__ticket-banner-icon">
+              <HeadsetIcon width="16" height="16" />
+            </span>
+            <span className="order-details__ticket-banner-text">
+              <span className="order-details__ticket-banner-title">Support Ticket {openCase.id}</span>
+              <span className="order-details__ticket-banner-sub">{openCase.slaLabel}</span>
+            </span>
+            <ChevronRightIcon className="order-details__ticket-banner-chevron" aria-hidden="true" />
+          </button>
+        )}
+
         {order.items && !scopedItem ? (
           <>
             <PrimaryItem
@@ -285,7 +299,6 @@ export default function OrderDetails({ params }) {
               onTrack={(item) => openTracking(item.product, item.timeline, item.sku)}
               onReturn={(item) => navigate('returnReplace', { orderId: order.id, sku: item.sku })}
               onRate={handleRateItem}
-              onMoreDetails={(item) => navigate('orderDetails', { orderId: order.id, sku: item.sku })}
             />
             {otherItems.length > 0 && (
               <div className="order-details__other-items">
@@ -294,11 +307,6 @@ export default function OrderDetails({ params }) {
                 </p>
                 <LineItems
                   items={otherItems}
-                  openSku={openItemSku}
-                  onToggle={toggleItem}
-                  onTrack={(item) => openTracking(item.product, item.timeline, item.sku)}
-                  onReturn={(item) => navigate('returnReplace', { orderId: order.id, sku: item.sku })}
-                  onRate={handleRateItem}
                   onMoreDetails={(item) => navigate('orderDetails', { orderId: order.id, sku: item.sku })}
                 />
               </div>

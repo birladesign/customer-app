@@ -84,13 +84,6 @@ export function recomputeOrderTotals(order) {
   order.amount = total;
 }
 
-export const PROACTIVE_PROMPT = {
-  id: 'proactive-cod',
-  title: 'Confirm Your Cash on Delivery Order',
-  body: 'Order #TSC90112 is Cash on Delivery. Confirm it to keep your delivery on schedule.',
-  actionLabel: 'Confirm COD Order',
-};
-
 // One shared demo shipping address — real apps show a per-order address, but
 // for this prototype a single consistent one is enough.
 const DEMO_ADDRESS = 'H.No. 24, Sector 44, Gurugram, Haryana 122003';

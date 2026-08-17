@@ -1,9 +1,8 @@
 import { useMemo, useState } from 'react';
-import { SECTIONS, ORDERS, PROACTIVE_PROMPT, parseOrderDate } from '../data/orders.js';
+import { SECTIONS, ORDERS, parseOrderDate } from '../data/orders.js';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
 import OrderCard from '../components/OrderCard.jsx';
 import ShipmentCard from '../components/ShipmentCard.jsx';
-import ProactiveCard from '../components/ProactiveCard.jsx';
 import TabBar from '../components/TabBar.jsx';
 import SearchAndFilterBar from '../components/SearchAndFilterBar.jsx';
 import { InboxIcon, HelpCircleIcon } from '../components/icons.jsx';
@@ -80,7 +79,6 @@ export default function MyOrders() {
   const listEntries = useMemo(() => groupByShipment(filteredOrders), [filteredOrders]);
 
   const hasAnyResults = filteredOrders.length > 0;
-  const isFiltering = query.trim().length > 0 || activeTab !== 'all';
 
   return (
     <div className="my-orders">
@@ -102,8 +100,6 @@ export default function MyOrders() {
       </div>
 
       <main className="my-orders__list">
-        {activeTab === 'all' && !isFiltering && <ProactiveCard {...PROACTIVE_PROMPT} />}
-
         {hasAnyResults ? (
           <div className="my-orders__cards">
             {listEntries.map((entry) =>

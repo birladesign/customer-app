@@ -2,7 +2,7 @@ import { splitProductSpec } from '../data/orders.js';
 import { getItemIntents } from '../data/intents.js';
 import Tracker from './Tracker.jsx';
 import StarRating from './StarRating.jsx';
-import { FileTextIcon, ShieldIcon, ExternalLinkIcon, ChevronRightIcon } from './icons.jsx';
+import { FileTextIcon, ShieldIcon, ExternalLinkIcon } from './icons.jsx';
 import './PrimaryItem.css';
 
 const STATUS_COLOR = {
@@ -20,7 +20,7 @@ function formatRupees(amount) {
 // multi-item order still reads at a glance the way a single-item order does:
 // here's what this is mainly about. The remaining items sit in their own,
 // visually quieter list below (LineItems), each needing a tap to open.
-export default function PrimaryItem({ item, onTrack, onReturn, onRate, onMoreDetails }) {
+export default function PrimaryItem({ item, onTrack, onReturn, onRate }) {
   const { name, spec } = splitProductSpec(item.product);
   const intents = getItemIntents(item);
 
@@ -52,11 +52,6 @@ export default function PrimaryItem({ item, onTrack, onReturn, onRate, onMoreDet
         <button className="primary-item__track" onClick={() => onTrack(item)}>
           <FileTextIcon width="14" height="14" />
           Track This Item
-        </button>
-
-        <button className="primary-item__more-details" onClick={() => onMoreDetails(item)}>
-          More Details
-          <ChevronRightIcon width="14" height="14" />
         </button>
 
         {typeof item.rating === 'number' && (
