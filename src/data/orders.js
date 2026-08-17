@@ -187,11 +187,11 @@ export const ORDERS = [
     date: '15 Jul 2026',
     image: imgBedElev8Adjustable,
     banner: { icon: 'zap', text: 'Action Required' },
-    status: { dot: 'red', label: 'Evidence Required' },
+    status: { dot: 'red', label: 'Damaged — Reported' },
     product: 'Elev8 Smart Adjustable Bed Frame',
-    caption: 'Submit photos of damage to proceed with warranty claim',
+    caption: 'Reported on 14 Jul 2026 · Investigation in progress',
     actions: [
-      { label: 'Upload Photos', variant: 'primary' },
+      { label: 'Track Investigation', variant: 'secondary' },
       { label: 'Get Help', variant: 'secondary' },
     ],
     amount: 22999,
@@ -1380,7 +1380,8 @@ export const ORDERS = [
   // Multi-item orders so far were all mid-flight (inProgress) — this one
   // needs attention instead: one item delivered cleanly, the other flagged
   // by getOrderStatus's dot:'red' check above, so the parent pill surfaces
-  // "Evidence Required" rather than a misleadingly calm "1 of 2 delivered".
+  // that flagged item's own "Delivered" (red) rather than a misleadingly
+  // calm "1 of 2 delivered" or "All Items Delivered".
   {
     id: 'TSC91850',
     section: 'needsAttention',
@@ -1388,9 +1389,9 @@ export const ORDERS = [
     image: imgSofaLuxeGrande,
     banner: { icon: 'alert', text: 'Action Required' },
     product: 'Living Room Refresh (2 items)',
-    caption: '1 of 2 items delivered fine — the other needs evidence photos',
+    caption: '1 of 2 items delivered fine — the other arrived damaged',
     actions: [
-      { label: 'Upload Photos', variant: 'primary' },
+      { label: 'Report Issue', variant: 'primary' },
       { label: 'Get Help', variant: 'secondary' },
     ],
     amount: 55998,
@@ -1438,8 +1439,12 @@ export const ORDERS = [
         image: imgChairOnyxOrthopedic,
         qty: 1,
         price: 10999,
-        status: { dot: 'red', label: 'Evidence Required' },
-        caption: 'Submit photos of damage to proceed with warranty claim',
+        // Label stays exactly "Delivered" (dot:'red' still flags it) so this
+        // item is actually eligible for Return/Replace per getItemIntents —
+        // that flow's own EvidenceStep is where photo evidence belongs, not
+        // a standalone "Evidence Required" state that would lock it out.
+        status: { dot: 'red', label: 'Delivered' },
+        caption: 'Arrived damaged — start a return or replacement to resolve it',
         tracker: { steps: ['Confirmed', 'Shipped', 'Delivered'], currentIndex: 2 },
         timeline: {
           steps: [
