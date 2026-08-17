@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { splitProductSpec } from '../data/orders.js';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
-import { ChevronRightIcon } from './icons.jsx';
+import { CopyIcon, CheckIcon, ChevronRightIcon } from './icons.jsx';
+import './OrderCard.css';
 import './ShipmentCard.css';
 
 const DOT_COLOR = {
@@ -11,12 +12,39 @@ const DOT_COLOR = {
   muted: 'var(--color-text-muted)',
 };
 
+function CopyShipmentId({ id }) {
+  const [copied, setCopied] = useState(false);
+
+  async function handleCopy(e) {
+    e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(id);
+    } catch {
+      // Clipboard API unavailable — the checkmark still confirms the tap.
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1200);
+  }
+
+  return (
+    <button className="order-card__id" onClick={handleCopy} aria-label={`Copy shipment number ${id}`}>
+      {copied ? (
+        <CheckIcon className="order-card__id-icon order-card__id-icon--copied" />
+      ) : (
+        <CopyIcon className="order-card__id-icon" />
+      )}
+      <span>{id}</span>
+    </button>
+  );
+}
+
 // Several units of the same SKU that travelled together under one shipmentId.
 // They share a status and a date, so repeating a full OrderCard per unit says
 // "Delivered" three times and reads as three unrelated purchases. This shows
-// the shipment once, with the unit count, and only reveals the individual
-// order IDs on tap — each still opens its own Order Details, since returns and
-// warranty are per-unit.
+// the shipment once, using the same order-card chrome as every other card in
+// the list, with the unit count in place of a badge and the individual order
+// IDs revealed on tap — each still opens its own Order Details, since returns
+// and warranty are per-unit.
 export default function ShipmentCard({ orders }) {
   const { navigate } = useNavigation();
   const [expanded, setExpanded] = useState(false);
@@ -25,29 +53,47 @@ export default function ShipmentCard({ orders }) {
   const status = first.status;
 
   return (
-    <article className="shipment-card">
-      <button
-        className="shipment-card__summary"
-        onClick={() => setExpanded((v) => !v)}
-        aria-expanded={expanded}
-      >
-        <img className="shipment-card__image" src={first.image} alt={first.product} />
-        <div className="shipment-card__text">
-          <div className="shipment-card__status-row">
-            <span className="shipment-card__status" style={{ color: DOT_COLOR[status.dot] }}>
-              {status.label}
-            </span>
-            <span className="shipment-card__count">{orders.length} units</span>
-          </div>
-          <p className="shipment-card__product">{productName}</p>
-          {spec && <p className="shipment-card__spec">{spec}</p>}
-          <p className="shipment-card__date">{first.date}</p>
+    <article
+      className="order-card"
+      role="button"
+      tabIndex={0}
+      aria-expanded={expanded}
+      onClick={() => setExpanded((v) => !v)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          setExpanded((v) => !v);
+        }
+      }}
+    >
+      <div className="order-card__body">
+        <div className="order-card__header">
+          <CopyShipmentId id={first.shipmentId} />
+          <span className="order-card__date">{first.date}</span>
         </div>
-        <ChevronRightIcon
-          className={`shipment-card__chevron${expanded ? ' shipment-card__chevron--open' : ''}`}
-          aria-hidden="true"
-        />
-      </button>
+
+        <div className="order-card__main">
+          <img className="order-card__image" src={first.image} alt={first.product} />
+          <div className="order-card__details">
+            <div className="order-card__status-row">
+              <span className="order-card__status-label" style={{ color: DOT_COLOR[status.dot] }}>
+                {status.label}
+              </span>
+              <span className="order-card__pill-badge">{orders.length} units</span>
+            </div>
+            <p className="order-card__product">{productName}</p>
+            {spec && (
+              <p className="order-card__variant">
+                <span>{spec}</span>
+              </p>
+            )}
+          </div>
+          <ChevronRightIcon
+            className={`order-card__chevron${expanded ? ' shipment-card__chevron--open' : ''}`}
+            aria-hidden="true"
+          />
+        </div>
+      </div>
 
       {expanded && (
         <div className="shipment-card__units">
@@ -55,7 +101,10 @@ export default function ShipmentCard({ orders }) {
             <button
               key={order.id}
               className="shipment-card__unit"
-              onClick={() => navigate('orderDetails', { orderId: order.id })}
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate('orderDetails', { orderId: order.id });
+              }}
             >
               <span className="shipment-card__unit-id">{order.id}</span>
               <ChevronRightIcon className="shipment-card__unit-chevron" aria-hidden="true" />
