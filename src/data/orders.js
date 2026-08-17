@@ -124,11 +124,11 @@ export const ORDERS = [
     date: '15 Jul 2026',
     image: imgBedElev8Adjustable,
     banner: { icon: 'zap', text: 'Action Required' },
-    status: { dot: 'red', label: 'Evidence Required' },
+    status: { dot: 'red', label: 'Damaged — Reported' },
     product: 'Elev8 Smart Adjustable Bed Frame',
-    caption: 'Submit photos of damage to proceed with warranty claim',
+    caption: 'Reported on 14 Jul 2026 · Investigation in progress',
     actions: [
-      { label: 'Upload Photos', variant: 'primary' },
+      { label: 'Track Investigation', variant: 'secondary' },
       { label: 'Get Help', variant: 'secondary' },
     ],
     amount: 22999,
@@ -139,11 +139,11 @@ export const ORDERS = [
       steps: [
         { label: 'Order Confirmed', timestamp: '15 Jul 2026, 11:20 AM' },
         { label: 'Delivered', timestamp: '20 Jul 2026, 4:10 PM' },
-        { label: 'Damage Reported', timestamp: '14 Jul 2026, 6:00 PM', description: 'Awaiting evidence photos' },
+        { label: 'Damage Reported', timestamp: '14 Jul 2026, 6:00 PM', description: 'Investigation in progress' },
       ],
       currentIndex: 2,
     },
-    intentOverrides: { warranty: 'Already mid-claim — see the evidence request above' },
+    intentOverrides: { warranty: 'Already mid-claim — see the investigation above' },
   },
   {
     id: 'TSC77541',
