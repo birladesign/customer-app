@@ -141,12 +141,16 @@ export default function OrderCard({ order }) {
         <div className="order-card__main">
           <img className="order-card__image" src={order.image} alt={product} />
           <div className="order-card__details">
-            <div className="order-card__status-row">
-              <span className="order-card__status-label" style={{ color: DOT_COLOR[status.dot] }}>
-                {status.label}
-              </span>
-              {badge && <span className="order-card__pill-badge">{badge}</span>}
-            </div>
+            {(!banner || badge) && (
+              <div className="order-card__status-row">
+                {!banner && (
+                  <span className="order-card__status-label" style={{ color: DOT_COLOR[status.dot] }}>
+                    {status.label}
+                  </span>
+                )}
+                {badge && <span className="order-card__pill-badge">{badge}</span>}
+              </div>
+            )}
             <p className="order-card__product">{productName}</p>
             {(order.qty || spec) && (
               <p className="order-card__variant">

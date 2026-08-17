@@ -59,6 +59,69 @@
   gap: var(--space-4);
 }
 
+.order-details__ticket-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  border: 1px solid var(--color-accent-cyan);
+  background: var(--color-accent-cyan-wash);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3) var(--space-4);
+  font-family: inherit;
+  text-align: left;
+  transition: transform 0.1s ease-out;
+}
+
+.order-details__ticket-banner:active {
+  transform: scale(0.99);
+}
+
+.order-details__ticket-banner-icon {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  background: var(--color-accent-cyan);
+  color: var(--color-navy-900);
+}
+
+.order-details__ticket-banner-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.order-details__ticket-banner-title {
+  font-size: var(--text-product-size);
+  font-weight: 700;
+  color: var(--color-navy-900);
+}
+
+.order-details__ticket-banner-sub {
+  font-size: var(--text-caption-size);
+  color: var(--color-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.order-details__ticket-banner-chevron {
+  flex-shrink: 0;
+  color: var(--color-navy-900);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .order-details__ticket-banner:active {
+    transform: none;
+  }
+}
+
 /* One card for everything "about this order right now" — product,
    id/status, tracking, technician, warranty, rating — instead of a
    separate box per fact. Every direct child gets an automatic hairline
