@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { ORDERS, splitProductSpec, getOrderStatus, getShipmentInfo } from '../data/orders.js';
-import { getOrderIntents, getEditEligibility, getItemIntents } from '../data/intents.js';
+import { getOrderIntents, getEditEligibility, getItemIntents, isPostDispatch } from '../data/intents.js';
 import { getOpenCaseForOrder } from '../data/support.js';
 import { CURRENT_USER } from '../data/profile.js';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
@@ -48,6 +48,11 @@ const CANCEL_REASONS = [
   'Other',
 ];
 
+// The one reason PRD §8.2/CX-02 calls out for its own retention offer (real
+// EDD + Expedite/Hold) before cancellation is even discussed — every other
+// reason goes straight to the plain Hold-or-cancel sheet below.
+const DELAY_REASON = 'Delivery taking too long';
+
 function formatRupees(amount) {
   return `₹${amount.toLocaleString('en-IN')}`;
 }
@@ -64,9 +69,13 @@ export default function OrderDetails({ params }) {
   // and only reach the final irreversible confirm after declining that.
   // cancelStep drives the reason/alternative sheet; confirmingCancel is the
   // separate, final ConfirmSheet reached only after "No, Cancel My Order."
-  const [cancelStep, setCancelStep] = useState(null); // null | 'reason' | 'alternative'
+  const [cancelStep, setCancelStep] = useState(null); // null | 'reason' | 'alternative' | 'delayed'
   const [cancelReason, setCancelReason] = useState(null);
   const [confirmingCancel, setConfirmingCancel] = useState(false);
+  // The honest "not guaranteed" RTO-intercept warning (PRD CX-04) — its own
+  // sheet rather than reusing confirmingCancel, since confirming it doesn't
+  // cancel outright, it hands off into the RTO-Replacement tracker instead.
+  const [showRtoIntercept, setShowRtoIntercept] = useState(false);
   // Edit and Cancel are both rare, one-off actions — neither belongs sitting
   // on the page by default. Both live behind this one closed-by-default
   // "need help" disclosure instead of two separate always-visible controls.
@@ -121,6 +130,11 @@ export default function OrderDetails({ params }) {
   const returnIntent = intents.find((i) => i.key === 'returnReplace');
   const warrantyIntent = intents.find((i) => i.key === 'warranty');
   const cancelIntent = intents.find((i) => i.key === 'cancel');
+  // Drives the delay-reason retention sheet below: whether the courier
+  // already has it (Hold no longer makes sense) and the real ETA to show
+  // instead of a generic "we'll speed this up".
+  const postDispatch = isPostDispatch(order);
+  const expectedDelivery = order.timeline?.steps.find((s) => s.expectedDate)?.expectedDate;
   const itemIntents = scopedItem ? getItemIntents(scopedItem) : null;
   const effectiveWarrantyIntent = scopedItem ? itemIntents.warranty : warrantyIntent;
   const effectiveReturnIntent = scopedItem ? itemIntents.returnReplace : returnIntent;
@@ -148,7 +162,36 @@ export default function OrderDetails({ params }) {
   }
 
   function continueToAlternative() {
-    setCancelStep('alternative');
+    setCancelStep(cancelReason === DELAY_REASON ? 'delayed' : 'alternative');
+  }
+
+  // PRD CX-02's retention offer for "taking too long" — expediting is
+  // always on the table; the mutation is just a caption update since there's
+  // no backend here to actually move dispatch up.
+  function handleExpediteRequest() {
+    Object.assign(order, {
+      caption: 'Expedited delivery requested — we will prioritize dispatch and confirm the updated ETA shortly.',
+    });
+    closeCancelFlow();
+    goBack();
+  }
+
+  // Once it's shipped, cancelling isn't an instant OMS/POS cancel anymore
+  // (CX-03) — it's an honest RTO-intercept attempt into the RTO-Replacement
+  // sub-flow (CX-04, §8.11), since the courier already has it.
+  function continueToCancelAnyway() {
+    setCancelStep(null);
+    if (postDispatch) {
+      setShowRtoIntercept(true);
+    } else {
+      setConfirmingCancel(true);
+    }
+  }
+
+  function handleConfirmRtoIntercept() {
+    setShowRtoIntercept(false);
+    setCancelReason(null);
+    navigate('rtoReplace', { orderId: order.id });
   }
 
   // Offered instead of an outright cancel — "Hold or cancel" is the real
@@ -716,6 +759,39 @@ export default function OrderDetails({ params }) {
           </button>
         </div>
       </BottomSheet>
+
+      <BottomSheet open={cancelStep === 'delayed'} onClose={closeCancelFlow}>
+        <h2 className="confirm-sheet__title">Your order is on its way</h2>
+        <p className="confirm-sheet__body">
+          {expectedDelivery
+            ? `Expected delivery: ${expectedDelivery}. We can speed this up instead of cancelling.`
+            : 'We can speed this up instead of cancelling.'}
+        </p>
+        <div className="confirm-sheet__footer confirm-sheet__footer--stacked">
+          <button className="confirm-sheet__confirm" onClick={handleExpediteRequest}>
+            Expedite Delivery
+          </button>
+          {!postDispatch && (
+            <button className="confirm-sheet__confirm" onClick={handlePutOnHold}>
+              Put on Hold Instead
+            </button>
+          )}
+          <button className="confirm-sheet__cancel" onClick={continueToCancelAnyway}>
+            Continue to Cancel Anyway
+          </button>
+        </div>
+      </BottomSheet>
+
+      <ConfirmSheet
+        open={showRtoIntercept}
+        title="We'll try to stop it before it arrives"
+        body="Your order has already shipped, so cancellation isn't guaranteed. If it can't be intercepted in time, we'll process a return-to-origin and refund you once it's back with us."
+        confirmLabel="Attempt Cancellation"
+        cancelLabel="Keep My Order"
+        danger
+        onConfirm={handleConfirmRtoIntercept}
+        onClose={() => setShowRtoIntercept(false)}
+      />
 
       {trackingTarget && (
         <BottomSheet open={trackingOpen} onClose={() => setTrackingOpen(false)}>

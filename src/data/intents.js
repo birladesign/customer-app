@@ -74,14 +74,19 @@ export function getItemIntents(item) {
 const SHIPPED_LABELS = ['Shipped', 'Dispatched', 'Out for Delivery', 'Delivered'];
 
 // Works for either a whole order or a single line item — both shapes carry
-// their own `timeline`. Editing (qty/size/address) closes the moment
-// whatever's being edited has left the warehouse; once it's shipped, the
-// courier already has the old version.
+// their own `timeline`. True once the courier already has it, which is the
+// line PRD §8.2/8.3 draws between an instant OMS/POS cancel (CX-03) and the
+// RTO-intercept → RTO-Replacement sub-flow (CX-04, §8.11).
+export function isPostDispatch(entity) {
+  const idx = entity.timeline?.steps.findIndex((s) => SHIPPED_LABELS.includes(s.label)) ?? -1;
+  return idx !== -1 && idx <= entity.timeline.currentIndex;
+}
+
+// Editing (qty/size/address) closes the moment whatever's being edited has
+// left the warehouse; once it's shipped, the courier already has the old
+// version.
 export function getEditEligibility(entity) {
   if (entity.section === 'closed') return { enabled: false, reason: 'Order already closed' };
-  const idx = entity.timeline?.steps.findIndex((s) => SHIPPED_LABELS.includes(s.label)) ?? -1;
-  if (idx !== -1 && idx <= entity.timeline.currentIndex) {
-    return { enabled: false, reason: 'Editing is locked once it ships' };
-  }
+  if (isPostDispatch(entity)) return { enabled: false, reason: 'Editing is locked once it ships' };
   return { enabled: true };
 }
