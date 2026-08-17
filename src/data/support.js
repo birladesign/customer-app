@@ -74,7 +74,7 @@ export const FAQ_ITEMS = [
     id: 'reschedule-technician',
     category: 'orders',
     question: 'Can I reschedule my technician visit?',
-    answer: "Yes — open the order and tap Reschedule, or raise a case under Installation & Technician and we'll help you pick a new slot.",
+    answer: "Yes — open the order and tap Reschedule, or raise a request under Installation & Technician and we'll help you pick a new slot.",
   },
   {
     id: 'cancel-order',
@@ -93,7 +93,7 @@ export const FAQ_ITEMS = [
     id: 'warranty-claim',
     category: 'returns',
     question: 'How do I file a warranty claim?',
-    answer: "Open the order in My Orders and tap Warranty Details, or raise a case from here under Delivery & Logistics — we'll walk you through it.",
+    answer: "Open the order in My Orders and tap Warranty Details, or raise a request from here under Delivery & Logistics — we'll walk you through it.",
   },
   {
     id: 'refund-timeline',
@@ -105,7 +105,7 @@ export const FAQ_ITEMS = [
     id: 'payment-deducted',
     category: 'payments',
     question: 'My payment failed but money was deducted',
-    answer: "This usually reverses automatically within 5–7 business days. If it doesn't, raise a case under Payments & Refunds with your transaction reference.",
+    answer: "This usually reverses automatically within 5–7 business days. If it doesn't, raise a request under Payments & Refunds with your transaction reference.",
   },
   {
     id: 'invoice-location',
@@ -290,6 +290,16 @@ export function updateCaseMessages(caseId, messages) {
 // thread behind them, most recent first.
 export function getActiveConversations() {
   return [...USER_CASES].filter((c) => c.status === 'open').sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+}
+
+// Requests screen's "Resolved" tab — same shape as getActiveConversations,
+// just the closed-out counterpart.
+export function getResolvedConversations() {
+  return [...USER_CASES].filter((c) => c.status === 'resolved').sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+}
+
+export function getCaseById(caseId) {
+  return USER_CASES.find((c) => c.id === caseId) ?? null;
 }
 
 // Order picker helper for the chat's order step — Returns is filtered to

@@ -249,7 +249,7 @@ export default function SupportChat({ escalate, presetOrder, staleOrderId, resum
     if (candidates.length === 0) {
       pushBot({
         text: 'None of your orders qualify for this category.',
-        chips: [{ key: 'general', label: 'File as a general case instead', onClick: () => handleSelectLane(GENERAL_LANE) }],
+        chips: [{ key: 'general', label: 'File as a general request instead', onClick: () => handleSelectLane(GENERAL_LANE) }],
       });
       return;
     }
@@ -323,8 +323,8 @@ export default function SupportChat({ escalate, presetOrder, staleOrderId, resum
     const existingCase = findOpenCaseForOrder(selectedOrder?.id, selectedLane.key, selectedItem?.sku ?? null);
     if (existingCase) {
       pushBot({
-        text: `You already have an open case (${existingCase.id}) for this. You can view it, or keep going to file a new one.`,
-        chips: [{ key: 'view', label: 'View existing case', onClick: () => navigate('requests') }],
+        text: `You already have an open request (${existingCase.id}) for this. You can view it, or keep going to file a new one.`,
+        chips: [{ key: 'view', label: 'View existing request', onClick: () => navigate('requests') }],
         tone: 'warning',
       });
     }
@@ -364,7 +364,7 @@ export default function SupportChat({ escalate, presetOrder, staleOrderId, resum
     pushUser({ text, photoUrl: attachSentPhoto() });
     setStage('confirm');
     pushBot({
-      text: 'Ready to submit this case?',
+      text: 'Ready to submit this request?',
       chips: [
         {
           key: 'submit',
@@ -423,7 +423,7 @@ export default function SupportChat({ escalate, presetOrder, staleOrderId, resum
       pushUser({ text, photoUrl: attachSentPhoto() });
       setStage('confirm');
       pushBot({
-        text: 'Ready to submit this case?',
+        text: 'Ready to submit this request?',
         chips: [
           { key: 'submit', label: 'Submit Request', onClick: handleSubmit },
           { key: 'edit', label: 'Keep Editing', onClick: () => setStage('describe') },
@@ -434,7 +434,7 @@ export default function SupportChat({ escalate, presetOrder, staleOrderId, resum
 
     if (stage === 'followup') {
       pushUser({ text, photoUrl: attachSentPhoto() });
-      pushBot({ text: "Thanks — we've added this to your case. Our team will follow up if there's anything more to share." });
+      pushBot({ text: "Thanks — we've added this to your request. Our team will follow up if there's anything more to share." });
       return;
     }
 
@@ -458,10 +458,10 @@ export default function SupportChat({ escalate, presetOrder, staleOrderId, resum
     });
     caseIdRef.current = record.id;
     pushBot({
-      text: 'Case filed.',
+      text: 'Request filed.',
       caseResult: record,
       chips: [
-        { key: 'view', label: 'View in My Cases', onClick: () => navigate('requests') },
+        { key: 'view', label: 'View in My Requests', onClick: () => navigate('requests') },
         { key: 'close', label: 'End Chat', onClick: onClose },
       ],
     });

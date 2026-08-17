@@ -217,7 +217,7 @@ export default function Support({ params = {} }) {
                 className="support__faq-empty-cta"
                 onClick={() => openChat({ escalate: false, presetOrder: null, staleOrderId: null, resumeCase: null })}
               >
-                Raise a case instead
+                Raise a request instead
               </button>
             </div>
           ) : !q && !activeCategory ? (
