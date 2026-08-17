@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { splitProductSpec } from '../data/orders.js';
+import { splitProductSpec, getShipmentStatus } from '../data/orders.js';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
 import { CopyIcon, CheckIcon, ChevronRightIcon } from './icons.jsx';
 import './OrderCard.css';
@@ -45,10 +45,9 @@ function CopyShipmentId({ id }) {
 // the list, with the unit count in place of a badge and the individual order
 // IDs revealed on tap — each still opens its own Order Details, since returns
 // and warranty are per-unit.
-export default function ShipmentCard({ orders }) {
+function SameProductShipmentCard({ orders, first }) {
   const { navigate } = useNavigation();
   const [expanded, setExpanded] = useState(false);
-  const [first] = orders;
   const { name: productName, spec } = splitProductSpec(first.product);
   const status = first.status;
 
@@ -125,5 +124,72 @@ export default function ShipmentCard({ orders }) {
         </div>
       )}
     </article>
+  );
+}
+
+// A shipment made of different products (not N units of one SKU) — there's
+// no single representative product/status to show collapsed, so this skips
+// the tap-to-expand toggle entirely and always shows every unit as its own
+// product card (image, name, qty, status) right on My Orders. Each card
+// still opens that unit's own Order Details on tap, same as the same-SKU
+// case above.
+function MultiProductShipmentCard({ orders, first }) {
+  const { navigate } = useNavigation();
+  const shipmentStatus = getShipmentStatus(orders);
+
+  return (
+    <article className="order-card shipment-card--multi">
+      <div className="order-card__body">
+        <div className="order-card__header">
+          <CopyShipmentId id={first.shipmentId} />
+          <span className="order-card__date">{first.date}</span>
+        </div>
+        <div className="order-card__status-row">
+          <span className="order-card__status-label" style={{ color: DOT_COLOR[shipmentStatus.dot] }}>
+            {shipmentStatus.label}
+          </span>
+        </div>
+        <p className="order-card__caption">{orders.length} items in this shipment</p>
+      </div>
+
+      <div className="shipment-card__units shipment-card__units--products">
+        {orders.map((order) => {
+          const { name, spec } = splitProductSpec(order.product);
+          return (
+            <button
+              key={order.id}
+              className="shipment-card__product"
+              onClick={() => navigate('orderDetails', { orderId: order.id })}
+            >
+              <img className="shipment-card__product-image" src={order.image} alt={order.product} />
+              <div className="shipment-card__product-details">
+                <span className="shipment-card__product-status" style={{ color: DOT_COLOR[order.status.dot] }}>
+                  {order.status.label}
+                </span>
+                <p className="shipment-card__product-name">{name}</p>
+                {(order.qty || spec) && (
+                  <p className="shipment-card__product-meta">
+                    {order.qty && <span>Qty: {order.qty}</span>}
+                    {order.qty && spec && <span className="order-card__variant-dot" aria-hidden="true" />}
+                    {spec && <span>{spec}</span>}
+                  </p>
+                )}
+              </div>
+              <ChevronRightIcon className="shipment-card__unit-chevron" aria-hidden="true" />
+            </button>
+          );
+        })}
+      </div>
+    </article>
+  );
+}
+
+export default function ShipmentCard({ orders }) {
+  const [first] = orders;
+  const sameProduct = orders.every((order) => order.product === first.product);
+  return sameProduct ? (
+    <SameProductShipmentCard orders={orders} first={first} />
+  ) : (
+    <MultiProductShipmentCard orders={orders} first={first} />
   );
 }

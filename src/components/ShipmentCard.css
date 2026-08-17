@@ -51,6 +51,82 @@
   color: var(--color-text-muted);
 }
 
+/* Multi-product shipment: no tap-to-expand, so the outer card shouldn't
+   look pressable the way a same-SKU ShipmentCard/OrderCard does. */
+.shipment-card--multi {
+  cursor: default;
+}
+
+.shipment-card--multi:active {
+  transform: none;
+}
+
+.shipment-card__units--products {
+  display: flex;
+  flex-direction: column;
+}
+
+.shipment-card__product {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  border: none;
+  background: none;
+  padding: var(--space-3) var(--space-4);
+  font-family: inherit;
+  text-align: left;
+  transition: background 0.15s var(--ease-standard);
+}
+
+.shipment-card__product + .shipment-card__product {
+  border-top: 1px solid var(--color-border);
+}
+
+.shipment-card__product:active {
+  background: rgba(26, 43, 88, 0.04);
+}
+
+.shipment-card__product-image {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  object-fit: cover;
+  background: var(--color-bg-app);
+  flex-shrink: 0;
+}
+
+.shipment-card__product-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.shipment-card__product-status {
+  display: block;
+  font-size: var(--text-caption-size);
+  letter-spacing: var(--text-caption-tracking);
+  font-weight: 600;
+}
+
+.shipment-card__product-name {
+  margin: 2px 0 0;
+  font-size: var(--text-body-size);
+  letter-spacing: var(--text-body-tracking);
+  line-height: var(--text-body-leading);
+  font-weight: 500;
+  color: #111827;
+}
+
+.shipment-card__product-meta {
+  margin: 2px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--text-caption-size);
+  letter-spacing: var(--text-caption-tracking);
+  color: var(--color-text-muted);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .shipment-card__chevron--open {
     transition: none;

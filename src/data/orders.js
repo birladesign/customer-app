@@ -53,23 +53,38 @@ export function splitProductSpec(product) {
   return match ? { name: match[1].trim(), spec: match[2].trim() } : { name: product, spec: null };
 }
 
+// Shared by getOrderStatus (a multi-item order's line items) and
+// getShipmentStatus (a multi-product shipment's sibling orders) — both are
+// "N things with their own status, roll up into one pill" the same way. A
+// unit needing attention (payment failed, damage reported, on hold...)
+// always outranks the delivered/in-transit count — the pill should surface
+// the one thing blocking things, not dilute it into "3 of 4 delivered" as if
+// everything were just running late.
+function deriveGroupStatus(units) {
+  const flagged = units.find((unit) => unit.status.dot === 'red');
+  if (flagged) return flagged.status;
+  const total = units.length;
+  const delivered = units.filter((unit) => unit.status.label === 'Delivered').length;
+  if (delivered === total) return { dot: 'green', label: 'All Items Delivered' };
+  if (delivered === 0) return { dot: 'blue', label: `${total} Items · In Transit` };
+  return { dot: 'blue', label: `${delivered} of ${total} Items Delivered` };
+}
+
 // Multi-item orders don't carry a static status — it's derived from each line
 // item's own status, so the parent pill always reflects reality (one item
 // still in transit while the rest are delivered) instead of a hand-authored
 // order.status drifting from what the items actually say.
 export function getOrderStatus(order) {
   if (!order.items) return order.status;
-  // A line item needing attention (payment failed, damage reported, on
-  // hold...) always outranks the delivered/in-transit count — the parent
-  // pill should surface the one thing blocking the order, not dilute it
-  // into "3 of 4 delivered" as if everything were just running late.
-  const flagged = order.items.find((item) => item.status.dot === 'red');
-  if (flagged) return flagged.status;
-  const total = order.items.length;
-  const delivered = order.items.filter((item) => item.status.label === 'Delivered').length;
-  if (delivered === total) return { dot: 'green', label: 'All Items Delivered' };
-  if (delivered === 0) return { dot: 'blue', label: `${total} Items · In Transit` };
-  return { dot: 'blue', label: `${delivered} of ${total} Items Delivered` };
+  return deriveGroupStatus(order.items);
+}
+
+// Same idea, for a shipment made of sibling top-level orders (different
+// products, each with its own order.status) rather than one order's line
+// items — used by ShipmentCard when the units in a shipment aren't all the
+// same SKU.
+export function getShipmentStatus(units) {
+  return deriveGroupStatus(units);
 }
 
 // After Edit Order changes a line item's price (qty or size change), the
@@ -1145,6 +1160,147 @@ export const ORDERS = [
         },
       ],
       currentIndex: 2,
+    },
+  },
+  // A genuine multi-SKU shipment — four different products travelling
+  // together in one parcel, each at its own point in delivery (unlike the
+  // same-SKU-×3 shipment above, where every unit is identical and shares one
+  // status). Still full orders in their own right — OrderDetails/Warranty
+  // work per unit — but ShipmentCard renders these as individual product
+  // cards under one shipment header, always shown, rather than the
+  // same-SKU case's "N units" summary behind a tap-to-expand toggle.
+  {
+    id: 'TSC96601',
+    shipmentId: 'SHP96601',
+    section: 'inProgress',
+    date: '12 Aug 2026',
+    image: imgDeskAeroplus,
+    status: { dot: 'green', label: 'Delivered' },
+    product: 'AeroPlus Adjustable Desk',
+    qty: 1,
+    actions: [{ label: 'Warranty', variant: 'secondary' }],
+    amount: 20999,
+    address: DEMO_ADDRESS,
+    payment: { method: 'UPI', status: 'Paid' },
+    priceBreakup: { itemPrice: 20999, shipping: 0, discount: 0, tax: 0, total: 20999 },
+    timeline: {
+      steps: [
+        {
+          label: 'Order Confirmed',
+          timestamp: '12 Aug 2026, 10:00 AM',
+          updates: [{ text: 'Order has been confirmed', timestamp: '12 Aug 2026, 10:00 AM' }],
+        },
+        {
+          label: 'Shipped',
+          timestamp: '13 Aug 2026, 9:00 AM',
+          updates: [{ text: 'Item has been handed over to courier', timestamp: '13 Aug 2026, 9:00 AM' }],
+        },
+        {
+          label: 'Delivered',
+          timestamp: '14 Aug 2026, 2:00 PM',
+          updates: [{ text: 'Delivered — signed for at the doorstep', timestamp: '14 Aug 2026, 2:00 PM' }],
+        },
+      ],
+      currentIndex: 2,
+    },
+  },
+  {
+    id: 'TSC96602',
+    shipmentId: 'SHP96601',
+    section: 'inProgress',
+    date: '12 Aug 2026',
+    image: imgChairStyluxErgonomic,
+    status: { dot: 'blue', label: 'Out for Delivery' },
+    product: 'Stylux Ergonomic Office Chair',
+    qty: 1,
+    actions: [{ label: 'Track Order', variant: 'secondary' }],
+    amount: 16999,
+    address: DEMO_ADDRESS,
+    payment: { method: 'UPI', status: 'Paid' },
+    priceBreakup: { itemPrice: 16999, shipping: 0, discount: 0, tax: 0, total: 16999 },
+    timeline: {
+      steps: [
+        {
+          label: 'Order Confirmed',
+          timestamp: '12 Aug 2026, 10:00 AM',
+          updates: [{ text: 'Order has been confirmed', timestamp: '12 Aug 2026, 10:00 AM' }],
+        },
+        {
+          label: 'Shipped',
+          timestamp: '13 Aug 2026, 9:00 AM',
+          updates: [{ text: 'Item has been handed over to courier', timestamp: '13 Aug 2026, 9:00 AM' }],
+        },
+        {
+          label: 'Out for Delivery',
+          timestamp: '17 Aug 2026, 9:00 AM',
+          updates: [{ text: 'Out for delivery, arriving today', timestamp: '17 Aug 2026, 9:00 AM' }],
+        },
+        { label: 'Delivered', timestamp: null, expectedDate: '17 Aug 2026' },
+      ],
+      currentIndex: 2,
+    },
+  },
+  {
+    id: 'TSC96603',
+    shipmentId: 'SHP96601',
+    section: 'inProgress',
+    date: '12 Aug 2026',
+    image: imgPillowCervical,
+    status: { dot: 'blue', label: 'Shipped' },
+    product: 'Smart Cervical Pillow',
+    qty: 2,
+    actions: [{ label: 'Track Order', variant: 'secondary' }],
+    amount: 4398,
+    address: DEMO_ADDRESS,
+    payment: { method: 'UPI', status: 'Paid' },
+    priceBreakup: { itemPrice: 4398, shipping: 0, discount: 0, tax: 0, total: 4398 },
+    timeline: {
+      steps: [
+        {
+          label: 'Order Confirmed',
+          timestamp: '12 Aug 2026, 10:00 AM',
+          updates: [{ text: 'Order has been confirmed', timestamp: '12 Aug 2026, 10:00 AM' }],
+        },
+        {
+          label: 'Shipped',
+          timestamp: '16 Aug 2026, 2:00 PM',
+          updates: [{ text: 'Item has been handed over to courier', timestamp: '16 Aug 2026, 2:00 PM' }],
+        },
+        { label: 'Delivered', timestamp: null, expectedDate: '19 Aug 2026' },
+      ],
+      currentIndex: 1,
+    },
+  },
+  {
+    id: 'TSC96604',
+    shipmentId: 'SHP96601',
+    section: 'inProgress',
+    date: '12 Aug 2026',
+    image: imgBedElev8Adjustable,
+    status: { dot: 'blue', label: 'Confirmed · Packing' },
+    product: 'Elev8 Smart Adjustable Bed Frame',
+    qty: 1,
+    actions: [{ label: 'Track Order', variant: 'secondary' }],
+    amount: 22999,
+    address: DEMO_ADDRESS,
+    payment: { method: 'UPI', status: 'Paid' },
+    priceBreakup: { itemPrice: 22999, shipping: 0, discount: 0, tax: 0, total: 22999 },
+    timeline: {
+      steps: [
+        {
+          label: 'Order Confirmed',
+          timestamp: '12 Aug 2026, 10:00 AM',
+          updates: [{ text: 'Order has been confirmed', timestamp: '12 Aug 2026, 10:00 AM' }],
+        },
+        {
+          label: 'Packing',
+          timestamp: '15 Aug 2026, 10:00 AM',
+          updates: [{ text: 'We have started packing this item', timestamp: '15 Aug 2026, 10:00 AM' }],
+        },
+        { label: 'Shipped', timestamp: null },
+        { label: 'Delivered', timestamp: null, expectedDate: '20 Aug 2026' },
+      ],
+      currentIndex: 1,
     },
   },
   // A genuine multi-SKU cart — three different products bought together in
