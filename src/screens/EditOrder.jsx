@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ORDERS, splitProductSpec, recomputeOrderTotals } from '../data/orders.js';
+import { ORDERS, splitProductSpec, recomputeOrderTotals, getOrderStatus } from '../data/orders.js';
 import { getVariants } from '../data/variants.js';
 import { getEditEligibility } from '../data/intents.js';
 import { ADDRESSES } from '../data/profile.js';
@@ -22,6 +22,13 @@ function formatAddressLine(address) {
 
 const QTY_MIN = 1;
 const QTY_MAX = 5;
+
+const DOT_COLOR = {
+  red: 'var(--color-action-red)',
+  blue: 'var(--color-info-blue)',
+  green: 'var(--color-success)',
+  muted: 'var(--color-text-muted)',
+};
 
 export default function EditOrder({ params }) {
   const { goBack } = useNavigation();
@@ -167,6 +174,14 @@ export default function EditOrder({ params }) {
                   ? `${formatRupees(Math.abs(delta))} will be refunded within 5–7 business days.`
                   : `${withSpec(baseName, currentSpec)} has been updated.`}
               </p>
+            </div>
+
+            <div className="edit-order__status-row">
+              <span
+                className="edit-order__status-dot"
+                style={{ background: DOT_COLOR[getOrderStatus(order).dot] }}
+              />
+              <span className="edit-order__status-label">Order Status: {getOrderStatus(order).label}</span>
             </div>
 
             {savedSummary.addressChanged && (
