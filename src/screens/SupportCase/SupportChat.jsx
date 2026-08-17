@@ -1,6 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigation } from '../../navigation/NavigationContext.jsx';
-import { CASE_LANES, getOrdersForLane, findOpenCaseForOrder, createCase, updateCaseMessages } from '../../data/support.js';
+import {
+  CASE_LANES,
+  getOrdersForLane,
+  findOpenCaseForOrder,
+  createCase,
+  updateCaseMessages,
+  getOrderStatus,
+} from '../../data/support.js';
 import { useObjectUrlPreview } from '../../hooks/useObjectUrlPreview.js';
 import { CopyIcon, CheckIcon, CameraIcon, CloseIcon } from '../../components/icons.jsx';
 import './SupportChat.css';
@@ -11,6 +18,16 @@ const GENERAL_LANE = CASE_LANES.find((l) => l.key === 'general');
 
 function isReturnEligible(order) {
   return Boolean(order) && getOrdersForLane('returns').some((o) => o.id === order.id);
+}
+
+// Delivered items can still be genuinely disputed — the courier's status
+// isn't proof the customer actually has the item in hand — so Delivery &
+// Logistics keeps offering a path in even after the system says delivered,
+// instead of the option quietly disappearing the moment the status flips.
+function isDelivered(selectedOrder, selectedItem) {
+  if (!selectedOrder) return false;
+  const label = selectedItem ? selectedItem.status.label : getOrderStatus(selectedOrder).label;
+  return label === 'Delivered';
 }
 
 function CaseResultCard({ caseResult }) {
@@ -124,6 +141,11 @@ export default function SupportChat({ escalate, presetOrder, staleOrderId, resum
   // order list) — reshown verbatim if the user types something unrelated
   // instead of tapping it, rather than the flow silently losing its place.
   const pendingPromptRef = useRef(null);
+  // Holds whatever text is about to become the case description — either
+  // typed through the composer (describe stage) or filled in by a quick
+  // chip like "Did not Receive" — so handleSubmit always has a single
+  // source of truth regardless of which path produced it.
+  const descriptionRef = useRef('');
 
   const [messages, setMessages] = useState(() => resumeCase?.messages ?? []);
   const [stage, setStage] = useState(resumeCase ? 'followup' : 'lane'); // lane | order | item | describe | confirm | followup
@@ -306,8 +328,52 @@ export default function SupportChat({ escalate, presetOrder, staleOrderId, resum
         tone: 'warning',
       });
     }
+    if (selectedLane.key === 'logistics' && isDelivered(selectedOrder, selectedItem)) {
+      pushBot({
+        text: 'Tell us what happened — type your message below, or pick an option:',
+        chips: [
+          {
+            key: 'not-received',
+            label: 'Did not Receive',
+            onClick: () =>
+              handleQuickDescribe(
+                selectedLane,
+                selectedOrder,
+                selectedItem,
+                'This shows as delivered, but I have not received it.'
+              ),
+          },
+        ],
+      });
+      setStage('describe');
+      return;
+    }
+
     pushBot({ text: 'Tell us what happened — type your message below.' });
     setStage('describe');
+  }
+
+  // Shortcut for canned, one-tap descriptions (e.g. "Did not Receive") that
+  // skip straight to confirm the same way a typed message does via
+  // handleSend, without requiring the customer to type it out themselves.
+  // Takes the lane/order/item explicitly (rather than reading state) since
+  // it's invoked from a chip built in the same synchronous handler as the
+  // setLane/setOrder/setItem calls that would otherwise not have flushed yet.
+  function handleQuickDescribe(selectedLane, selectedOrder, selectedItem, text) {
+    descriptionRef.current = text;
+    pushUser({ text, photoUrl: attachSentPhoto() });
+    setStage('confirm');
+    pushBot({
+      text: 'Ready to submit this case?',
+      chips: [
+        {
+          key: 'submit',
+          label: 'Submit Case',
+          onClick: () => handleSubmit({ lane: selectedLane, order: selectedOrder, item: selectedItem }),
+        },
+        { key: 'edit', label: 'Keep Editing', onClick: () => setStage('describe') },
+      ],
+    });
   }
 
   // Off-topic guard: if the bot is waiting on a specific tap (a lane, an
@@ -353,6 +419,7 @@ export default function SupportChat({ escalate, presetOrder, staleOrderId, resum
         pushBot({ text: `A few more words would help (${text.length}/${MIN_LENGTH}).` });
         return;
       }
+      descriptionRef.current = text;
       pushUser({ text, photoUrl: attachSentPhoto() });
       setStage('confirm');
       pushBot({
@@ -374,8 +441,21 @@ export default function SupportChat({ escalate, presetOrder, staleOrderId, resum
     reaskPending(text);
   }
 
-  function handleSubmit() {
-    const record = createCase({ lane: lane.key, order, item, description: draft, hasPhoto: Boolean(photoFile), escalate, messages });
+  // Accepts explicit overrides for lane/order/item rather than always
+  // trusting component state — a chip pushed in the same synchronous
+  // handler as setLane/setOrder/setItem (e.g. the "Did not Receive"
+  // quick-reply) closes over the pre-update render, so its state reads
+  // would still be null/stale when the chip is actually tapped later.
+  function handleSubmit(overrides = {}) {
+    const record = createCase({
+      lane: (overrides.lane ?? lane).key,
+      order: overrides.order !== undefined ? overrides.order : order,
+      item: overrides.item !== undefined ? overrides.item : item,
+      description: descriptionRef.current,
+      hasPhoto: Boolean(photoFile),
+      escalate,
+      messages,
+    });
     caseIdRef.current = record.id;
     pushBot({
       text: 'Case filed.',
