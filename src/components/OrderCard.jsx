@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { splitProductSpec, getOrderStatus } from '../data/orders.js';
+import { splitProductSpec, getOrderStatus, getExpectedDelivery } from '../data/orders.js';
 import { getOpenCaseForOrder } from '../data/support.js';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
-import { CopyIcon, CheckIcon, ChevronRightIcon, WalletIcon, CheckCircleIcon } from './icons.jsx';
+import { CopyIcon, CheckIcon, ChevronRightIcon, WalletIcon, CheckCircleIcon, CalendarIcon } from './icons.jsx';
 import StarRating from './StarRating.jsx';
 import './OrderCard.css';
 
@@ -72,6 +72,7 @@ export default function OrderCard({ order }) {
   const status = getOrderStatus(order);
   const { navigate, switchTab } = useNavigation();
   const { name: productName, spec } = splitProductSpec(product);
+  const expectedDelivery = getExpectedDelivery(order);
   const visibleActions = actions.filter((a) => !a.label.startsWith('Track'));
   // No backend in this prototype — mutate the shared order object in place
   // (same pattern as elsewhere) so Order Details reflects the same rating
@@ -148,6 +149,12 @@ export default function OrderCard({ order }) {
               </p>
             )}
             {caption && <p className="order-card__caption">{caption}</p>}
+            {expectedDelivery && !caption?.includes(expectedDelivery) && (
+              <p className="order-card__edd">
+                <CalendarIcon width="12" height="12" />
+                Est. Delivery: {expectedDelivery}
+              </p>
+            )}
             {savings && (
               <p className="order-card__savings">
                 <WalletIcon /> {savings}

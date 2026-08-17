@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { splitProductSpec, getShipmentStatus } from '../data/orders.js';
+import { splitProductSpec, getShipmentStatus, getExpectedDelivery } from '../data/orders.js';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
-import { CopyIcon, CheckIcon, ChevronRightIcon } from './icons.jsx';
+import { CopyIcon, CheckIcon, ChevronRightIcon, CalendarIcon } from './icons.jsx';
 import './OrderCard.css';
 import './ShipmentCard.css';
 
@@ -69,6 +69,7 @@ function SameProductShipmentCard({ orders, first }) {
   const [expanded, setExpanded] = useState(false);
   const { name: productName, spec } = splitProductSpec(first.product);
   const status = first.status;
+  const edd = getExpectedDelivery(first);
 
   return (
     <article
@@ -107,6 +108,12 @@ function SameProductShipmentCard({ orders, first }) {
             <p className="order-card__caption">
               All {orders.length} units {status.dot === 'green' ? 'delivered' : 'arriving'} together on {first.date}
             </p>
+            {edd && (
+              <p className="order-card__edd">
+                <CalendarIcon width="12" height="12" />
+                Est. Delivery: {edd}
+              </p>
+            )}
           </div>
           <ChevronRightIcon
             className={`order-card__chevron${expanded ? ' shipment-card__chevron--open' : ''}`}
@@ -150,6 +157,9 @@ function SameProductShipmentCard({ orders, first }) {
 function MultiProductShipmentCard({ orders, first }) {
   const { navigate } = useNavigation();
   const shipmentStatus = getShipmentStatus(orders);
+  // Every unit in one shipment travels and arrives together — one shared
+  // delivery day for the whole card, not a different EDD per row.
+  const shipmentEdd = orders.map(getExpectedDelivery).find(Boolean);
 
   return (
     <article className="order-card shipment-card--multi">
@@ -164,6 +174,12 @@ function MultiProductShipmentCard({ orders, first }) {
           </span>
         </div>
         <p className="order-card__caption">{orders.length} items in this shipment</p>
+        {shipmentEdd && (
+          <p className="order-card__edd">
+            <CalendarIcon width="12" height="12" />
+            Est. Delivery: {shipmentEdd}
+          </p>
+        )}
       </div>
 
       <div className="shipment-card__units shipment-card__units--products">

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { ORDERS, splitProductSpec, getOrderStatus, getShipmentInfo } from '../data/orders.js';
+import { ORDERS, splitProductSpec, getOrderStatus, getShipmentInfo, getExpectedDelivery } from '../data/orders.js';
 import { getOrderIntents, getEditEligibility, getItemIntents, isPostDispatch } from '../data/intents.js';
 import { getOpenCaseForOrder } from '../data/support.js';
 import { CURRENT_USER } from '../data/profile.js';
@@ -138,7 +138,7 @@ export default function OrderDetails({ params }) {
   // already has it (Hold no longer makes sense) and the real ETA to show
   // instead of a generic "we'll speed this up".
   const postDispatch = isPostDispatch(order);
-  const expectedDelivery = order.timeline?.steps.find((s) => s.expectedDate)?.expectedDate;
+  const expectedDelivery = getExpectedDelivery(order);
   const itemIntents = scopedItem ? getItemIntents(scopedItem) : null;
   const effectiveWarrantyIntent = scopedItem ? itemIntents.warranty : warrantyIntent;
   const effectiveReturnIntent = scopedItem ? itemIntents.returnReplace : returnIntent;

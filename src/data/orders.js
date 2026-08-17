@@ -53,6 +53,17 @@ export function splitProductSpec(product) {
   return match ? { name: match[1].trim(), spec: match[2].trim() } : { name: product, spec: null };
 }
 
+// Not every pending step with an expectedDate is about delivery — a
+// delivered item can still have "Installation Completed" or "Refund
+// Initiated" pending, each with its own expectedDate that isn't a delivery
+// promise. Only a step actually named for delivery counts.
+const DELIVERY_STEP_LABELS = ['Delivered', 'All Items Delivered'];
+
+export function getExpectedDelivery(entity) {
+  const step = entity.timeline?.steps.find((s) => s.expectedDate && DELIVERY_STEP_LABELS.includes(s.label));
+  return step?.expectedDate ?? null;
+}
+
 // Shared by getOrderStatus (a multi-item order's line items) and
 // getShipmentStatus (a multi-product shipment's sibling orders) — both are
 // "N things with their own status, roll up into one pill" the same way. A
@@ -152,7 +163,7 @@ export const ORDERS = [
     date: '15 Jul 2026',
     image: imgBedElev8Adjustable,
     status: { dot: 'red', label: 'Damaged — Reported' },
-    product: 'Elev8 Smart Adjustable Bed Frame',
+    product: 'Elev8 Smart Adjustable Bed Frame (Queen / Grey)',
     caption: 'Reported on 14 Jul 2026 · Investigation in progress',
     actions: [
       { label: 'Track Investigation', variant: 'secondary' },
@@ -202,7 +213,7 @@ export const ORDERS = [
     image: imgChairStyluxErgonomic,
     banner: { icon: 'zap', text: 'Pay Now' },
     status: { dot: 'red', label: 'Payment Failed' },
-    product: 'Stylux Ergonomic Office Chair',
+    product: 'Stylux Ergonomic Office Chair (Grey)',
     caption: 'Retry payment to resume your order',
     actions: [{ label: 'Retry Payment', variant: 'primary' }],
     amount: 16999,
@@ -237,7 +248,7 @@ export const ORDERS = [
     image: imgMattressOrthoHybrid,
     banner: { icon: 'alert', text: 'Damage Reported' },
     status: { dot: 'red', label: 'Damaged — Reported' },
-    product: 'Smart Ortho Hybrid Pocketed Spring Mattress (Queen)',
+    product: 'Smart Ortho Hybrid Pocketed Spring Mattress (Queen / 8 inch / 60x78 in)',
     caption: 'Reported on 03 Aug 2026 · Investigation in progress',
     disabledReason: 'Manage Order unavailable — investigation in progress',
     tracker: { steps: ['Reported', 'Investigation Started', 'Issue Resolved'], currentIndex: 1 },
@@ -291,7 +302,7 @@ export const ORDERS = [
     image: imgPillowHybrid,
     badge: 'Express',
     status: { dot: 'blue', label: 'Out for Delivery' },
-    product: 'Smart Hybrid Pillow (Set of 2)',
+    product: 'Smart Hybrid Pillow (Set of 2 / Memory Foam)',
     qty: 2,
     caption: 'Arriving today by 6 PM',
     // Already out for delivery — "Reschedule" doesn't apply once it's with the
@@ -351,7 +362,7 @@ export const ORDERS = [
     date: '01 Aug 2026',
     image: imgPillowPregnancy,
     status: { dot: 'blue', label: 'Confirmed · Packing' },
-    product: 'Smart Pregnancy Pillow',
+    product: 'Smart Pregnancy Pillow (U-Shape / Memory Foam)',
     caption: 'Estimated delivery: 06 Aug 2026',
     tracker: { steps: ['Confirmed', 'Packing', 'Shipped', 'Delivered'], currentIndex: 1 },
     actions: [
@@ -398,7 +409,7 @@ export const ORDERS = [
     date: '28 Jul 2026',
     image: imgSofaLuxeGrande,
     status: { dot: 'blue', label: 'Installation Scheduled' },
-    product: 'Luxe Grande Recliner Sofa',
+    product: 'Luxe Grande Recliner Sofa (Royal Blue / 3 Seater)',
     caption: 'Technician visit: 06 Aug 2026, 10 AM – 12 PM',
     technician: { name: 'Rajesh Kumar', phone: '+919876543210', phoneDisplay: '+91 98765 43210' },
     installationStatus: 'confirmed',
@@ -463,7 +474,7 @@ export const ORDERS = [
     date: '10 Aug 2026',
     image: imgBedElev8Adjustable,
     status: { dot: 'blue', label: 'Installation Pending' },
-    product: 'Elev8 Smart Adjustable Bed Frame',
+    product: 'Elev8 Smart Adjustable Bed Frame (Queen / Grey)',
     caption: 'Delivered — confirm your installation slot',
     installationStatus: 'pending',
     installationSlot: { date: '12 Aug 2026', window: '10 AM – 12 PM' },
@@ -521,7 +532,7 @@ export const ORDERS = [
     date: '18 Jul 2026',
     image: imgChairOnyxOrthopedic,
     status: { dot: 'blue', label: 'Return Pickup Scheduled' },
-    product: 'Onyx Orthopedic Office Chair',
+    product: 'Onyx Orthopedic Office Chair (Black)',
     color: 'Black',
     caption: 'Pickup 05 Aug 2026, 2 PM – 6 PM',
     tracker: { steps: ['Pickup Scheduled', 'Picked Up', 'Quality Check', 'Refund Initiated'], currentIndex: 0 },
@@ -577,7 +588,7 @@ export const ORDERS = [
     date: '12 Jul 2026',
     image: imgMattressOrthoRoyale,
     status: { dot: 'blue', label: 'Replacement Dispatched' },
-    product: 'Smart Ortho Royale Mattress (King)',
+    product: 'Smart Ortho Royale Mattress (King / 8 inch / 72x78 in)',
     caption: 'Replacing damaged unit. ETA 07 Aug 2026',
     tracker: { steps: ['Confirmed', 'Dispatched', 'Out for Delivery', 'Delivered'], currentIndex: 1 },
     actions: [{ label: 'Track Replacement', variant: 'secondary' }],
@@ -626,7 +637,7 @@ export const ORDERS = [
     date: '02 Mar 2026',
     image: imgChairElitePremium,
     status: { dot: 'green', label: 'Delivered' },
-    product: 'Elite Premium Office Chair',
+    product: 'Elite Premium Office Chair (Charcoal Grey)',
     color: 'Charcoal Grey',
     caption: 'Delivered on 15 May 2026',
     savings: 'You saved ₹12,345 on this item',
@@ -675,7 +686,7 @@ export const ORDERS = [
     date: '10 Jan 2026',
     image: imgMattressLuxeRoyale,
     status: { dot: 'green', label: 'Exchange Completed' },
-    product: 'Smart Luxe Royale Mattress (Queen)',
+    product: 'Smart Luxe Royale Mattress (Queen / 8 inch / 60x78 in)',
     color: 'Ivory White',
     caption: 'Completed on 11 Apr 2026',
     savings: 'You saved ₹12,345 on this item',
@@ -727,7 +738,7 @@ export const ORDERS = [
     image: imgDeskAeroplus,
     badge: 'Express',
     status: { dot: 'green', label: 'Installation Completed' },
-    product: 'AeroPlus Adjustable Desk',
+    product: 'AeroPlus Adjustable Desk (Oak / 120x60 cm)',
     caption: 'Installed on 23 Dec 2025',
     savings: 'You saved ₹8,200 on this item',
     rating: 0,
@@ -770,7 +781,7 @@ export const ORDERS = [
     date: '05 Nov 2025',
     image: imgMattressOrtho,
     status: { dot: 'muted', label: 'Refund Completed' },
-    product: 'Smart Ortho Mattress (Single)',
+    product: 'Smart Ortho Mattress (Single / 5 inch / 36x75 in)',
     refundNote: '₹32,235 refunded to source account',
     actions: [],
     amount: 9490,
@@ -829,7 +840,7 @@ export const ORDERS = [
     date: '15 Oct 2025',
     image: imgPillowCervical,
     status: { dot: 'muted', label: 'Cancelled' },
-    product: 'Smart Cervical Pillow',
+    product: 'Smart Cervical Pillow (Standard / Memory Foam)',
     caption: 'Cancelled on 16 Oct 2025',
     actions: [{ label: 'Reorder', variant: 'secondary' }],
     amount: 2199,
@@ -869,7 +880,7 @@ export const ORDERS = [
     image: imgMattressOrthoRoyale,
     banner: { icon: 'alert', text: 'Delivery Failed' },
     status: { dot: 'red', label: 'Delivery Delayed — Delivery Failed' },
-    product: 'Smart Ortho Royale Mattress (King)',
+    product: 'Smart Ortho Royale Mattress (King / 8 inch / 72x78 in)',
     caption: 'Courier could not deliver after 3 attempts · Returning to warehouse',
     tracker: { steps: ['Delivery Failed', 'Delivery Delayed', 'Received at Warehouse', 'Refund Initiated'], currentIndex: 1 },
     actions: [
@@ -923,7 +934,7 @@ export const ORDERS = [
     date: '20 Jun 2026',
     image: imgChairElitePremium,
     status: { dot: 'green', label: 'Delivery Delayed — Refund Processed' },
-    product: 'Elite Premium Office Chair',
+    product: 'Elite Premium Office Chair (Charcoal Grey)',
     color: 'Onyx Black',
     caption: '₹38,499 refunded after return to warehouse',
     refundNote: '₹38,499 refunded to source account',
@@ -994,7 +1005,7 @@ export const ORDERS = [
     date: '20 Nov 2025',
     image: imgBedElev8Adjustable,
     status: { dot: 'green', label: 'Delivered' },
-    product: 'Recliner Bed with Italia Frame (King)',
+    product: 'Recliner Bed with Italia Frame (King / Walnut Finish)',
     qty: 1,
     actions: [{ label: 'Warranty', variant: 'secondary' }],
     amount: 54999,
@@ -1038,7 +1049,7 @@ export const ORDERS = [
     date: '20 Nov 2025',
     image: imgBedElev8Adjustable,
     status: { dot: 'green', label: 'Delivered' },
-    product: 'Recliner Bed with Italia Frame (King)',
+    product: 'Recliner Bed with Italia Frame (King / Walnut Finish)',
     qty: 1,
     actions: [{ label: 'Warranty', variant: 'secondary' }],
     amount: 54999,
@@ -1082,7 +1093,7 @@ export const ORDERS = [
     date: '20 Nov 2025',
     image: imgBedElev8Adjustable,
     status: { dot: 'green', label: 'Delivered' },
-    product: 'Recliner Bed with Italia Frame (King)',
+    product: 'Recliner Bed with Italia Frame (King / Walnut Finish)',
     qty: 1,
     actions: [{ label: 'Warranty', variant: 'secondary' }],
     amount: 54999,
@@ -1133,7 +1144,7 @@ export const ORDERS = [
     date: '12 Aug 2026',
     image: imgDeskAeroplus,
     status: { dot: 'green', label: 'Delivered' },
-    product: 'AeroPlus Adjustable Desk',
+    product: 'AeroPlus Adjustable Desk (Oak / 120x60 cm)',
     qty: 1,
     actions: [{ label: 'Warranty', variant: 'secondary' }],
     amount: 20999,
@@ -1154,8 +1165,8 @@ export const ORDERS = [
         },
         {
           label: 'Delivered',
-          timestamp: '14 Aug 2026, 2:00 PM',
-          updates: [{ text: 'Delivered — signed for at the doorstep', timestamp: '14 Aug 2026, 2:00 PM' }],
+          timestamp: '17 Aug 2026, 2:00 PM',
+          updates: [{ text: 'Delivered — signed for at the doorstep', timestamp: '17 Aug 2026, 2:00 PM' }],
         },
       ],
       currentIndex: 2,
@@ -1168,7 +1179,7 @@ export const ORDERS = [
     date: '12 Aug 2026',
     image: imgChairStyluxErgonomic,
     status: { dot: 'blue', label: 'Out for Delivery' },
-    product: 'Stylux Ergonomic Office Chair',
+    product: 'Stylux Ergonomic Office Chair (Grey)',
     qty: 1,
     actions: [{ label: 'Track Order', variant: 'secondary' }],
     amount: 16999,
@@ -1204,7 +1215,7 @@ export const ORDERS = [
     date: '12 Aug 2026',
     image: imgPillowCervical,
     status: { dot: 'blue', label: 'Shipped' },
-    product: 'Smart Cervical Pillow',
+    product: 'Smart Cervical Pillow (Standard / Memory Foam)',
     qty: 2,
     actions: [{ label: 'Track Order', variant: 'secondary' }],
     amount: 4398,
@@ -1223,7 +1234,7 @@ export const ORDERS = [
           timestamp: '16 Aug 2026, 2:00 PM',
           updates: [{ text: 'Item has been handed over to courier', timestamp: '16 Aug 2026, 2:00 PM' }],
         },
-        { label: 'Delivered', timestamp: null, expectedDate: '19 Aug 2026' },
+        { label: 'Delivered', timestamp: null, expectedDate: '17 Aug 2026' },
       ],
       currentIndex: 1,
     },
@@ -1235,7 +1246,7 @@ export const ORDERS = [
     date: '12 Aug 2026',
     image: imgBedElev8Adjustable,
     status: { dot: 'blue', label: 'Confirmed · Packing' },
-    product: 'Elev8 Smart Adjustable Bed Frame',
+    product: 'Elev8 Smart Adjustable Bed Frame (Queen / Grey)',
     qty: 1,
     actions: [{ label: 'Track Order', variant: 'secondary' }],
     amount: 22999,
@@ -1255,7 +1266,7 @@ export const ORDERS = [
           updates: [{ text: 'We have started packing this item', timestamp: '15 Aug 2026, 10:00 AM' }],
         },
         { label: 'Shipped', timestamp: null },
-        { label: 'Delivered', timestamp: null, expectedDate: '20 Aug 2026' },
+        { label: 'Delivered', timestamp: null, expectedDate: '17 Aug 2026' },
       ],
       currentIndex: 1,
     },
@@ -1280,7 +1291,7 @@ export const ORDERS = [
     items: [
       {
         sku: 'TSC94500-1',
-        product: 'Smart Ortho Hybrid Pocketed Spring Mattress (Queen)',
+        product: 'Smart Ortho Hybrid Pocketed Spring Mattress (Queen / 8 inch / 60x78 in)',
         image: imgMattressOrthoHybrid,
         qty: 1,
         price: 21290,
@@ -1313,7 +1324,7 @@ export const ORDERS = [
       },
       {
         sku: 'TSC94500-2',
-        product: 'Smart Hybrid Pillow (Set of 2)',
+        product: 'Smart Hybrid Pillow (Set of 2 / Memory Foam)',
         image: imgPillowHybrid,
         qty: 1,
         price: 2199,
@@ -1342,7 +1353,7 @@ export const ORDERS = [
       },
       {
         sku: 'TSC94500-3',
-        product: 'Elev8 Smart Adjustable Bed Frame',
+        product: 'Elev8 Smart Adjustable Bed Frame (Queen / Grey)',
         image: imgBedElev8Adjustable,
         qty: 1,
         price: 22999,
@@ -1421,7 +1432,7 @@ export const ORDERS = [
     items: [
       {
         sku: 'TSC97500-1',
-        product: 'AeroPlus Adjustable Desk',
+        product: 'AeroPlus Adjustable Desk (Oak / 120x60 cm)',
         image: imgDeskAeroplus,
         qty: 1,
         price: 20999,
@@ -1455,7 +1466,7 @@ export const ORDERS = [
       },
       {
         sku: 'TSC97500-2',
-        product: 'Stylux Ergonomic Office Chair',
+        product: 'Stylux Ergonomic Office Chair (Grey)',
         image: imgChairStyluxErgonomic,
         qty: 1,
         price: 16999,
@@ -1486,7 +1497,7 @@ export const ORDERS = [
       },
       {
         sku: 'TSC97500-3',
-        product: 'Smart Ortho Pro Mattress (Queen)',
+        product: 'Smart Ortho Pro Mattress (Queen / 6 inch / 60x78 in)',
         image: imgMattressOrthoPro,
         qty: 1,
         price: 17990,
@@ -1520,7 +1531,7 @@ export const ORDERS = [
       },
       {
         sku: 'TSC97500-4',
-        product: 'Smart Cervical Pillow',
+        product: 'Smart Cervical Pillow (Standard / Memory Foam)',
         image: imgPillowCervical,
         qty: 1,
         price: 2199,
@@ -1546,7 +1557,7 @@ export const ORDERS = [
       },
       {
         sku: 'TSC97500-5',
-        product: 'Elev8 Smart Adjustable Bed Frame',
+        product: 'Elev8 Smart Adjustable Bed Frame (Queen / Grey)',
         image: imgBedElev8Adjustable,
         qty: 1,
         price: 22999,
@@ -1626,7 +1637,7 @@ export const ORDERS = [
     items: [
       {
         sku: 'TSC91850-1',
-        product: 'Luxe Grande Recliner Sofa',
+        product: 'Luxe Grande Recliner Sofa (Royal Blue / 3 Seater)',
         image: imgSofaLuxeGrande,
         qty: 1,
         price: 44999,
@@ -1660,7 +1671,7 @@ export const ORDERS = [
       },
       {
         sku: 'TSC91850-2',
-        product: 'Onyx Orthopedic Office Chair',
+        product: 'Onyx Orthopedic Office Chair (Black)',
         image: imgChairOnyxOrthopedic,
         qty: 1,
         price: 10999,
@@ -1741,7 +1752,7 @@ export const ORDERS = [
     items: [
       {
         sku: 'TSC86420-1',
-        product: 'Smart Ortho Royale Mattress (King)',
+        product: 'Smart Ortho Royale Mattress (King / 8 inch / 72x78 in)',
         image: imgMattressOrthoRoyale,
         qty: 1,
         price: 40990,
@@ -1775,7 +1786,7 @@ export const ORDERS = [
       },
       {
         sku: 'TSC86420-2',
-        product: 'Smart Cervical Pillow',
+        product: 'Smart Cervical Pillow (Standard / Memory Foam)',
         image: imgPillowCervical,
         qty: 1,
         price: 2199,
