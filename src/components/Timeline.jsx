@@ -25,6 +25,16 @@ export default function Timeline({ steps, currentIndex }) {
                   {step.timestamp}
                 </p>
               )}
+              {/* Only upcoming steps carry an expectedDate — a step already
+                  reached has its real timestamp instead, and one that's
+                  merely next-in-line without a knowable date (e.g. an
+                  open investigation) has neither. */}
+              {!step.timestamp && step.expectedDate && (
+                <p className="timeline__timestamp timeline__timestamp--expected">
+                  <ClockIcon />
+                  Expected {step.expectedDate}
+                </p>
+              )}
             </div>
           </div>
         );

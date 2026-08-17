@@ -34,6 +34,14 @@ export default function DetailedTracking({ steps, currentIndex }) {
                   {u.timestamp && <p className="detailed-tracking__update-time">{u.timestamp}</p>}
                 </div>
               ))}
+              {/* A step with neither real updates nor a timestamp yet still
+                  isn't blank if we know when it's expected — same
+                  done/current-only rule as Timeline's expectedDate. */}
+              {updates.length === 0 && step.expectedDate && (
+                <p className="detailed-tracking__update-time detailed-tracking__update-time--expected">
+                  Expected {step.expectedDate}
+                </p>
+              )}
             </div>
           </div>
         );

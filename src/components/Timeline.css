@@ -92,3 +92,7 @@
 .timeline__step--current .timeline__timestamp {
   color: var(--color-text-secondary);
 }
+
+.timeline__timestamp--expected {
+  font-style: italic;
+}

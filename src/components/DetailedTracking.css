@@ -92,3 +92,7 @@
 .detailed-tracking__step--current .detailed-tracking__update-text {
   color: var(--color-text-primary);
 }
+
+.detailed-tracking__update-time--expected {
+  font-style: italic;
+}
