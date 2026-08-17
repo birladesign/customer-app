@@ -1229,6 +1229,328 @@ export const ORDERS = [
       currentIndex: 1,
     },
   },
+  // A smaller multi-product shipment (2 items) — the light end of the
+  // combination range, next to the 4-item and 5-item shipments below.
+  {
+    id: 'TSC97701',
+    shipmentId: 'SHP97701',
+    section: 'inProgress',
+    date: '14 Aug 2026',
+    image: imgMattressOrthoHybrid,
+    status: { dot: 'green', label: 'Delivered' },
+    product: 'Smart Ortho Hybrid Pocketed Spring Mattress (Queen / 8 inch / 60x78 in)',
+    qty: 1,
+    actions: [{ label: 'Warranty', variant: 'secondary' }],
+    amount: 27990,
+    address: DEMO_ADDRESS,
+    payment: { method: 'UPI', status: 'Paid' },
+    priceBreakup: { itemPrice: 27990, shipping: 0, discount: 0, tax: 0, total: 27990 },
+    timeline: {
+      steps: [
+        {
+          label: 'Order Confirmed',
+          timestamp: '14 Aug 2026, 11:00 AM',
+          updates: [{ text: 'Order has been confirmed', timestamp: '14 Aug 2026, 11:00 AM' }],
+        },
+        {
+          label: 'Shipped',
+          timestamp: '15 Aug 2026, 9:00 AM',
+          updates: [{ text: 'Item has been handed over to courier', timestamp: '15 Aug 2026, 9:00 AM' }],
+        },
+        {
+          label: 'Delivered',
+          timestamp: '17 Aug 2026, 1:00 PM',
+          updates: [{ text: 'Delivered — signed for at the doorstep', timestamp: '17 Aug 2026, 1:00 PM' }],
+        },
+      ],
+      currentIndex: 2,
+    },
+  },
+  {
+    id: 'TSC97702',
+    shipmentId: 'SHP97701',
+    section: 'inProgress',
+    date: '14 Aug 2026',
+    image: imgPillowHybrid,
+    status: { dot: 'blue', label: 'Out for Delivery' },
+    product: 'Smart Hybrid Pillow (Set of 2 / Memory Foam)',
+    qty: 1,
+    actions: [{ label: 'Track Order', variant: 'secondary' }],
+    amount: 2499,
+    address: DEMO_ADDRESS,
+    payment: { method: 'UPI', status: 'Paid' },
+    priceBreakup: { itemPrice: 2499, shipping: 0, discount: 0, tax: 0, total: 2499 },
+    timeline: {
+      steps: [
+        {
+          label: 'Order Confirmed',
+          timestamp: '14 Aug 2026, 11:00 AM',
+          updates: [{ text: 'Order has been confirmed', timestamp: '14 Aug 2026, 11:00 AM' }],
+        },
+        {
+          label: 'Shipped',
+          timestamp: '15 Aug 2026, 9:00 AM',
+          updates: [{ text: 'Item has been handed over to courier', timestamp: '15 Aug 2026, 9:00 AM' }],
+        },
+        {
+          label: 'Out for Delivery',
+          timestamp: '17 Aug 2026, 9:00 AM',
+          updates: [{ text: 'Out for delivery, arriving today', timestamp: '17 Aug 2026, 9:00 AM' }],
+        },
+        { label: 'Delivered', timestamp: null, expectedDate: '17 Aug 2026' },
+      ],
+      currentIndex: 2,
+    },
+  },
+  // The large end of the combination range (5 items) — and one unit is
+  // damaged, so getShipmentStatus's red-flag-wins rule surfaces that one
+  // unit's own status instead of a delivered/in-transit count, same as a
+  // flagged line item would in a multi-SKU order.
+  {
+    id: 'TSC98801',
+    shipmentId: 'SHP98801',
+    section: 'needsAttention',
+    date: '13 Aug 2026',
+    image: imgMattressLuxeRoyale,
+    status: { dot: 'green', label: 'Delivered' },
+    product: 'Smart Luxe Royale Mattress (Queen / 8 inch / 60x78 in)',
+    qty: 1,
+    actions: [{ label: 'Warranty', variant: 'secondary' }],
+    amount: 32999,
+    address: DEMO_ADDRESS,
+    payment: { method: 'Credit Card', status: 'Paid' },
+    priceBreakup: { itemPrice: 32999, shipping: 0, discount: 0, tax: 0, total: 32999 },
+    timeline: {
+      steps: [
+        {
+          label: 'Order Confirmed',
+          timestamp: '13 Aug 2026, 10:00 AM',
+          updates: [{ text: 'Order has been confirmed', timestamp: '13 Aug 2026, 10:00 AM' }],
+        },
+        {
+          label: 'Shipped',
+          timestamp: '14 Aug 2026, 9:00 AM',
+          updates: [{ text: 'Item has been handed over to courier', timestamp: '14 Aug 2026, 9:00 AM' }],
+        },
+        {
+          label: 'Delivered',
+          timestamp: '16 Aug 2026, 11:00 AM',
+          updates: [{ text: 'Delivered — signed for at the doorstep', timestamp: '16 Aug 2026, 11:00 AM' }],
+        },
+      ],
+      currentIndex: 2,
+    },
+  },
+  {
+    id: 'TSC98802',
+    shipmentId: 'SHP98801',
+    section: 'needsAttention',
+    date: '13 Aug 2026',
+    image: imgChairOnyxOrthopedic,
+    status: { dot: 'green', label: 'Delivered' },
+    product: 'Onyx Orthopedic Office Chair (Black)',
+    qty: 1,
+    actions: [{ label: 'Warranty', variant: 'secondary' }],
+    amount: 21999,
+    address: DEMO_ADDRESS,
+    payment: { method: 'Credit Card', status: 'Paid' },
+    priceBreakup: { itemPrice: 21999, shipping: 0, discount: 0, tax: 0, total: 21999 },
+    timeline: {
+      steps: [
+        {
+          label: 'Order Confirmed',
+          timestamp: '13 Aug 2026, 10:00 AM',
+          updates: [{ text: 'Order has been confirmed', timestamp: '13 Aug 2026, 10:00 AM' }],
+        },
+        {
+          label: 'Shipped',
+          timestamp: '14 Aug 2026, 9:00 AM',
+          updates: [{ text: 'Item has been handed over to courier', timestamp: '14 Aug 2026, 9:00 AM' }],
+        },
+        {
+          label: 'Delivered',
+          timestamp: '16 Aug 2026, 11:00 AM',
+          updates: [{ text: 'Delivered — signed for at the doorstep', timestamp: '16 Aug 2026, 11:00 AM' }],
+        },
+      ],
+      currentIndex: 2,
+    },
+  },
+  {
+    id: 'TSC98803',
+    shipmentId: 'SHP98801',
+    section: 'needsAttention',
+    date: '13 Aug 2026',
+    image: imgPillowHybrid,
+    status: { dot: 'red', label: 'Damaged — Reported' },
+    product: 'Smart Hybrid Pillow (Set of 2 / Memory Foam)',
+    qty: 1,
+    caption: 'Reported on 16 Aug 2026 · Investigation in progress',
+    disabledReason: 'Manage Order unavailable — investigation in progress',
+    actions: [{ label: 'Get Help', variant: 'secondary' }],
+    amount: 2499,
+    address: DEMO_ADDRESS,
+    payment: { method: 'Credit Card', status: 'Paid' },
+    priceBreakup: { itemPrice: 2499, shipping: 0, discount: 0, tax: 0, total: 2499 },
+    timeline: {
+      steps: [
+        {
+          label: 'Order Confirmed',
+          timestamp: '13 Aug 2026, 10:00 AM',
+          updates: [{ text: 'Order has been confirmed', timestamp: '13 Aug 2026, 10:00 AM' }],
+        },
+        {
+          label: 'Shipped',
+          timestamp: '14 Aug 2026, 9:00 AM',
+          updates: [{ text: 'Item has been handed over to courier', timestamp: '14 Aug 2026, 9:00 AM' }],
+        },
+        {
+          label: 'Delivered',
+          timestamp: '16 Aug 2026, 11:00 AM',
+          updates: [{ text: 'Delivered — signed for at the doorstep', timestamp: '16 Aug 2026, 11:00 AM' }],
+        },
+        {
+          label: 'Damaged — Reported',
+          timestamp: '16 Aug 2026, 4:00 PM',
+          description: 'Awaiting evidence photos',
+          updates: [{ text: 'Damage reported by customer', timestamp: '16 Aug 2026, 4:00 PM' }],
+        },
+      ],
+      currentIndex: 3,
+    },
+  },
+  {
+    id: 'TSC98804',
+    shipmentId: 'SHP98801',
+    section: 'needsAttention',
+    date: '13 Aug 2026',
+    image: imgBedElev8Adjustable,
+    status: { dot: 'blue', label: 'Out for Delivery' },
+    product: 'Elev8 Smart Adjustable Bed Frame (Queen / Grey)',
+    qty: 1,
+    actions: [{ label: 'Track Order', variant: 'secondary' }],
+    amount: 22999,
+    address: DEMO_ADDRESS,
+    payment: { method: 'Credit Card', status: 'Paid' },
+    priceBreakup: { itemPrice: 22999, shipping: 0, discount: 0, tax: 0, total: 22999 },
+    timeline: {
+      steps: [
+        {
+          label: 'Order Confirmed',
+          timestamp: '13 Aug 2026, 10:00 AM',
+          updates: [{ text: 'Order has been confirmed', timestamp: '13 Aug 2026, 10:00 AM' }],
+        },
+        {
+          label: 'Shipped',
+          timestamp: '14 Aug 2026, 9:00 AM',
+          updates: [{ text: 'Item has been handed over to courier', timestamp: '14 Aug 2026, 9:00 AM' }],
+        },
+        {
+          label: 'Out for Delivery',
+          timestamp: '17 Aug 2026, 9:00 AM',
+          updates: [{ text: 'Out for delivery, arriving today', timestamp: '17 Aug 2026, 9:00 AM' }],
+        },
+        { label: 'Delivered', timestamp: null, expectedDate: '17 Aug 2026' },
+      ],
+      currentIndex: 2,
+    },
+  },
+  {
+    id: 'TSC98805',
+    shipmentId: 'SHP98801',
+    section: 'needsAttention',
+    date: '13 Aug 2026',
+    image: imgPillowCervical,
+    status: { dot: 'blue', label: 'Shipped' },
+    product: 'Smart Cervical Pillow (Standard / Memory Foam)',
+    qty: 1,
+    actions: [{ label: 'Track Order', variant: 'secondary' }],
+    amount: 2199,
+    address: DEMO_ADDRESS,
+    payment: { method: 'Credit Card', status: 'Paid' },
+    priceBreakup: { itemPrice: 2199, shipping: 0, discount: 0, tax: 0, total: 2199 },
+    timeline: {
+      steps: [
+        {
+          label: 'Order Confirmed',
+          timestamp: '13 Aug 2026, 10:00 AM',
+          updates: [{ text: 'Order has been confirmed', timestamp: '13 Aug 2026, 10:00 AM' }],
+        },
+        {
+          label: 'Shipped',
+          timestamp: '17 Aug 2026, 9:00 AM',
+          updates: [{ text: 'Item has been handed over to courier', timestamp: '17 Aug 2026, 9:00 AM' }],
+        },
+        { label: 'Delivered', timestamp: null, expectedDate: '17 Aug 2026' },
+      ],
+      currentIndex: 1,
+    },
+  },
+  // A same-SKU shipment still in progress (not yet delivered) — exercises
+  // ShipmentCard's "arriving together" caption branch, since the one other
+  // same-SKU demo (SHP93001) is already fully delivered.
+  {
+    id: 'TSC99401',
+    shipmentId: 'SHP99401',
+    section: 'inProgress',
+    date: '15 Aug 2026',
+    image: imgMattressOrthoRoyale,
+    status: { dot: 'blue', label: 'Shipped' },
+    product: 'Smart Ortho Royale Mattress (King / 8 inch / 72x78 in)',
+    qty: 1,
+    actions: [{ label: 'Track Order', variant: 'secondary' }],
+    amount: 34999,
+    address: DEMO_ADDRESS,
+    payment: { method: 'UPI', status: 'Paid' },
+    priceBreakup: { itemPrice: 34999, shipping: 0, discount: 0, tax: 0, total: 34999 },
+    timeline: {
+      steps: [
+        {
+          label: 'Order Confirmed',
+          timestamp: '15 Aug 2026, 10:00 AM',
+          updates: [{ text: 'Order has been confirmed', timestamp: '15 Aug 2026, 10:00 AM' }],
+        },
+        {
+          label: 'Shipped',
+          timestamp: '16 Aug 2026, 9:00 AM',
+          updates: [{ text: 'Item has been handed over to courier', timestamp: '16 Aug 2026, 9:00 AM' }],
+        },
+        { label: 'Delivered', timestamp: null, expectedDate: '19 Aug 2026' },
+      ],
+      currentIndex: 1,
+    },
+  },
+  {
+    id: 'TSC99402',
+    shipmentId: 'SHP99401',
+    section: 'inProgress',
+    date: '15 Aug 2026',
+    image: imgMattressOrthoRoyale,
+    status: { dot: 'blue', label: 'Shipped' },
+    product: 'Smart Ortho Royale Mattress (King / 8 inch / 72x78 in)',
+    qty: 1,
+    actions: [{ label: 'Track Order', variant: 'secondary' }],
+    amount: 34999,
+    address: DEMO_ADDRESS,
+    payment: { method: 'UPI', status: 'Paid' },
+    priceBreakup: { itemPrice: 34999, shipping: 0, discount: 0, tax: 0, total: 34999 },
+    timeline: {
+      steps: [
+        {
+          label: 'Order Confirmed',
+          timestamp: '15 Aug 2026, 10:00 AM',
+          updates: [{ text: 'Order has been confirmed', timestamp: '15 Aug 2026, 10:00 AM' }],
+        },
+        {
+          label: 'Shipped',
+          timestamp: '16 Aug 2026, 9:00 AM',
+          updates: [{ text: 'Item has been handed over to courier', timestamp: '16 Aug 2026, 9:00 AM' }],
+        },
+        { label: 'Delivered', timestamp: null, expectedDate: '19 Aug 2026' },
+      ],
+      currentIndex: 1,
+    },
+  },
   // A genuine multi-SKU cart — three different products bought together in
   // one checkout (unlike the same-SKU-×3 shipment above). Each line item
   // ships and tracks independently, so OrderDetails renders them as their
