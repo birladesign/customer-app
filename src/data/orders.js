@@ -207,41 +207,6 @@ export const ORDERS = [
     intentOverrides: { warranty: 'Already mid-claim — see the evidence request above' },
   },
   {
-    id: 'TSC77541',
-    section: 'needsAttention',
-    date: '02 Jul 2026',
-    image: imgChairStyluxErgonomic,
-    banner: { icon: 'zap', text: 'Pay Now' },
-    status: { dot: 'red', label: 'Payment Failed' },
-    product: 'Stylux Ergonomic Office Chair (Grey)',
-    caption: 'Retry payment to resume your order',
-    actions: [{ label: 'Retry Payment', variant: 'primary' }],
-    amount: 16999,
-    address: DEMO_ADDRESS,
-    payment: { method: 'Credit Card', status: 'Failed' },
-    priceBreakup: { itemPrice: 16999, shipping: 0, discount: 0, tax: 0, total: 16999 },
-    timeline: {
-      steps: [
-        {
-          label: 'Order Placed',
-          timestamp: '02 Jul 2026, 5:45 PM',
-          updates: [{ text: 'Order placed, awaiting payment confirmation', timestamp: '02 Jul 2026, 5:45 PM' }],
-        },
-        {
-          label: 'Payment Failed',
-          timestamp: '02 Jul 2026, 5:46 PM',
-          description: 'Bank declined the charge',
-          updates: [{ text: 'Payment attempt declined by bank', timestamp: '02 Jul 2026, 5:46 PM' }],
-        },
-      ],
-      currentIndex: 1,
-    },
-    intentOverrides: {
-      returnReplace: 'Complete payment before requesting a return or replacement',
-      warranty: 'Available after delivery',
-    },
-  },
-  {
     id: 'TSC97821',
     section: 'needsAttention',
     date: '03 Aug 2026',
