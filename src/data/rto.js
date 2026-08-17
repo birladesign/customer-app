@@ -5,7 +5,7 @@
 // replacement, for a post-dispatch order edit per OM-07) isn't wired up
 // anywhere yet, so this always ends in a refund.
 
-const TRACKER_LABELS = ['RTO Requested', 'RTO Confirmed', 'Refund Initiated'];
+const TRACKER_LABELS = ['Delivery Re-Requested', 'RTO Confirmed', 'Refund Initiated'];
 
 export function getRtoExecutionSteps() {
   return { steps: TRACKER_LABELS.map((label) => ({ label })), currentIndex: 0 };
