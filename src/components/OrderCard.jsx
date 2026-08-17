@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { splitProductSpec, getOrderStatus } from '../data/orders.js';
+import { getOpenCaseForOrder } from '../data/support.js';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
 import { CopyIcon, CheckIcon, ChevronRightIcon, WalletIcon, CheckCircleIcon } from './icons.jsx';
 import StarRating from './StarRating.jsx';
@@ -91,7 +92,11 @@ export default function OrderCard({ order }) {
       return () => switchTab('support', { openChat: true, orderId: order.id });
     }
     if (label === 'Manage Return') {
-      return () => navigate('requestDetail', { orderId: order.id });
+      return () => {
+        const openCase = getOpenCaseForOrder(order.id);
+        if (openCase) navigate('requestDetail', { caseId: openCase.id });
+        else switchTab('support', { openChat: true, orderId: order.id });
+      };
     }
     return undefined;
   }

@@ -179,7 +179,6 @@ export const ORDERS = [
     section: 'needsAttention',
     date: '15 Jul 2026',
     image: imgBedElev8Adjustable,
-    banner: { icon: 'zap', text: 'Action Required' },
     status: { dot: 'red', label: 'Damaged — Reported' },
     product: 'Elev8 Smart Adjustable Bed Frame',
     caption: 'Reported on 14 Jul 2026 · Investigation in progress',
@@ -1375,7 +1374,6 @@ export const ORDERS = [
     section: 'needsAttention',
     date: '04 Aug 2026',
     image: imgSofaLuxeGrande,
-    banner: { icon: 'alert', text: 'Action Required' },
     product: 'Living Room Refresh (2 items)',
     caption: '1 of 2 items delivered fine — the other arrived damaged',
     actions: [
