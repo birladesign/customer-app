@@ -25,7 +25,7 @@
   letter-spacing: var(--text-heading-tracking);
   line-height: var(--text-heading-leading);
   font-weight: 700;
-  color: var(--color-text-primary);
+  color: var(--color-text-heading);
 }
 
 .order-details__icon-btn {
@@ -59,14 +59,31 @@
   gap: var(--space-4);
 }
 
-.order-details__product-card {
-  display: flex;
-  gap: var(--space-3);
-  align-items: center;
+/* One card for everything "about this order right now" — product,
+   id/status, tracking, technician, warranty, rating — instead of a
+   separate box per fact. Every direct child gets an automatic hairline
+   divider from the next, so which sections exist can vary freely
+   (single vs. multi-item, technician or not, rated or not) with zero
+   manual divider bookkeeping. */
+.order-details__summary-card {
   background: var(--color-bg-primary);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  padding: var(--space-3);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+}
+
+.order-details__summary-card > * + * {
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+
+.order-details__product-row {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
 }
 
 .order-details__image {
@@ -137,11 +154,15 @@
   white-space: nowrap;
 }
 
-.order-details__card {
-  background: var(--color-bg-primary);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-card);
-  padding: var(--space-4);
+.order-details__caption {
+  margin: 4px 0 0;
+  font-size: var(--text-body-size);
+  color: var(--color-text-secondary);
+}
+
+.order-details__timeline-block {
+  display: flex;
+  flex-direction: column;
 }
 
 .order-details__other-items {
@@ -166,9 +187,8 @@
   gap: var(--space-3);
   margin-top: var(--space-3);
   border: none;
-  background: var(--color-accent-cyan-wash);
-  border-radius: var(--radius-md);
-  padding: var(--space-3);
+  background: none;
+  padding: 0;
   text-align: left;
   font-family: inherit;
   transition: transform 0.1s ease-out;
@@ -186,7 +206,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--color-bg-primary);
+  background: var(--color-accent-cyan-wash);
   color: var(--color-navy-900);
 }
 
@@ -203,14 +223,10 @@
   color: var(--color-navy-900);
 }
 
-.order-details__technician-card {
+.order-details__technician-row {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  background: var(--color-bg-primary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: var(--space-3);
 }
 
 .order-details__technician-icon {
@@ -258,6 +274,23 @@
   transition: transform 0.1s ease-out;
 }
 
+.order-details__technician-reschedule {
+  flex-shrink: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  padding: var(--space-2) var(--space-3);
+  background: none;
+  font-family: inherit;
+  font-size: var(--text-body-size);
+  font-weight: 600;
+  color: var(--color-navy-900);
+  transition: transform 0.1s ease-out;
+}
+
+.order-details__technician-reschedule:active {
+  transform: scale(0.96);
+}
+
 .order-details__technician-call:active {
   transform: scale(0.96);
 }
@@ -266,7 +299,58 @@
   margin: 0 0 var(--space-4);
   font-size: var(--text-heading-size);
   font-weight: 700;
+  color: var(--color-text-heading);
+}
+
+.order-details__tracking-sheet-shipment {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+  padding: var(--space-3);
+  background: var(--color-accent-cyan-wash);
+  border-radius: var(--radius-md);
+}
+
+.order-details__tracking-sheet-shipment-icon {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg-primary);
+  color: var(--color-navy-900);
+}
+
+.order-details__tracking-sheet-shipment-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.order-details__tracking-sheet-shipment-courier {
+  font-size: var(--text-body-size);
+  font-weight: 600;
   color: var(--color-text-primary);
+}
+
+.order-details__tracking-sheet-shipment-awb {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: none;
+  background: none;
+  padding: 0;
+  font-family: inherit;
+  font-size: var(--text-caption-size);
+  color: var(--color-text-secondary);
+  transition: transform 0.1s ease-out;
+}
+
+.order-details__tracking-sheet-shipment-awb:active {
+  transform: scale(0.96);
 }
 
 .order-details__tracking-sheet-body {
@@ -275,9 +359,6 @@
 }
 
 .order-details__disclosure-wrap {
-  background: var(--color-bg-primary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
   overflow: hidden;
 }
 
@@ -288,7 +369,7 @@
   justify-content: space-between;
   border: none;
   background: none;
-  padding: var(--space-4);
+  padding: var(--space-2) 0;
   font-family: inherit;
   font-size: var(--text-heading-size);
   font-weight: 600;
@@ -310,16 +391,22 @@
 }
 
 .order-details__disclosure-body {
-  padding: 0 var(--space-4) var(--space-4);
+  padding: var(--space-4) 0 0;
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+}
+
+/* Each direct child (payment/savings/refund/shipping) is its own section —
+   a hairline divider between them reads as clearly as a separate tinted
+   box would, without stacking colored panels inside an already-bordered
+   card. */
+.order-details__disclosure-body > * + * {
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
 }
 
 .order-details__payment-block {
-  background: var(--color-accent-cyan-wash);
-  border-radius: var(--radius-md);
-  padding: var(--space-3);
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
@@ -370,9 +457,6 @@
 }
 
 .order-details__savings-block {
-  background: var(--color-accent-cyan-wash);
-  border-radius: var(--radius-md);
-  padding: var(--space-3);
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
@@ -419,8 +503,8 @@
   align-items: center;
   gap: var(--space-2);
   margin-top: var(--space-1);
-  border: none;
-  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  background: none;
   border-radius: var(--radius-full);
   padding: var(--space-2) var(--space-3);
   font-family: inherit;
@@ -434,10 +518,18 @@
   transform: scale(0.97);
 }
 
+.order-details__get-invoice:disabled {
+  color: var(--color-disabled-text);
+}
+
+.order-details__get-invoice-reason {
+  margin: 0;
+  text-align: center;
+  font-size: var(--text-caption-size);
+  color: var(--color-text-muted);
+}
+
 .order-details__refund-block {
-  background: var(--color-success-tint);
-  border-radius: var(--radius-md);
-  padding: var(--space-3);
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
@@ -480,6 +572,13 @@
   letter-spacing: var(--text-label-tracking);
 }
 
+.order-details__shipping-name {
+  margin: 0;
+  font-size: var(--text-body-size);
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
 .order-details__shipping-value {
   margin: 0;
   font-size: var(--text-body-size);
@@ -507,19 +606,14 @@
   align-items: center;
   gap: var(--space-3);
   border: none;
-  background: var(--color-accent-cyan-wash);
-  border-radius: var(--radius-md);
-  padding: var(--space-3);
+  background: none;
+  padding: 0;
   text-align: left;
   transition: transform 0.1s ease-out;
 }
 
 .order-details__warranty-row:active {
   transform: scale(0.99);
-}
-
-.order-details__warranty-row--disabled {
-  background: var(--color-disabled-bg);
 }
 
 .order-details__warranty-icon {
@@ -530,11 +624,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--color-bg-primary);
+  background: var(--color-accent-cyan-wash);
   color: var(--color-navy-900);
 }
 
 .order-details__warranty-row--disabled .order-details__warranty-icon {
+  background: var(--color-disabled-bg);
   color: var(--color-disabled-text);
 }
 
@@ -573,9 +668,6 @@
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  padding: var(--space-3) 0;
-  border-top: 1px solid var(--color-border);
-  border-bottom: 1px solid var(--color-border);
 }
 
 .order-details__rating-image {
@@ -586,37 +678,38 @@
   flex-shrink: 0;
 }
 
-.order-details__rating-heading {
-  margin: 0 0 var(--space-1);
+/* This is the one dedicated "rate this order" module on the page (photo +
+   heading + stars), so it gets a bigger, stacked presentation instead of
+   the compact inline row StarRating uses on the My Orders card / line items. */
+.order-details__rating-control {
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: var(--space-1);
+}
+
+.order-details__rating-control .star-rating__label {
   font-size: var(--text-heading-size);
   font-weight: 600;
-  color: var(--color-text-primary);
 }
 
-.order-details__rating-stars {
-  display: inline-flex;
-  gap: 2px;
-  color: var(--color-disabled-text);
-}
-
-.order-details__help-wrap {
-  background: var(--color-accent-cyan-wash);
-  border-radius: var(--radius-md);
-  overflow: hidden;
-}
-
-/* Edit and Cancel are both rare, one-off requests — this is the one place on
-   the page that surfaces them, and even here they stay a tap away rather
-   than sitting open by default. */
+/* Folded into the summary card as its last row (see OrderDetails.jsx) —
+   Edit and Cancel are both rare, one-off requests, and even here they stay
+   a tap away (behind the arrow) rather than being named upfront or sitting
+   open by default. */
 .order-details__help-toggle {
   width: 100%;
   display: flex;
-  gap: var(--space-3);
   align-items: center;
+  justify-content: space-between;
   border: none;
   background: none;
-  padding: var(--space-4);
+  padding: var(--space-2) 0;
   font-family: inherit;
+  font-size: var(--text-heading-size);
+  font-weight: 600;
+  color: var(--color-text-primary);
   text-align: left;
   transition: transform 0.1s ease-out;
 }
@@ -625,49 +718,12 @@
   transform: scale(0.99);
 }
 
-.order-details__help-icon {
-  flex-shrink: 0;
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-full);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--color-bg-primary);
-  color: var(--color-navy-900);
-}
-
-.order-details__help-text {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.order-details__help-heading {
-  font-size: var(--text-product-size);
-  font-weight: 600;
-  color: var(--color-text-primary);
-}
-
-.order-details__help-subtext {
-  margin-top: 2px;
-  font-size: var(--text-body-size);
-  color: var(--color-text-muted);
-}
-
 .order-details__help-chevron {
   flex-shrink: 0;
   color: var(--color-text-muted);
-  transition: transform 0.2s var(--ease-standard);
-}
-
-.order-details__help-chevron--open {
-  transform: rotate(90deg);
 }
 
 .order-details__help-actions {
-  padding: 0 var(--space-4) var(--space-4);
   display: flex;
   flex-direction: column;
 }
@@ -702,6 +758,37 @@
   color: var(--color-text-muted);
 }
 
+.order-details__help-action-reason--center {
+  margin: var(--space-1) 0 0;
+  text-align: center;
+}
+
+/* Cancelling is rare and irreversible, unlike Edit/Return/Contact Support
+   above — kept as a quiet text link, not a list row or a red button;
+   red is reserved for the moment cancellation is actually confirmed. */
+.order-details__help-sheet-cancel {
+  display: block;
+  width: 100%;
+  margin-top: var(--space-4);
+  border: none;
+  background: none;
+  padding: var(--space-2);
+  font-family: inherit;
+  font-size: var(--text-body-size);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-align: center;
+  transition: transform 0.1s ease-out;
+}
+
+.order-details__help-sheet-cancel:active {
+  transform: scale(0.97);
+}
+
+.order-details__help-sheet-cancel:disabled {
+  color: var(--color-disabled-text);
+}
+
 .order-details__cancel-prompt {
   margin: 0 0 var(--space-4);
   font-size: var(--text-body-size);
@@ -712,31 +799,56 @@
 .order-details__cancel-reasons {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
   margin-bottom: var(--space-4);
 }
 
+.order-details__cancel-reasons > * + * {
+  border-top: 1px solid var(--color-border);
+}
+
 .order-details__cancel-reason {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
   text-align: left;
-  border: 1px solid rgba(26, 43, 88, 0.1);
-  background: var(--color-bg-primary);
-  border-radius: var(--radius-md);
+  border: none;
+  background: none;
   padding: var(--space-3) var(--space-4);
   font-family: inherit;
   font-size: var(--text-product-size);
   font-weight: 500;
   color: var(--color-text-primary);
-  transition: transform 0.1s ease-out, background 0.15s var(--ease-standard), color 0.15s var(--ease-standard);
+  transition: background 0.15s var(--ease-standard);
 }
 
 .order-details__cancel-reason:active {
-  transform: scale(0.98);
+  background: rgba(26, 43, 88, 0.04);
 }
 
-.order-details__cancel-reason--selected {
-  background: var(--color-navy-900);
+.order-details__cancel-reason-radio {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-full);
+  border: 2px solid var(--color-border);
+  position: relative;
+  transition: border-color 0.15s var(--ease-standard);
+}
+
+.order-details__cancel-reason--selected .order-details__cancel-reason-radio {
   border-color: var(--color-navy-900);
-  color: var(--color-text-inverse);
+}
+
+.order-details__cancel-reason--selected .order-details__cancel-reason-radio::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border-radius: var(--radius-full);
+  background: var(--color-navy-900);
 }
 
 .order-details__cancel-continue {
@@ -775,8 +887,9 @@
   .order-details__get-invoice:active,
   .order-details__help-toggle:active,
   .order-details__help-action:active,
+  .order-details__help-sheet-cancel:active,
   .order-details__technician-call:active,
-  .order-details__cancel-reason:active,
+  .order-details__technician-reschedule:active,
   .order-details__cancel-continue:not(:disabled):active {
     transform: none;
   }

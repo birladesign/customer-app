@@ -25,7 +25,7 @@
   letter-spacing: var(--text-heading-tracking);
   line-height: var(--text-heading-leading);
   font-weight: 700;
-  color: var(--color-text-primary);
+  color: var(--color-text-heading);
 }
 
 .addresses__icon-btn {
@@ -123,7 +123,7 @@
   margin: 0;
   font-size: var(--text-product-size);
   font-weight: 700;
-  color: var(--color-text-primary);
+  color: var(--color-text-heading);
 }
 
 .addresses__card {

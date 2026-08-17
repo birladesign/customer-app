@@ -29,7 +29,7 @@
   margin: 0;
   font-size: var(--text-product-size);
   font-weight: 700;
-  color: var(--color-text-primary);
+  color: var(--color-text-heading);
 }
 
 .execution-step__confirm-body {
@@ -50,7 +50,7 @@
   font-size: var(--text-body-size);
   font-weight: 700;
   letter-spacing: var(--text-label-tracking);
-  color: var(--color-text-primary);
+  color: var(--color-text-heading);
 }
 
 .execution-step__done {

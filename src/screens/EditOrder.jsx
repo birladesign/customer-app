@@ -5,7 +5,7 @@ import { getEditEligibility } from '../data/intents.js';
 import { ADDRESSES } from '../data/profile.js';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
 import ConfirmSheet from '../components/ConfirmSheet.jsx';
-import { ChevronLeftIcon } from '../components/icons.jsx';
+import { ChevronLeftIcon, CheckIcon, MapPinIcon } from '../components/icons.jsx';
 import './EditOrder.css';
 
 function formatRupees(amount) {
@@ -40,6 +40,11 @@ export default function EditOrder({ params }) {
   const [qty, setQty] = useState(initialQty);
   const [selectedSize, setSelectedSize] = useState(currentSpec);
   const [selectedAddress, setSelectedAddress] = useState('current');
+  // Same reasoning as InstallationSchedule's bookingConfirmed — saving
+  // shouldn't just dump the customer back on Order Details. Captured here
+  // (not re-derived after the mutation) so the summary can still say what
+  // changed once qty/selectedSize/selectedAddress equal their new values.
+  const [savedSummary, setSavedSummary] = useState(null);
 
   if (!order || (params.sku && !item)) {
     return (
@@ -109,6 +114,8 @@ export default function EditOrder({ params }) {
 
   function handleConfirm() {
     const newProduct = variants ? withSpec(baseName, selectedSize) : target.product;
+    const addressChanged = selectedAddress !== 'current';
+    const newAddress = addressChanged ? ADDRESSES.find((a) => a.id === selectedAddress) : null;
 
     if (item) {
       Object.assign(item, { product: newProduct, qty, price: newLinePrice });
@@ -122,13 +129,17 @@ export default function EditOrder({ params }) {
       });
     }
 
-    if (selectedAddress !== 'current') {
-      const address = ADDRESSES.find((a) => a.id === selectedAddress);
-      if (address) order.address = formatAddressLine(address);
-    }
+    if (newAddress) order.address = formatAddressLine(newAddress);
 
     setConfirmOpen(false);
-    goBack();
+    setSavedSummary({
+      qtyChanged: qty !== initialQty,
+      newQty: qty,
+      sizeChanged: Boolean(variants) && selectedSize !== currentSpec,
+      newSize: selectedSize,
+      addressChanged: Boolean(newAddress),
+      newAddressText: newAddress ? formatAddressLine(newAddress) : null,
+    });
   }
 
   return (
@@ -142,98 +153,155 @@ export default function EditOrder({ params }) {
       </header>
 
       <main className="edit-order__content">
-        <div className="edit-order__product-card">
-          <img className="edit-order__image" src={target.image} alt={target.product} />
-          <div className="edit-order__product-text">
-            <p className="edit-order__product">{baseName}</p>
-            {currentSpec && <p className="edit-order__spec">Current: {currentSpec}</p>}
-          </div>
-        </div>
+        {savedSummary ? (
+          <>
+            <div className="edit-order__success">
+              <span className="edit-order__success-icon">
+                <CheckIcon width="20" height="20" strokeWidth="3" />
+              </span>
+              <p className="edit-order__success-title">Changes Saved</p>
+              <p className="edit-order__success-body">
+                {delta > 0
+                  ? `${formatRupees(delta)} will be charged to your original payment method.`
+                  : delta < 0
+                  ? `${formatRupees(Math.abs(delta))} will be refunded within 5–7 business days.`
+                  : `${withSpec(baseName, currentSpec)} has been updated.`}
+              </p>
+            </div>
 
-        <section className="edit-order__section">
-          <p className="edit-order__section-heading">Quantity</p>
-          <div className="edit-order__stepper">
-            <button
-              className="edit-order__stepper-btn"
-              disabled={qty <= QTY_MIN}
-              onClick={() => setQty((q) => Math.max(QTY_MIN, q - 1))}
-              aria-label="Decrease quantity"
-            >
-              −
-            </button>
-            <span className="edit-order__stepper-value">{qty}</span>
-            <button
-              className="edit-order__stepper-btn"
-              disabled={qty >= QTY_MAX}
-              onClick={() => setQty((q) => Math.min(QTY_MAX, q + 1))}
-              aria-label="Increase quantity"
-            >
-              +
-            </button>
-          </div>
-        </section>
+            {savedSummary.addressChanged && (
+              <div className="edit-order__address-updated">
+                <span className="edit-order__address-updated-icon">
+                  <MapPinIcon width="16" height="16" />
+                </span>
+                <div>
+                  <p className="edit-order__address-updated-label">Delivery Address Updated</p>
+                  <p className="edit-order__address-updated-value">{savedSummary.newAddressText}</p>
+                </div>
+              </div>
+            )}
 
-        {variants && (
-          <section className="edit-order__section">
-            <p className="edit-order__section-heading">Size</p>
-            <div className="edit-order__chip-row">
-              {variants.map((v) => (
+            <section className="edit-order__summary">
+              {savedSummary.qtyChanged && (
+                <div className="edit-order__summary-row">
+                  <span>Quantity</span>
+                  <span>{savedSummary.newQty}</span>
+                </div>
+              )}
+              {savedSummary.sizeChanged && (
+                <div className="edit-order__summary-row">
+                  <span>Size</span>
+                  <span>{savedSummary.newSize}</span>
+                </div>
+              )}
+              <div className="edit-order__summary-row">
+                <span>New Total</span>
+                <span>{formatRupees(newOrderTotal)}</span>
+              </div>
+            </section>
+          </>
+        ) : (
+          <>
+            <div className="edit-order__product-card">
+              <img className="edit-order__image" src={target.image} alt={target.product} />
+              <div className="edit-order__product-text">
+                <p className="edit-order__product">{baseName}</p>
+                {currentSpec && <p className="edit-order__spec">Current: {currentSpec}</p>}
+              </div>
+            </div>
+
+            <section className="edit-order__section">
+              <p className="edit-order__section-heading">Quantity</p>
+              <div className="edit-order__stepper">
                 <button
-                  key={v.label}
-                  className={`edit-order__chip${selectedSize === v.label ? ' edit-order__chip--selected' : ''}`}
-                  onClick={() => setSelectedSize(v.label)}
+                  className="edit-order__stepper-btn"
+                  disabled={qty <= QTY_MIN}
+                  onClick={() => setQty((q) => Math.max(QTY_MIN, q - 1))}
+                  aria-label="Decrease quantity"
                 >
-                  {v.label}
-                  <span className="edit-order__chip-price">{formatRupees(v.price)}</span>
+                  −
+                </button>
+                <span className="edit-order__stepper-value">{qty}</span>
+                <button
+                  className="edit-order__stepper-btn"
+                  disabled={qty >= QTY_MAX}
+                  onClick={() => setQty((q) => Math.min(QTY_MAX, q + 1))}
+                  aria-label="Increase quantity"
+                >
+                  +
+                </button>
+              </div>
+            </section>
+
+            {variants && (
+              <section className="edit-order__section">
+                <p className="edit-order__section-heading">Size</p>
+                <div className="edit-order__chip-row">
+                  {variants.map((v) => (
+                    <button
+                      key={v.label}
+                      className={`edit-order__chip${selectedSize === v.label ? ' edit-order__chip--selected' : ''}`}
+                      onClick={() => setSelectedSize(v.label)}
+                    >
+                      {v.label}
+                      <span className="edit-order__chip-price">{formatRupees(v.price)}</span>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            <section className="edit-order__section">
+              <p className="edit-order__section-heading">Delivery Address</p>
+              <button
+                className={`edit-order__address-card${selectedAddress === 'current' ? ' edit-order__address-card--selected' : ''}`}
+                onClick={() => setSelectedAddress('current')}
+              >
+                <span className="edit-order__address-badge">Current</span>
+                <span className="edit-order__address-text">{order.address}</span>
+              </button>
+              {ADDRESSES.map((a) => (
+                <button
+                  key={a.id}
+                  className={`edit-order__address-card${selectedAddress === a.id ? ' edit-order__address-card--selected' : ''}`}
+                  onClick={() => setSelectedAddress(a.id)}
+                >
+                  <span className="edit-order__address-badge">{a.label}</span>
+                  <span className="edit-order__address-text">{formatAddressLine(a)}</span>
                 </button>
               ))}
-            </div>
-          </section>
+            </section>
+
+            <section className="edit-order__summary">
+              <div className="edit-order__summary-row">
+                <span>Previous Amount</span>
+                <span>{formatRupees(oldOrderTotal)}</span>
+              </div>
+              <div className="edit-order__summary-row">
+                <span>New Amount</span>
+                <span>{formatRupees(newOrderTotal)}</span>
+              </div>
+              {delta !== 0 && (
+                <div className="edit-order__summary-row edit-order__summary-row--delta">
+                  <span>{delta > 0 ? 'Additional Payment' : 'Refund'}</span>
+                  <span>{formatRupees(Math.abs(delta))}</span>
+                </div>
+              )}
+            </section>
+          </>
         )}
-
-        <section className="edit-order__section">
-          <p className="edit-order__section-heading">Delivery Address</p>
-          <button
-            className={`edit-order__address-card${selectedAddress === 'current' ? ' edit-order__address-card--selected' : ''}`}
-            onClick={() => setSelectedAddress('current')}
-          >
-            <span className="edit-order__address-badge">Current</span>
-            <span className="edit-order__address-text">{order.address}</span>
-          </button>
-          {ADDRESSES.map((a) => (
-            <button
-              key={a.id}
-              className={`edit-order__address-card${selectedAddress === a.id ? ' edit-order__address-card--selected' : ''}`}
-              onClick={() => setSelectedAddress(a.id)}
-            >
-              <span className="edit-order__address-badge">{a.label}</span>
-              <span className="edit-order__address-text">{formatAddressLine(a)}</span>
-            </button>
-          ))}
-        </section>
-
-        <section className="edit-order__summary">
-          <div className="edit-order__summary-row">
-            <span>Previous Amount</span>
-            <span>{formatRupees(oldOrderTotal)}</span>
-          </div>
-          <div className="edit-order__summary-row">
-            <span>New Amount</span>
-            <span>{formatRupees(newOrderTotal)}</span>
-          </div>
-          {delta !== 0 && (
-            <div className="edit-order__summary-row edit-order__summary-row--delta">
-              <span>{delta > 0 ? 'Additional Payment' : 'Refund'}</span>
-              <span>{formatRupees(Math.abs(delta))}</span>
-            </div>
-          )}
-        </section>
       </main>
 
       <div className="edit-order__footer">
-        <button className="edit-order__continue" disabled={!hasChanges} onClick={() => setConfirmOpen(true)}>
-          {delta > 0 ? 'Continue to Payment' : delta < 0 ? 'Continue to Refund' : 'Save Changes'}
-        </button>
+        {savedSummary ? (
+          <button className="edit-order__continue" onClick={goBack}>
+            Done
+          </button>
+        ) : (
+          <button className="edit-order__continue" disabled={!hasChanges} onClick={() => setConfirmOpen(true)}>
+            {delta > 0 ? 'Continue to Payment' : delta < 0 ? 'Continue to Refund' : 'Save Changes'}
+          </button>
+        )}
       </div>
 
       <ConfirmSheet

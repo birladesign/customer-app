@@ -8,10 +8,12 @@
   z-index: 50;
 }
 
+/* Solid, not glass — a sheet like Tracking Updates is mostly text, and text
+   sitting on a blurred, translucent surface loses contrast right when it
+   needs to be most readable. Glass is for thin chrome (topbars, the tab
+   bar); a sheet this full of content earns an opaque, legible ground. */
 .bottom-sheet {
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
+  background: var(--color-bg-primary);
   width: 100%;
   max-width: 430px;
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;

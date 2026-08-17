@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
 
 const NavigationContext = createContext(null);
 
@@ -15,13 +15,29 @@ const TAB_BY_ROOT_SCREEN = Object.fromEntries(Object.entries(ROOT_SCREEN_BY_TAB)
 // LoginFlow), and Logout replaces 'home' back with 'login' the same way.
 // Neither is a tab root (see ROOT_SCREEN_BY_TAB above), so activeTab is null
 // while here and BottomTabBar stays hidden without any special-casing.
-const INITIAL_STACK = [{ screen: 'login', params: {} }];
+const INITIAL_STACK = [{ screen: 'login', params: {}, key: 'tab-login' }];
 
 export function NavigationProvider({ children }) {
   const [stack, setStack] = useState(INITIAL_STACK);
+  // An escape hatch for a screen that needs the tab bar gone without pushing
+  // a new route — e.g. Support's inline chat, which stays at the tab root
+  // (depth never changes) but still wants the full-screen feel of a
+  // conversation. Resets to false on tab switch so it can never leak onto a
+  // different tab's root.
+  const [hideTabBar, setHideTabBar] = useState(false);
+  // ScreenStack keys its AnimatePresence entry off each stack entry's `key`
+  // rather than depth+screen name — two separate pushes of the same screen
+  // at the same depth (e.g. "View Slot" on one order, then again on
+  // another) would otherwise share a key, and React would reuse the old
+  // component instance instead of mounting a fresh one, leaking stale
+  // useState values across visits. Tab roots are the deliberate exception:
+  // they keep a stable per-tab key so switching away and back preserves
+  // that tab's own scroll/filter state, same as a native tab bar.
+  const nextPushKeyRef = useRef(1);
 
   const navigate = useCallback((screen, params = {}) => {
-    setStack((s) => [...s, { screen, params }]);
+    const key = `push-${nextPushKeyRef.current++}`;
+    setStack((s) => [...s, { screen, params, key }]);
   }, []);
 
   const goBack = useCallback(() => {
@@ -31,7 +47,8 @@ export function NavigationProvider({ children }) {
   // Swap the top of the stack without growing it — e.g. a flow finishing and
   // landing on a "done" state without leaving a wizard step behind Back.
   const replace = useCallback((screen, params = {}) => {
-    setStack((s) => [...s.slice(0, -1), { screen, params }]);
+    const key = `push-${nextPushKeyRef.current++}`;
+    setStack((s) => [...s.slice(0, -1), { screen, params, key }]);
   }, []);
 
   // A tab switch is a hard reset to that tab's root, not a push — no per-tab
@@ -41,7 +58,10 @@ export function NavigationProvider({ children }) {
   // same idea as navigate's params.
   const switchTab = useCallback((tabKey, params = {}) => {
     const screen = ROOT_SCREEN_BY_TAB[tabKey];
-    if (screen) setStack([{ screen, params }]);
+    if (screen) {
+      setStack([{ screen, params, key: `tab-${screen}` }]);
+      setHideTabBar(false);
+    }
   }, []);
 
   const current = stack[stack.length - 1];
@@ -60,8 +80,10 @@ export function NavigationProvider({ children }) {
       goBack,
       replace,
       switchTab,
+      hideTabBar,
+      setHideTabBar,
     }),
-    [stack, current, previous, activeTab, navigate, goBack, replace, switchTab]
+    [stack, current, previous, activeTab, navigate, goBack, replace, switchTab, hideTabBar]
   );
 
   return <NavigationContext.Provider value={value}>{children}</NavigationContext.Provider>;

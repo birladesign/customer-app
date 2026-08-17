@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { splitProductSpec, getOrderStatus } from '../data/orders.js';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
-import { CopyIcon, CheckIcon, ChevronRightIcon, ZapIcon, AlertTriangleIcon, WalletIcon, CheckCircleIcon, StarIcon } from './icons.jsx';
+import { CopyIcon, CheckIcon, ChevronRightIcon, ZapIcon, AlertTriangleIcon, WalletIcon, CheckCircleIcon } from './icons.jsx';
+import StarRating from './StarRating.jsx';
 import './OrderCard.css';
 
 const DOT_COLOR = {
@@ -71,15 +72,37 @@ function CopyOrderId({ id }) {
 }
 
 export default function OrderCard({ order }) {
-  const { banner, badge, product, caption, savings, refundNote, disabledReason, actions, rating } = order;
+  const { banner, badge, product, caption, savings, refundNote, disabledReason, actions } = order;
   const status = getOrderStatus(order);
   const { navigate } = useNavigation();
   const BannerIcon = banner ? BANNER_ICON[banner.icon] : null;
   const { name: productName, spec } = splitProductSpec(product);
   const visibleActions = actions.filter((a) => !a.label.startsWith('Track'));
+  // No backend in this prototype — mutate the shared order object in place
+  // (same pattern as elsewhere) so Order Details reflects the same rating
+  // if the customer taps through after rating from the list.
+  const [rating, setRating] = useState(order.rating);
+
+  // Installation is the one order-card action with a real destination so
+  // far — everything else on this card stays present-but-inert until it has
+  // one too, same discipline as the rest of this prototype.
+  function getActionHandler(label) {
+    if (label === 'Schedule Installation' || label === 'Reschedule') {
+      return () => navigate('installationSchedule', { orderId: order.id, reschedule: label === 'Reschedule' });
+    }
+    if (label === 'View Slot') {
+      return () => navigate('installationSchedule', { orderId: order.id });
+    }
+    return undefined;
+  }
 
   function openDetails() {
     navigate('orderDetails', { orderId: order.id });
+  }
+
+  function handleRate(value) {
+    order.rating = value;
+    setRating(value);
   }
 
   return (
@@ -146,20 +169,19 @@ export default function OrderCard({ order }) {
         {visibleActions.length > 0 && (
           <div className="order-card__actions">
             {visibleActions.map((a) => (
-              <ActionButton key={a.label} {...a} />
+              <ActionButton key={a.label} {...a} onClick={getActionHandler(a.label)} />
             ))}
           </div>
         )}
 
         {typeof rating === 'number' && (
-          <div className="order-card__rating">
-            <span>Rate this product</span>
-            <span className="order-card__stars">
-              {Array.from({ length: 5 }, (_, i) => (
-                <StarIcon key={i} filled={i < rating} />
-              ))}
-            </span>
-          </div>
+          <StarRating
+            className="order-card__rating"
+            value={rating}
+            onRate={handleRate}
+            idleLabel="Rate this product"
+            itemName={productName}
+          />
         )}
       </div>
     </article>

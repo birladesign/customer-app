@@ -8,7 +8,7 @@
   margin: var(--space-2) 0 0;
   font-size: var(--text-product-size);
   font-weight: 700;
-  color: var(--color-text-primary);
+  color: var(--color-text-heading);
 }
 
 .refund-method-step__heading:first-child {

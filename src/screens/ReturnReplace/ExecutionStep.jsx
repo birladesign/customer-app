@@ -4,7 +4,6 @@ import { CheckIcon } from '../../components/icons.jsx';
 import './ExecutionStep.css';
 
 const LEVER_CONFIRMATION = {
-  repair: 'Repair booked',
   sendPart: 'Replacement part on its way',
   replace: 'Replacement booked',
   return: 'Return booked',

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { ORDERS, splitProductSpec, getOrderStatus } from '../data/orders.js';
+import { ORDERS, splitProductSpec, getOrderStatus, getShipmentInfo } from '../data/orders.js';
 import { getOrderIntents, getEditEligibility } from '../data/intents.js';
 import { CURRENT_USER } from '../data/profile.js';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
@@ -9,6 +9,7 @@ import Timeline from '../components/Timeline.jsx';
 import DetailedTracking from '../components/DetailedTracking.jsx';
 import LineItems from '../components/LineItems.jsx';
 import PrimaryItem from '../components/PrimaryItem.jsx';
+import StarRating from '../components/StarRating.jsx';
 import ConfirmSheet from '../components/ConfirmSheet.jsx';
 import BottomSheet from '../components/BottomSheet.jsx';
 import {
@@ -16,17 +17,17 @@ import {
   ChevronRightIcon,
   CopyIcon,
   CheckIcon,
-  CloseIcon,
   ClockIcon,
   FileTextIcon,
+  DownloadIcon,
   ShieldIcon,
   ExternalLinkIcon,
-  StarIcon,
-  HelpCircleIcon,
+  HeadsetIcon,
   MailIcon,
   PhoneIcon,
   UserIcon,
   EditIcon,
+  TruckIcon,
 } from '../components/icons.jsx';
 import './OrderDetails.css';
 
@@ -51,7 +52,7 @@ function formatRupees(amount) {
 }
 
 export default function OrderDetails({ params }) {
-  const { goBack, navigate } = useNavigation();
+  const { goBack, navigate, switchTab } = useNavigation();
   const [copied, setCopied] = useState(false);
   // Payment/shipping/cancel info is relevant on first glance, not tucked
   // behind a click — starts open, but stays collapsible for anyone who wants
@@ -75,6 +76,9 @@ export default function OrderDetails({ params }) {
   // that item's "Track This Item" link. Kept separate from trackingOpen so
   // the sheet's exit animation doesn't lose its content mid-close.
   const [trackingTarget, setTrackingTarget] = useState(null);
+  // Separate from `copied` (the Order ID's own) so copying one doesn't
+  // flash the checkmark on the other.
+  const [awbCopied, setAwbCopied] = useState(false);
   // Single-open accordion for line items, mirroring a native list disclosure —
   // expanding one item retracts whichever was open before.
   const [openItemSku, setOpenItemSku] = useState(null);
@@ -82,6 +86,10 @@ export default function OrderDetails({ params }) {
   // object in place — order.items is a plain module-level array, so a
   // direct mutation wouldn't trigger a re-render the way this does.
   const [itemRatings, setItemRatings] = useState({});
+  // Single-item orders carry their rating on the order itself, not per-item —
+  // same local-state-over-mutation reasoning as itemRatings above. Starts
+  // unset and falls back to order.rating until the customer actually rates.
+  const [orderRatingOverride, setOrderRatingOverride] = useState(null);
   const reduceMotion = useReducedMotion();
   const order = ORDERS.find((o) => o.id === params.orderId);
 
@@ -107,6 +115,13 @@ export default function OrderDetails({ params }) {
   const returnIntent = intents.find((i) => i.key === 'returnReplace');
   const warrantyIntent = intents.find((i) => i.key === 'warranty');
   const cancelIntent = intents.find((i) => i.key === 'cancel');
+  // The invoice only exists once the order has actually shipped out — same
+  // "available after delivery" window as Warranty, just also true for a
+  // multi-item order once every line item (not just the order's headline
+  // item) has arrived.
+  const isFullyDelivered = order.items
+    ? order.items.every((item) => item.status.label === 'Delivered')
+    : Boolean(warrantyIntent?.enabled);
 
   function openCancelFlow() {
     setCancelStep('reason');
@@ -180,9 +195,27 @@ export default function OrderDetails({ params }) {
     setTimeout(() => setCopied(false), 1200);
   }
 
-  function openTracking(title, timeline) {
-    setTrackingTarget({ title, steps: timeline.steps, currentIndex: timeline.currentIndex });
+  // shipmentKey is the order id for the order's own aggregate timeline, or
+  // a line item's `sku` for that item's own shipment — getShipmentInfo
+  // resolves either the same way (see data/orders.js).
+  function openTracking(title, timeline, shipmentKey) {
+    setTrackingTarget({
+      title,
+      steps: timeline.steps,
+      currentIndex: timeline.currentIndex,
+      shipment: getShipmentInfo(shipmentKey),
+    });
     setTrackingOpen(true);
+  }
+
+  async function handleCopyAwb(awb) {
+    try {
+      await navigator.clipboard.writeText(awb);
+    } catch {
+      // Clipboard API unavailable — the checkmark still confirms the tap.
+    }
+    setAwbCopied(true);
+    setTimeout(() => setAwbCopied(false), 1200);
   }
 
   function toggleItem(sku) {
@@ -192,6 +225,8 @@ export default function OrderDetails({ params }) {
   function handleRateItem(item, value) {
     setItemRatings((prev) => ({ ...prev, [item.sku]: value }));
   }
+
+  const orderRating = orderRatingOverride ?? order.rating;
 
   const displayItems = order.items?.map((item) =>
     itemRatings[item.sku] != null ? { ...item, rating: itemRatings[item.sku] } : item
@@ -223,7 +258,7 @@ export default function OrderDetails({ params }) {
           <>
             <PrimaryItem
               item={primaryItem}
-              onTrack={(item) => openTracking(item.product, item.timeline)}
+              onTrack={(item) => openTracking(item.product, item.timeline, item.sku)}
               onReturn={(item) => navigate('returnReplace', { orderId: order.id, sku: item.sku })}
               onRate={handleRateItem}
             />
@@ -236,78 +271,147 @@ export default function OrderDetails({ params }) {
                   items={otherItems}
                   openSku={openItemSku}
                   onToggle={toggleItem}
-                  onTrack={(item) => openTracking(item.product, item.timeline)}
+                  onTrack={(item) => openTracking(item.product, item.timeline, item.sku)}
                   onReturn={(item) => navigate('returnReplace', { orderId: order.id, sku: item.sku })}
                   onRate={handleRateItem}
                 />
               </div>
             )}
           </>
-        ) : (
-          <div className="order-details__product-card">
-            <img className="order-details__image" src={order.image} alt={order.product} />
-            <div className="order-details__product-text">
-              <p className="order-details__product">{productName}</p>
-              {spec && <p className="order-details__spec">{spec}</p>}
+        ) : null}
+
+        {/* One card for everything about this order — product, id/status,
+            tracking, technician, warranty, rating, billing, and how to get
+            help — instead of a separate box per fact. Each direct child
+            gets an automatic hairline divider from the next (see the
+            `> * + *` rule in CSS), so which sections exist can vary freely
+            without any manual divider bookkeeping here. */}
+        <div className="order-details__summary-card">
+          {!order.items && (
+            <div className="order-details__product-row">
+              <img className="order-details__image" src={order.image} alt={order.product} />
+              <div className="order-details__product-text">
+                <p className="order-details__product">{productName}</p>
+                {spec && <p className="order-details__spec">{spec}</p>}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        <div className="order-details__id-row">
-          <div>
-            <p className="order-details__id-label">Order ID</p>
-            <button className="order-details__id" onClick={handleCopy}>
-              {copied ? <CheckIcon width="13" height="13" strokeWidth="3" /> : <CopyIcon width="13" height="13" />}
-              <span>{order.id}</span>
-            </button>
-          </div>
-          <span className="order-details__status-pill" style={{ background: pill.bg, color: pill.color }}>
-            {status.label}
-          </span>
-        </div>
-
-        {order.timeline && (
-          <div className="order-details__card">
-            <Timeline steps={order.timeline.steps} currentIndex={order.timeline.currentIndex} />
-            <button className="order-details__tracking-link" onClick={() => openTracking('Tracking Updates', order.timeline)}>
-              <span className="order-details__tracking-link-icon">
-                <FileTextIcon width="14" height="14" />
-              </span>
-              <span className="order-details__tracking-link-label">Tracking Updates</span>
-              <ChevronRightIcon className="order-details__tracking-link-chevron" aria-hidden="true" />
-            </button>
-          </div>
-        )}
-
-        {order.technician && (
-          <div className="order-details__technician-card">
-            <span className="order-details__technician-icon">
-              <UserIcon width="18" height="18" />
+          <div className="order-details__id-row">
+            <div>
+              <p className="order-details__id-label">Order ID</p>
+              <button className="order-details__id" onClick={handleCopy}>
+                {copied ? <CheckIcon width="13" height="13" strokeWidth="3" /> : <CopyIcon width="13" height="13" />}
+                <span>{order.id}</span>
+              </button>
+              {/* The one-line plain-language summary ("Arriving today by 6
+                  PM", "Delivered on 15 May 2026"...) every order already
+                  carries for its My Orders card — surfaced here too instead
+                  of making someone piece it together from the timeline
+                  steps below. Kept inside this column (not a sibling of the
+                  row) so it reads as part of the same status line, not a
+                  new divided section. */}
+              {order.caption && <p className="order-details__caption">{order.caption}</p>}
+            </div>
+            <span className="order-details__status-pill" style={{ background: pill.bg, color: pill.color }}>
+              {status.label}
             </span>
-            <div className="order-details__technician-text">
-              <p className="order-details__technician-label">Your Technician</p>
-              <p className="order-details__technician-name">{order.technician.name}</p>
-            </div>
-            <a className="order-details__technician-call" href={`tel:${order.technician.phone}`}>
-              <PhoneIcon width="14" height="14" />
-              Call
-            </a>
           </div>
-        )}
 
-        <div className="order-details__disclosure-wrap">
-          <button
-            className="order-details__disclosure"
-            onClick={() => setDetailsOpen((v) => !v)}
-            aria-expanded={detailsOpen}
-          >
-            <span>Bill Summary</span>
-            <ChevronRightIcon
-              className={`order-details__disclosure-chevron${detailsOpen ? ' order-details__disclosure-chevron--open' : ''}`}
-            />
-          </button>
-          <AnimatePresence initial={false}>
-            {detailsOpen && (
+          {order.timeline && (
+            <div className="order-details__timeline-block">
+              <Timeline steps={order.timeline.steps} currentIndex={order.timeline.currentIndex} />
+              <button
+                className="order-details__tracking-link"
+                onClick={() => openTracking('Tracking Updates', order.timeline, order.id)}
+              >
+                <span className="order-details__tracking-link-icon">
+                  <FileTextIcon width="14" height="14" />
+                </span>
+                <span className="order-details__tracking-link-label">Tracking Updates</span>
+                <ChevronRightIcon className="order-details__tracking-link-chevron" aria-hidden="true" />
+              </button>
+            </div>
+          )}
+
+          {order.technician && (
+            <div className="order-details__technician-row">
+              <span className="order-details__technician-icon">
+                <UserIcon width="18" height="18" />
+              </span>
+              <div className="order-details__technician-text">
+                <p className="order-details__technician-label">Your Technician</p>
+                <p className="order-details__technician-name">{order.technician.name}</p>
+              </div>
+              <a className="order-details__technician-call" href={`tel:${order.technician.phone}`}>
+                <PhoneIcon width="14" height="14" />
+                Call
+              </a>
+              <button
+                className="order-details__technician-reschedule"
+                onClick={() => navigate('installationSchedule', { orderId: order.id, reschedule: true })}
+              >
+                Reschedule
+              </button>
+            </div>
+          )}
+
+          {/* Multi-item orders get these scoped per line item inside
+              LineItems/PrimaryItem instead — a single order-level
+              Warranty/Rate doesn't make sense once each SKU has its own
+              delivery state and eligibility. */}
+          {!order.items &&
+            (warrantyIntent?.enabled ? (
+              <button className="order-details__warranty-row">
+                <span className="order-details__warranty-icon">
+                  <ShieldIcon />
+                </span>
+                <span className="order-details__warranty-label">Warranty Details</span>
+                <ExternalLinkIcon className="order-details__warranty-external" />
+              </button>
+            ) : (
+              <div className="order-details__warranty-row order-details__warranty-row--disabled">
+                <span className="order-details__warranty-icon">
+                  <ShieldIcon />
+                </span>
+                <span className="order-details__warranty-text">
+                  <span className="order-details__warranty-label">Warranty Details</span>
+                  <span className="order-details__warranty-reason">{warrantyIntent?.reason}</span>
+                </span>
+              </div>
+            ))}
+
+          {!order.items && typeof orderRating === 'number' && (
+            <div className="order-details__rating">
+              <img className="order-details__rating-image" src={order.image} alt="" />
+              <StarRating
+                className="order-details__rating-control"
+                value={orderRating}
+                onRate={setOrderRatingOverride}
+                idleLabel={`Rate ${productName}`}
+                itemName={productName}
+              />
+            </div>
+          )}
+
+          {/* Bill Summary and the help toggle used to be their own separate
+              cards below this one — folded in here instead, so "everything
+              about this order" (status, billing, and how to get help with
+              it) reads as one card with dividers, not three stacked boxes
+              repeating the same border/shadow. */}
+          <div className="order-details__disclosure-wrap">
+            <button
+              className="order-details__disclosure"
+              onClick={() => setDetailsOpen((v) => !v)}
+              aria-expanded={detailsOpen}
+            >
+              <span>Bill Summary</span>
+              <ChevronRightIcon
+                className={`order-details__disclosure-chevron${detailsOpen ? ' order-details__disclosure-chevron--open' : ''}`}
+              />
+            </button>
+            <AnimatePresence initial={false}>
+              {detailsOpen && (
               <motion.div
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: 'auto', opacity: 1 }}
@@ -340,10 +444,13 @@ export default function OrderDetails({ params }) {
                       <span>Payment Method</span>
                       <span>{order.payment.method} · {order.payment.status}</span>
                     </div>
-                    <button className="order-details__get-invoice">
-                      <FileTextIcon width="14" height="14" />
-                      Download Invoice / Credit Note
+                    <button className="order-details__get-invoice" disabled={!isFullyDelivered}>
+                      <DownloadIcon width="14" height="14" />
+                      Download Invoice
                     </button>
+                    {!isFullyDelivered && (
+                      <p className="order-details__get-invoice-reason">Available once the order is delivered</p>
+                    )}
                   </div>
 
                   {discount > 0 && (
@@ -378,6 +485,9 @@ export default function OrderDetails({ params }) {
                     <div className="order-details__shipping-block">
                       <div className="order-details__shipping-row">
                         <p className="order-details__shipping-label">Delivery Address</p>
+                        <p className="order-details__shipping-name">
+                          {CURRENT_USER.firstName} {CURRENT_USER.lastName}
+                        </p>
                         <p className="order-details__shipping-value">{order.address}</p>
                       </div>
                       <div className="order-details__shipping-divider" />
@@ -402,129 +512,90 @@ export default function OrderDetails({ params }) {
 
                 </div>
               </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+              )}
+            </AnimatePresence>
+          </div>
 
-        {/* Multi-item orders get these scoped per line item inside LineItems
-            instead — a single order-level Warranty/Rate/Return doesn't make
-            sense once each SKU has its own delivery state and eligibility. */}
-        {!order.items && (
-          <>
-            {warrantyIntent?.enabled ? (
-              <button className="order-details__warranty-row">
-                <span className="order-details__warranty-icon">
-                  <ShieldIcon />
-                </span>
-                <span className="order-details__warranty-label">Warranty Details</span>
-                <ExternalLinkIcon className="order-details__warranty-external" />
-              </button>
-            ) : (
-              <div className="order-details__warranty-row order-details__warranty-row--disabled">
-                <span className="order-details__warranty-icon">
-                  <ShieldIcon />
-                </span>
-                <span className="order-details__warranty-text">
-                  <span className="order-details__warranty-label">Warranty Details</span>
-                  <span className="order-details__warranty-reason">{warrantyIntent?.reason}</span>
-                </span>
-              </div>
-            )}
-
-            {typeof order.rating === 'number' && (
-              <div className="order-details__rating">
-                <img className="order-details__rating-image" src={order.image} alt="" />
-                <div>
-                  <p className="order-details__rating-heading">Rate {productName}</p>
-                  <span className="order-details__rating-stars">
-                    {Array.from({ length: 5 }, (_, i) => (
-                      <StarIcon key={i} filled={i < order.rating} />
-                    ))}
-                  </span>
-                </div>
-              </div>
-            )}
-          </>
-        )}
-
-        <div className="order-details__help-wrap">
-          <button
-            className="order-details__help-toggle"
-            onClick={() => setHelpSectionOpen((v) => !v)}
-            aria-expanded={helpSectionOpen}
-          >
-            <span className="order-details__help-icon">
-              <HelpCircleIcon />
-            </span>
-            <span className="order-details__help-text">
-              <span className="order-details__help-heading">Do you need help with the existing order?</span>
-              <span className="order-details__help-subtext">
-                {order.items ? 'Edit or cancel this order' : 'Edit, return, or cancel this order'}
-              </span>
-            </span>
-            <ChevronRightIcon
-              className={`order-details__help-chevron${helpSectionOpen ? ' order-details__help-chevron--open' : ''}`}
-            />
+          <button className="order-details__help-toggle" onClick={() => setHelpSectionOpen(true)}>
+            <span>Do you need help with the existing order?</span>
+            <ChevronRightIcon className="order-details__help-chevron" />
           </button>
-          <AnimatePresence initial={false}>
-            {helpSectionOpen && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={reduceMotion ? DURATION_REDUCED : SPRING_STANDARD}
-                style={{ overflow: 'hidden' }}
-              >
-                <div className="order-details__help-actions">
-                  <button
-                    className="order-details__help-action"
-                    disabled={!editIntent.enabled}
-                    onClick={
-                      editIntent.enabled
-                        ? () =>
-                            navigate(
-                              'editOrder',
-                              order.items ? { orderId: order.id, sku: primaryItem.sku } : { orderId: order.id }
-                            )
-                        : undefined
-                    }
-                  >
-                    <EditIcon width="15" height="15" />
-                    <span>Edit Order</span>
-                  </button>
-                  {!editIntent.enabled && <p className="order-details__help-action-reason">{editIntent.reason}</p>}
-
-                  {!order.items && (
-                    <>
-                      <button
-                        className="order-details__help-action"
-                        disabled={!returnIntent?.enabled}
-                        onClick={returnIntent?.enabled ? () => navigate('returnReplace', { orderId: order.id }) : undefined}
-                      >
-                        <ExternalLinkIcon width="14" height="14" />
-                        <span>Return or Replace</span>
-                      </button>
-                      {!returnIntent?.enabled && (
-                        <p className="order-details__help-action-reason">{returnIntent?.reason}</p>
-                      )}
-                    </>
-                  )}
-
-                  <button
-                    className="order-details__help-action"
-                    disabled={!cancelIntent?.enabled}
-                    onClick={cancelIntent?.enabled ? openCancelFlow : undefined}
-                  >
-                    <CloseIcon width="14" height="14" />
-                    <span>Cancel Order</span>
-                  </button>
-                  {!cancelIntent?.enabled && <p className="order-details__help-action-reason">{cancelIntent?.reason}</p>}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
       </main>
+
+      <BottomSheet open={helpSectionOpen} onClose={() => setHelpSectionOpen(false)}>
+        <h2 className="confirm-sheet__title">Need help with this order?</h2>
+        <div className="order-details__help-actions">
+          <button
+            className="order-details__help-action"
+            disabled={!editIntent.enabled}
+            onClick={
+              editIntent.enabled
+                ? () => {
+                    setHelpSectionOpen(false);
+                    navigate('editOrder', order.items ? { orderId: order.id, sku: primaryItem.sku } : { orderId: order.id });
+                  }
+                : undefined
+            }
+          >
+            <EditIcon width="15" height="15" />
+            <span>Edit Order</span>
+          </button>
+          {!editIntent.enabled && <p className="order-details__help-action-reason">{editIntent.reason}</p>}
+
+          {!order.items && (
+            <>
+              <button
+                className="order-details__help-action"
+                disabled={!returnIntent?.enabled}
+                onClick={
+                  returnIntent?.enabled
+                    ? () => {
+                        setHelpSectionOpen(false);
+                        navigate('returnReplace', { orderId: order.id });
+                      }
+                    : undefined
+                }
+              >
+                <ExternalLinkIcon width="14" height="14" />
+                <span>Return or Replace</span>
+              </button>
+              {!returnIntent?.enabled && <p className="order-details__help-action-reason">{returnIntent?.reason}</p>}
+            </>
+          )}
+
+          <button
+            className="order-details__help-action"
+            onClick={() => {
+              setHelpSectionOpen(false);
+              switchTab('support', { openChat: true, orderId: order.id });
+            }}
+          >
+            <HeadsetIcon width="15" height="15" />
+            <span>Contact Support</span>
+          </button>
+        </div>
+
+        <button
+          className="order-details__help-sheet-cancel"
+          disabled={!cancelIntent?.enabled}
+          onClick={
+            cancelIntent?.enabled
+              ? () => {
+                  setHelpSectionOpen(false);
+                  openCancelFlow();
+                }
+              : undefined
+          }
+        >
+          Want to cancel order?
+        </button>
+        {!cancelIntent?.enabled && (
+          <p className="order-details__help-action-reason order-details__help-action-reason--center">
+            {cancelIntent?.reason}
+          </p>
+        )}
+      </BottomSheet>
 
       <ConfirmSheet
         open={confirmingCancel}
@@ -538,14 +609,17 @@ export default function OrderDetails({ params }) {
       <BottomSheet open={cancelStep === 'reason'} onClose={closeCancelFlow}>
         <h2 className="confirm-sheet__title">Why are you cancelling?</h2>
         <p className="order-details__cancel-prompt">This helps us route it correctly.</p>
-        <div className="order-details__cancel-reasons">
+        <div className="order-details__cancel-reasons" role="radiogroup">
           {CANCEL_REASONS.map((reason) => (
             <button
               key={reason}
               className={`order-details__cancel-reason${cancelReason === reason ? ' order-details__cancel-reason--selected' : ''}`}
               onClick={() => selectCancelReason(reason)}
+              role="radio"
+              aria-checked={cancelReason === reason}
             >
-              {reason}
+              <span className="order-details__cancel-reason-radio" aria-hidden="true" />
+              <span>{reason}</span>
             </button>
           ))}
         </div>
@@ -573,6 +647,27 @@ export default function OrderDetails({ params }) {
       {trackingTarget && (
         <BottomSheet open={trackingOpen} onClose={() => setTrackingOpen(false)}>
           <h2 className="order-details__tracking-sheet-title">{trackingTarget.title}</h2>
+          {/* Only exists once a courier has actually picked this up — same
+              "no AWB before dispatch" reasoning as the real thing. */}
+          {trackingTarget.shipment && (
+            <div className="order-details__tracking-sheet-shipment">
+              <span className="order-details__tracking-sheet-shipment-icon">
+                <TruckIcon width="16" height="16" />
+              </span>
+              <div className="order-details__tracking-sheet-shipment-text">
+                <span className="order-details__tracking-sheet-shipment-courier">
+                  Shipped via {trackingTarget.shipment.courier}
+                </span>
+                <button
+                  className="order-details__tracking-sheet-shipment-awb"
+                  onClick={() => handleCopyAwb(trackingTarget.shipment.awb)}
+                >
+                  {awbCopied ? <CheckIcon width="12" height="12" strokeWidth="3" /> : <CopyIcon width="12" height="12" />}
+                  <span>AWB {trackingTarget.shipment.awb}</span>
+                </button>
+              </div>
+            </div>
+          )}
           <div className="order-details__tracking-sheet-body">
             <DetailedTracking steps={trackingTarget.steps} currentIndex={trackingTarget.currentIndex} />
           </div>

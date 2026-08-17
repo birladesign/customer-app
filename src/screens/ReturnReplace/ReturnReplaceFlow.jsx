@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { ORDERS } from '../../data/orders.js';
-import { getRemediationOptions } from '../../data/remediation.js';
+import { getRemediationOptions, getPostBookingUpdate } from '../../data/remediation.js';
 import { useNavigation } from '../../navigation/NavigationContext.jsx';
 import { SPRING_STANDARD, DURATION_REDUCED } from '../../motion.js';
 import { ChevronLeftIcon } from '../../components/icons.jsx';
@@ -22,7 +22,7 @@ const STEP_TITLES = {
 };
 
 // Refund method + pickup confirmation only makes sense for "Return for
-// Refund" — repair/replace/sendPart never move money, so those levers skip
+// Refund" — replace/sendPart never move money, so those levers skip
 // straight from Options to Execution instead of carrying a dead step.
 const STEPS_WITH_REFUND = ['reason', 'evidence', 'options', 'refundMethod', 'execution'];
 const STEPS_WITHOUT_REFUND = ['reason', 'evidence', 'options', 'execution'];
@@ -74,6 +74,32 @@ export default function ReturnReplaceFlow({ params }) {
   function handleBack() {
     if (step > 0) goToStep(step - 1);
     else goBack();
+  }
+
+  // No backend in this prototype — mutate the shared order (or, for a
+  // multi-SKU order, the one line item) in place, same pattern as
+  // OrderDetails' handleCancelOrder/handlePutOnHold, so My Orders and Order
+  // Details both reflect the booked journey the moment we navigate back.
+  function handleJourneyComplete() {
+    const update = getPostBookingUpdate(selectedLever);
+    const newStatus = { dot: 'blue', label: update.label };
+
+    if (item) {
+      Object.assign(item, { status: newStatus, tracker: { steps: update.trackerSteps, currentIndex: 0 } });
+      item.timeline?.steps.push({ label: update.label, timestamp: null, description: update.description });
+      if (item.timeline) item.timeline.currentIndex = item.timeline.steps.length - 1;
+    } else {
+      Object.assign(order, {
+        section: 'inProgress',
+        status: newStatus,
+        actions: update.actions,
+        intentOverrides: { ...order.intentOverrides, returnReplace: update.overrideReason },
+      });
+      if (order.tracker) order.tracker = { steps: update.trackerSteps, currentIndex: 0 };
+      order.timeline?.steps.push({ label: update.label, timestamp: null, description: update.description });
+      if (order.timeline) order.timeline.currentIndex = order.timeline.steps.length - 1;
+    }
+    goBack();
   }
 
   const direction = directionRef.current;
@@ -150,9 +176,9 @@ export default function ReturnReplaceFlow({ params }) {
             {currentKey === 'refundMethod' && (
               <RefundMethodStep order={target} refundAmount={itemPrice} onSubmit={() => goToStep(4)} />
             )}
-            {currentKey === 'execution' && needsApproval && <ApprovalPendingStep onDone={goBack} />}
+            {currentKey === 'execution' && needsApproval && <ApprovalPendingStep onDone={handleJourneyComplete} />}
             {currentKey === 'execution' && !needsApproval && (
-              <ExecutionStep order={target} leverId={selectedLever} onDone={goBack} />
+              <ExecutionStep order={target} leverId={selectedLever} onDone={handleJourneyComplete} />
             )}
           </motion.div>
         </AnimatePresence>

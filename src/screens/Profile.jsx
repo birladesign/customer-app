@@ -9,24 +9,33 @@ import {
   BellIcon,
   FileTextIcon,
   ShieldIcon,
+  HeadsetIcon,
   ChevronRightIcon,
   LogoutIcon,
 } from '../components/icons.jsx';
 import './Profile.css';
 
 // Things about *you* first, then things about your *activity* — see the plan
-// doc for the full hierarchy rationale.
+// doc for the full hierarchy rationale. "Help & Support" is a tab switch
+// (support is a bottom-nav tab, not a pushed screen), so it's handled as a
+// special case in the click handler rather than a plain navigate(key).
 const MENU = [
   { key: 'personalInformation', label: 'Personal Information', icon: UserIcon },
   { key: 'addresses', label: 'Addresses', icon: MapPinIcon },
   { key: 'notifications', label: 'Notifications', icon: BellIcon },
   { key: 'invoices', label: 'Invoices', icon: FileTextIcon },
   { key: 'requests', label: 'Requests', icon: ShieldIcon },
+  { key: 'support', label: 'Help & Support', icon: HeadsetIcon },
 ];
 
 export default function Profile() {
-  const { navigate, replace } = useNavigation();
+  const { navigate, replace, switchTab } = useNavigation();
   const [confirmingLogout, setConfirmingLogout] = useState(false);
+
+  function handleMenuClick(key) {
+    if (key === 'support') switchTab('support');
+    else navigate(key);
+  }
 
   function handleLogout() {
     setConfirmingLogout(false);
@@ -53,7 +62,7 @@ export default function Profile() {
 
         <div className="profile__menu">
           {MENU.map(({ key, label, icon: Icon }) => (
-            <button key={key} className="profile__row" onClick={() => navigate(key)}>
+            <button key={key} className="profile__row" onClick={() => handleMenuClick(key)}>
               <span className="profile__row-icon">
                 <Icon width="18" height="18" />
               </span>

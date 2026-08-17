@@ -6,7 +6,7 @@ function formatRupees(amount) {
   return `₹${amount.toLocaleString('en-IN')}`;
 }
 
-// Only shown for the "Return for Refund" lever — repair/replace/sendPart
+// Only shown for the "Return for Refund" lever — replace/sendPart
 // don't move money, so there's no refund or pickup to confirm. Refunds only
 // ever go to the original payment method — no wallet — so this is a plain
 // confirmation, not a choice between options.

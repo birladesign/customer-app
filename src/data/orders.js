@@ -59,6 +59,12 @@ export function splitProductSpec(product) {
 // order.status drifting from what the items actually say.
 export function getOrderStatus(order) {
   if (!order.items) return order.status;
+  // A line item needing attention (payment failed, damage reported, on
+  // hold...) always outranks the delivered/in-transit count — the parent
+  // pill should surface the one thing blocking the order, not dilute it
+  // into "3 of 4 delivered" as if everything were just running late.
+  const flagged = order.items.find((item) => item.status.dot === 'red');
+  if (flagged) return flagged.status;
   const total = order.items.length;
   const delivered = order.items.filter((item) => item.status.label === 'Delivered').length;
   if (delivered === total) return { dot: 'green', label: 'All Items Delivered' };
@@ -89,6 +95,47 @@ export const PROACTIVE_PROMPT = {
 // for this prototype a single consistent one is enough.
 const DEMO_ADDRESS = 'H.No. 24, Sector 44, Gurugram, Haryana 122003';
 
+// Shipment-level detail (courier + tracking/AWB number) — the thing Amazon
+// and Flipkart always surface once a parcel is actually with a courier, and
+// this app didn't carry at all until now. Keyed by order id for a
+// single-shipment order, or by the line item's own `sku` for a multi-item
+// order where each item can travel with a different courier. Deliberately
+// absent for anything not yet handed to a courier (on hold, payment failed,
+// still packing) — same reasoning as a real AWB not existing before pickup.
+// Items shipped in the same parcel (per their own timeline copy) share one
+// courier + AWB; a backordered/split item gets its own.
+const SHIPMENTS = {
+  TSC97821: { courier: 'Delhivery', awb: '1027384950162' },
+  TSC89203: { courier: 'Ecom Express', awb: 'EE38291056473' },
+  TSC91100: { courier: 'Delhivery', awb: '3455102938201' },
+  TSC88320: { courier: 'Bluedart', awb: '77048291056' },
+  TSC96210: { courier: 'Ecom Express', awb: 'EE29384756102' },
+  TSC85611: { courier: 'Delhivery', awb: '1029384756123' },
+  TSC83940: { courier: 'Xpressbees', awb: 'XB8172635401' },
+  TSC82341: { courier: 'Delhivery', awb: '1084756392017' },
+  TSC79902: { courier: 'DTDC', awb: 'D7283910456' },
+  TSC75890: { courier: 'Bluedart', awb: '77029384756' },
+  TSC70021: { courier: 'Delhivery', awb: '1057382910234' },
+  TSC93001: { courier: 'Delhivery', awb: '1046372819501' },
+  TSC93002: { courier: 'Delhivery', awb: '1046372819502' },
+  TSC93003: { courier: 'Delhivery', awb: '1046372819503' },
+  'TSC94500-1': { courier: 'Delhivery', awb: '1029384756789' },
+  'TSC94500-2': { courier: 'Delhivery', awb: '1029384756789' },
+  'TSC94500-3': { courier: 'Xpressbees', awb: 'XB93027461850' },
+  'TSC97500-1': { courier: 'Bluedart', awb: '77019283746' },
+  'TSC97500-2': { courier: 'Bluedart', awb: '77019283746' },
+  'TSC97500-3': { courier: 'Delhivery', awb: '1093827465019' },
+  'TSC97500-4': { courier: 'Ecom Express', awb: 'EE10293847561' },
+  'TSC91850-1': { courier: 'Delhivery', awb: '1038475629104' },
+  'TSC91850-2': { courier: 'Delhivery', awb: '1038475629104' },
+  'TSC86420-1': { courier: 'Bluedart', awb: '77038291056' },
+  'TSC86420-2': { courier: 'Bluedart', awb: '77038291056' },
+};
+
+export function getShipmentInfo(key) {
+  return SHIPMENTS[key] ?? null;
+}
+
 export const ORDERS = [
   {
     id: 'TSC92401',
@@ -109,9 +156,25 @@ export const ORDERS = [
     priceBreakup: { itemPrice: 17990, shipping: 0, discount: 1000, tax: 0, total: 16990 },
     timeline: {
       steps: [
-        { label: 'Order Confirmed', timestamp: '28 Jul 2026, 10:14 AM' },
-        { label: 'Packed', timestamp: '30 Jul 2026, 2:40 PM' },
-        { label: 'On Hold', timestamp: '01 Aug 2026, 9:00 AM', description: 'Awaiting your decision' },
+        {
+          label: 'Order Confirmed',
+          timestamp: '28 Jul 2026, 10:14 AM',
+          updates: [
+            { text: 'Order has been confirmed', timestamp: '28 Jul 2026, 10:14 AM' },
+            { text: 'We are processing your order', timestamp: '28 Jul 2026, 1:30 PM' },
+          ],
+        },
+        {
+          label: 'Packed',
+          timestamp: '30 Jul 2026, 2:40 PM',
+          updates: [{ text: 'Item has been packed and is ready for dispatch', timestamp: '30 Jul 2026, 2:40 PM' }],
+        },
+        {
+          label: 'On Hold',
+          timestamp: '01 Aug 2026, 9:00 AM',
+          description: 'Awaiting your decision',
+          updates: [{ text: 'Order paused at your request before dispatch', timestamp: '01 Aug 2026, 9:00 AM' }],
+        },
         { label: 'Shipped', timestamp: null },
         { label: 'Delivered', timestamp: null },
       ],
@@ -137,9 +200,32 @@ export const ORDERS = [
     priceBreakup: { itemPrice: 24999, shipping: 0, discount: 2000, tax: 0, total: 22999 },
     timeline: {
       steps: [
-        { label: 'Order Confirmed', timestamp: '15 Jul 2026, 11:20 AM' },
-        { label: 'Delivered', timestamp: '20 Jul 2026, 4:10 PM' },
-        { label: 'Damage Reported', timestamp: '14 Jul 2026, 6:00 PM', description: 'Awaiting evidence photos' },
+        {
+          label: 'Order Confirmed',
+          timestamp: '15 Jul 2026, 11:20 AM',
+          updates: [
+            { text: 'Order has been confirmed', timestamp: '15 Jul 2026, 11:20 AM' },
+            { text: 'We are preparing your order', timestamp: '15 Jul 2026, 2:00 PM' },
+          ],
+        },
+        {
+          label: 'Delivered',
+          timestamp: '20 Jul 2026, 4:10 PM',
+          updates: [
+            { text: 'Item has been shipped', timestamp: '18 Jul 2026, 10:00 AM' },
+            { text: 'Out for delivery', timestamp: '20 Jul 2026, 9:00 AM' },
+            { text: 'Delivered — signed for at the doorstep', timestamp: '20 Jul 2026, 4:10 PM' },
+          ],
+        },
+        {
+          label: 'Damage Reported',
+          timestamp: '14 Jul 2026, 6:00 PM',
+          description: 'Awaiting evidence photos',
+          updates: [
+            { text: 'Damage reported by customer', timestamp: '14 Jul 2026, 6:00 PM' },
+            { text: 'Warranty claim opened — awaiting evidence photos', timestamp: '14 Jul 2026, 6:05 PM' },
+          ],
+        },
       ],
       currentIndex: 2,
     },
@@ -161,8 +247,17 @@ export const ORDERS = [
     priceBreakup: { itemPrice: 16999, shipping: 0, discount: 0, tax: 0, total: 16999 },
     timeline: {
       steps: [
-        { label: 'Order Placed', timestamp: '02 Jul 2026, 5:45 PM' },
-        { label: 'Payment Failed', timestamp: '02 Jul 2026, 5:46 PM', description: 'Bank declined the charge' },
+        {
+          label: 'Order Placed',
+          timestamp: '02 Jul 2026, 5:45 PM',
+          updates: [{ text: 'Order placed, awaiting payment confirmation', timestamp: '02 Jul 2026, 5:45 PM' }],
+        },
+        {
+          label: 'Payment Failed',
+          timestamp: '02 Jul 2026, 5:46 PM',
+          description: 'Bank declined the charge',
+          updates: [{ text: 'Payment attempt declined by bank', timestamp: '02 Jul 2026, 5:46 PM' }],
+        },
       ],
       currentIndex: 1,
     },
@@ -192,10 +287,33 @@ export const ORDERS = [
     priceBreakup: { itemPrice: 23290, shipping: 0, discount: 2000, tax: 0, total: 21290 },
     timeline: {
       steps: [
-        { label: 'Order Confirmed', timestamp: '18 Jul 2026, 9:30 AM' },
-        { label: 'Delivered', timestamp: '24 Jul 2026, 1:15 PM' },
-        { label: 'Damage Reported', timestamp: '03 Aug 2026, 8:20 AM' },
-        { label: 'Investigation Started', timestamp: '03 Aug 2026, 3:00 PM' },
+        {
+          label: 'Order Confirmed',
+          timestamp: '18 Jul 2026, 9:30 AM',
+          updates: [
+            { text: 'Order has been confirmed', timestamp: '18 Jul 2026, 9:30 AM' },
+            { text: 'We are processing your order', timestamp: '18 Jul 2026, 1:00 PM' },
+          ],
+        },
+        {
+          label: 'Delivered',
+          timestamp: '24 Jul 2026, 1:15 PM',
+          updates: [
+            { text: 'Item has been shipped from the warehouse', timestamp: '20 Jul 2026, 10:00 AM' },
+            { text: 'Out for delivery', timestamp: '24 Jul 2026, 9:00 AM' },
+            { text: 'Delivered — signed for at the doorstep', timestamp: '24 Jul 2026, 1:15 PM' },
+          ],
+        },
+        {
+          label: 'Damage Reported',
+          timestamp: '03 Aug 2026, 8:20 AM',
+          updates: [{ text: 'Damage reported by customer with photos', timestamp: '03 Aug 2026, 8:20 AM' }],
+        },
+        {
+          label: 'Investigation Started',
+          timestamp: '03 Aug 2026, 3:00 PM',
+          updates: [{ text: 'Case assigned to the quality investigation team', timestamp: '03 Aug 2026, 3:00 PM' }],
+        },
         { label: 'Resolution', timestamp: null },
       ],
       currentIndex: 3,
@@ -282,8 +400,19 @@ export const ORDERS = [
     priceBreakup: { itemPrice: 1999, shipping: 0, discount: 0, tax: 0, total: 1999 },
     timeline: {
       steps: [
-        { label: 'Confirmed', timestamp: '01 Aug 2026, 6:05 PM' },
-        { label: 'Packing', timestamp: '02 Aug 2026, 10:00 AM' },
+        {
+          label: 'Confirmed',
+          timestamp: '01 Aug 2026, 6:05 PM',
+          updates: [
+            { text: 'Order has been confirmed', timestamp: '01 Aug 2026, 6:05 PM' },
+            { text: 'Cash on Delivery confirmation received', timestamp: '01 Aug 2026, 6:10 PM' },
+          ],
+        },
+        {
+          label: 'Packing',
+          timestamp: '02 Aug 2026, 10:00 AM',
+          updates: [{ text: 'We have started packing your order', timestamp: '02 Aug 2026, 10:00 AM' }],
+        },
         { label: 'Shipped', timestamp: null },
         { label: 'Delivered', timestamp: null },
       ],
@@ -308,6 +437,8 @@ export const ORDERS = [
     product: 'Luxe Grande Recliner Sofa',
     caption: 'Technician visit: 06 Aug 2026, 10 AM – 12 PM',
     technician: { name: 'Rajesh Kumar', phone: '+919876543210', phoneDisplay: '+91 98765 43210' },
+    installationStatus: 'confirmed',
+    installationSlot: { date: '06 Aug 2026', window: '10 AM – 12 PM' },
     // Viewing the booked slot is a passive look, not a decision — same
     // reasoning as the Track buttons, so no dark CTA here either.
     actions: [
@@ -363,6 +494,68 @@ export const ORDERS = [
       currentIndex: 2,
     },
   },
+  // Delivered, but installation hasn't been booked yet — the app proposes a
+  // default slot 48 hours out and surfaces it for confirmation rather than
+  // auto-booking it, so "Schedule Installation" always ends in an explicit
+  // confirm tap (see InstallationSchedule.jsx).
+  {
+    id: 'TSC96210',
+    section: 'inProgress',
+    date: '10 Aug 2026',
+    image: imgBedElev8Adjustable,
+    status: { dot: 'blue', label: 'Installation Pending' },
+    product: 'Elev8 Smart Adjustable Bed Frame',
+    caption: 'Delivered — confirm your installation slot',
+    installationStatus: 'pending',
+    installationSlot: { date: '12 Aug 2026', window: '10 AM – 12 PM' },
+    actions: [{ label: 'Schedule Installation', variant: 'primary' }],
+    amount: 22999,
+    address: DEMO_ADDRESS,
+    payment: { method: 'UPI', status: 'Paid' },
+    priceBreakup: { itemPrice: 22999, shipping: 0, discount: 0, tax: 0, total: 22999 },
+    timeline: {
+      steps: [
+        {
+          label: 'Order Confirmed',
+          timestamp: '08 Aug 2026, 11:00 AM',
+          updates: [
+            { text: 'Order has been confirmed', timestamp: '08 Aug 2026, 11:00 AM' },
+            { text: 'We are processing your order', timestamp: '08 Aug 2026, 1:30 PM' },
+          ],
+        },
+        {
+          label: 'Delivered',
+          timestamp: '10 Aug 2026, 2:15 PM',
+          updates: [
+            { text: 'Item has been shipped', timestamp: '09 Aug 2026, 9:00 AM' },
+            { text: 'Out for delivery', timestamp: '10 Aug 2026, 9:30 AM' },
+            { text: 'Delivered — signed for at the doorstep', timestamp: '10 Aug 2026, 2:15 PM' },
+          ],
+        },
+        {
+          label: 'Installation Pending',
+          timestamp: '10 Aug 2026, 2:20 PM',
+          description: 'We propose 12 Aug 2026, 10 AM – 12 PM — confirm or choose another slot',
+          updates: [
+            {
+              text: 'A default installation slot has been proposed within 48 hours of delivery',
+              timestamp: '10 Aug 2026, 2:20 PM',
+            },
+          ],
+        },
+        { label: 'Installation Completed', timestamp: null },
+      ],
+      currentIndex: 2,
+    },
+    homeTracker: {
+      steps: [
+        { label: 'Delivered', date: '10 Aug' },
+        { label: 'Installation', date: '12 Aug' },
+        { label: 'Complete' },
+      ],
+      currentIndex: 1,
+    },
+  },
   {
     id: 'TSC85611',
     section: 'inProgress',
@@ -384,10 +577,36 @@ export const ORDERS = [
     priceBreakup: { itemPrice: 10999, shipping: 0, discount: 0, tax: 0, total: 10999 },
     timeline: {
       steps: [
-        { label: 'Order Confirmed', timestamp: '18 Jul 2026, 4:00 PM' },
-        { label: 'Delivered', timestamp: '23 Jul 2026, 12:40 PM' },
-        { label: 'Return Requested', timestamp: '02 Aug 2026, 10:00 AM' },
-        { label: 'Pickup Scheduled', timestamp: '03 Aug 2026, 9:15 AM' },
+        {
+          label: 'Order Confirmed',
+          timestamp: '18 Jul 2026, 4:00 PM',
+          updates: [
+            { text: 'Order has been confirmed', timestamp: '18 Jul 2026, 4:00 PM' },
+            { text: 'We are processing your order', timestamp: '18 Jul 2026, 6:00 PM' },
+          ],
+        },
+        {
+          label: 'Delivered',
+          timestamp: '23 Jul 2026, 12:40 PM',
+          updates: [
+            { text: 'Item has been shipped', timestamp: '20 Jul 2026, 9:00 AM' },
+            { text: 'Out for delivery', timestamp: '23 Jul 2026, 9:00 AM' },
+            { text: 'Delivered — signed for at the doorstep', timestamp: '23 Jul 2026, 12:40 PM' },
+          ],
+        },
+        {
+          label: 'Return Requested',
+          timestamp: '02 Aug 2026, 10:00 AM',
+          updates: [
+            { text: 'Return request submitted', timestamp: '02 Aug 2026, 10:00 AM' },
+            { text: 'Return approved', timestamp: '02 Aug 2026, 2:00 PM' },
+          ],
+        },
+        {
+          label: 'Pickup Scheduled',
+          timestamp: '03 Aug 2026, 9:15 AM',
+          updates: [{ text: 'Pickup slot confirmed: 05 Aug 2026, 2 PM – 6 PM', timestamp: '03 Aug 2026, 9:15 AM' }],
+        },
         { label: 'Refund Initiated', timestamp: null },
       ],
       currentIndex: 3,
@@ -410,10 +629,33 @@ export const ORDERS = [
     priceBreakup: { itemPrice: 40990, shipping: 0, discount: 0, tax: 0, total: 40990 },
     timeline: {
       steps: [
-        { label: 'Order Confirmed', timestamp: '12 Jul 2026, 2:00 PM' },
-        { label: 'Delivered', timestamp: '17 Jul 2026, 11:00 AM' },
-        { label: 'Replacement Confirmed', timestamp: '30 Jul 2026, 9:00 AM' },
-        { label: 'Replacement Dispatched', timestamp: '01 Aug 2026, 8:00 AM' },
+        {
+          label: 'Order Confirmed',
+          timestamp: '12 Jul 2026, 2:00 PM',
+          updates: [
+            { text: 'Order has been confirmed', timestamp: '12 Jul 2026, 2:00 PM' },
+            { text: 'We are processing your order', timestamp: '12 Jul 2026, 4:00 PM' },
+          ],
+        },
+        {
+          label: 'Delivered',
+          timestamp: '17 Jul 2026, 11:00 AM',
+          updates: [
+            { text: 'Item has been shipped', timestamp: '14 Jul 2026, 10:00 AM' },
+            { text: 'Out for delivery', timestamp: '17 Jul 2026, 8:00 AM' },
+            { text: 'Delivered — signed for at the doorstep', timestamp: '17 Jul 2026, 11:00 AM' },
+          ],
+        },
+        {
+          label: 'Replacement Confirmed',
+          timestamp: '30 Jul 2026, 9:00 AM',
+          updates: [{ text: 'Replacement approved after damage assessment', timestamp: '30 Jul 2026, 9:00 AM' }],
+        },
+        {
+          label: 'Replacement Dispatched',
+          timestamp: '01 Aug 2026, 8:00 AM',
+          updates: [{ text: 'Replacement unit packed and handed to courier', timestamp: '01 Aug 2026, 8:00 AM' }],
+        },
         { label: 'Delivered', timestamp: null },
       ],
       currentIndex: 3,
@@ -440,9 +682,30 @@ export const ORDERS = [
     priceBreakup: { itemPrice: 57344, shipping: 0, discount: 12345, tax: 0, total: 44999 },
     timeline: {
       steps: [
-        { label: 'Order Confirmed', timestamp: '02 Mar 2026, 10:00 AM' },
-        { label: 'Shipped', timestamp: '05 Mar 2026, 2:00 PM' },
-        { label: 'Delivered', timestamp: '15 May 2026, 1:48 PM' },
+        {
+          label: 'Order Confirmed',
+          timestamp: '02 Mar 2026, 10:00 AM',
+          updates: [
+            { text: 'Order has been confirmed', timestamp: '02 Mar 2026, 10:00 AM' },
+            { text: 'We are processing your order', timestamp: '02 Mar 2026, 1:00 PM' },
+          ],
+        },
+        {
+          label: 'Shipped',
+          timestamp: '05 Mar 2026, 2:00 PM',
+          updates: [
+            { text: 'Item has been handed over to courier', timestamp: '05 Mar 2026, 2:00 PM' },
+            { text: 'Item has reached the courier facility in Gurugram, Haryana', timestamp: '06 Mar 2026, 9:00 AM' },
+          ],
+        },
+        {
+          label: 'Delivered',
+          timestamp: '15 May 2026, 1:48 PM',
+          updates: [
+            { text: 'Out for delivery', timestamp: '15 May 2026, 9:00 AM' },
+            { text: 'Delivered — signed for at the doorstep', timestamp: '15 May 2026, 1:48 PM' },
+          ],
+        },
       ],
       currentIndex: 2,
     },
@@ -464,10 +727,36 @@ export const ORDERS = [
     priceBreakup: { itemPrice: 53335, shipping: 0, discount: 12345, tax: 0, total: 40990 },
     timeline: {
       steps: [
-        { label: 'Order Confirmed', timestamp: '10 Jan 2026, 9:00 AM' },
-        { label: 'Delivered', timestamp: '15 Jan 2026, 3:30 PM' },
-        { label: 'Exchange Requested', timestamp: '02 Apr 2026, 10:00 AM' },
-        { label: 'Exchange Completed', timestamp: '11 Apr 2026, 4:00 PM' },
+        {
+          label: 'Order Confirmed',
+          timestamp: '10 Jan 2026, 9:00 AM',
+          updates: [
+            { text: 'Order has been confirmed', timestamp: '10 Jan 2026, 9:00 AM' },
+            { text: 'We are processing your order', timestamp: '10 Jan 2026, 11:30 AM' },
+          ],
+        },
+        {
+          label: 'Delivered',
+          timestamp: '15 Jan 2026, 3:30 PM',
+          updates: [
+            { text: 'Item has been shipped', timestamp: '12 Jan 2026, 10:00 AM' },
+            { text: 'Out for delivery', timestamp: '15 Jan 2026, 9:00 AM' },
+            { text: 'Delivered — signed for at the doorstep', timestamp: '15 Jan 2026, 3:30 PM' },
+          ],
+        },
+        {
+          label: 'Exchange Requested',
+          timestamp: '02 Apr 2026, 10:00 AM',
+          updates: [
+            { text: 'Exchange request submitted', timestamp: '02 Apr 2026, 10:00 AM' },
+            { text: 'Exchange approved', timestamp: '02 Apr 2026, 3:00 PM' },
+          ],
+        },
+        {
+          label: 'Exchange Completed',
+          timestamp: '11 Apr 2026, 4:00 PM',
+          updates: [{ text: 'Replacement unit delivered and old unit picked up', timestamp: '11 Apr 2026, 4:00 PM' }],
+        },
       ],
       currentIndex: 3,
     },
@@ -490,9 +779,28 @@ export const ORDERS = [
     priceBreakup: { itemPrice: 29199, shipping: 0, discount: 8200, tax: 0, total: 20999 },
     timeline: {
       steps: [
-        { label: 'Order Confirmed', timestamp: '20 Dec 2025, 11:30 AM' },
-        { label: 'Delivered', timestamp: '22 Dec 2025, 2:00 PM' },
-        { label: 'Installation Completed', timestamp: '23 Dec 2025, 5:00 PM' },
+        {
+          label: 'Order Confirmed',
+          timestamp: '20 Dec 2025, 11:30 AM',
+          updates: [
+            { text: 'Order has been confirmed', timestamp: '20 Dec 2025, 11:30 AM' },
+            { text: 'We are processing your order', timestamp: '20 Dec 2025, 2:00 PM' },
+          ],
+        },
+        {
+          label: 'Delivered',
+          timestamp: '22 Dec 2025, 2:00 PM',
+          updates: [
+            { text: 'Item has been shipped', timestamp: '21 Dec 2025, 9:00 AM' },
+            { text: 'Out for delivery', timestamp: '22 Dec 2025, 10:00 AM' },
+            { text: 'Delivered — signed for at the doorstep', timestamp: '22 Dec 2025, 2:00 PM' },
+          ],
+        },
+        {
+          label: 'Installation Completed',
+          timestamp: '23 Dec 2025, 5:00 PM',
+          updates: [{ text: 'Technician visit completed and desk assembled', timestamp: '23 Dec 2025, 5:00 PM' }],
+        },
       ],
       currentIndex: 2,
     },
@@ -512,10 +820,33 @@ export const ORDERS = [
     priceBreakup: { itemPrice: 9490, shipping: 0, discount: 0, tax: 0, total: 9490 },
     timeline: {
       steps: [
-        { label: 'Order Confirmed', timestamp: '20 Oct 2025, 10:00 AM' },
-        { label: 'Delivered', timestamp: '25 Oct 2025, 1:00 PM' },
-        { label: 'Return Picked Up', timestamp: '02 Nov 2025, 11:00 AM' },
-        { label: 'Refund Completed', timestamp: '05 Nov 2025, 11:30 AM' },
+        {
+          label: 'Order Confirmed',
+          timestamp: '20 Oct 2025, 10:00 AM',
+          updates: [
+            { text: 'Order has been confirmed', timestamp: '20 Oct 2025, 10:00 AM' },
+            { text: 'We are processing your order', timestamp: '20 Oct 2025, 1:00 PM' },
+          ],
+        },
+        {
+          label: 'Delivered',
+          timestamp: '25 Oct 2025, 1:00 PM',
+          updates: [
+            { text: 'Item has been shipped', timestamp: '22 Oct 2025, 9:00 AM' },
+            { text: 'Out for delivery', timestamp: '25 Oct 2025, 9:00 AM' },
+            { text: 'Delivered — signed for at the doorstep', timestamp: '25 Oct 2025, 1:00 PM' },
+          ],
+        },
+        {
+          label: 'Return Picked Up',
+          timestamp: '02 Nov 2025, 11:00 AM',
+          updates: [{ text: 'Courier picked up the returned item', timestamp: '02 Nov 2025, 11:00 AM' }],
+        },
+        {
+          label: 'Refund Completed',
+          timestamp: '05 Nov 2025, 11:30 AM',
+          updates: [{ text: 'Refund processed to source account', timestamp: '05 Nov 2025, 11:30 AM' }],
+        },
       ],
       currentIndex: 3,
     },
@@ -548,8 +879,20 @@ export const ORDERS = [
     priceBreakup: { itemPrice: 2199, shipping: 0, discount: 0, tax: 0, total: 2199 },
     timeline: {
       steps: [
-        { label: 'Order Confirmed', timestamp: '15 Oct 2025, 8:00 AM' },
-        { label: 'Cancelled', timestamp: '16 Oct 2025, 10:00 AM', description: 'Cancelled as per your request' },
+        {
+          label: 'Order Confirmed',
+          timestamp: '15 Oct 2025, 8:00 AM',
+          updates: [{ text: 'Order has been confirmed', timestamp: '15 Oct 2025, 8:00 AM' }],
+        },
+        {
+          label: 'Cancelled',
+          timestamp: '16 Oct 2025, 10:00 AM',
+          description: 'Cancelled as per your request',
+          updates: [
+            { text: 'Order cancelled as per your request', timestamp: '16 Oct 2025, 10:00 AM' },
+            { text: 'Refund of ₹2,199 initiated to original payment method', timestamp: '16 Oct 2025, 10:05 AM' },
+          ],
+        },
       ],
       currentIndex: 1,
     },
@@ -575,9 +918,30 @@ export const ORDERS = [
     priceBreakup: { itemPrice: 54999, shipping: 0, discount: 0, tax: 0, total: 54999 },
     timeline: {
       steps: [
-        { label: 'Order Confirmed', timestamp: '15 Nov 2025, 11:00 AM' },
-        { label: 'Shipped', timestamp: '17 Nov 2025, 9:00 AM' },
-        { label: 'Delivered', timestamp: '20 Nov 2025, 2:00 PM' },
+        {
+          label: 'Order Confirmed',
+          timestamp: '15 Nov 2025, 11:00 AM',
+          updates: [
+            { text: 'Order has been confirmed', timestamp: '15 Nov 2025, 11:00 AM' },
+            { text: 'We are processing your order', timestamp: '15 Nov 2025, 2:00 PM' },
+          ],
+        },
+        {
+          label: 'Shipped',
+          timestamp: '17 Nov 2025, 9:00 AM',
+          updates: [
+            { text: 'Item has been handed over to courier', timestamp: '17 Nov 2025, 9:00 AM' },
+            { text: 'Item has reached the courier facility in Gurugram, Haryana', timestamp: '17 Nov 2025, 3:00 PM' },
+          ],
+        },
+        {
+          label: 'Delivered',
+          timestamp: '20 Nov 2025, 2:00 PM',
+          updates: [
+            { text: 'Out for delivery', timestamp: '20 Nov 2025, 9:00 AM' },
+            { text: 'Delivered — signed for at the doorstep', timestamp: '20 Nov 2025, 2:00 PM' },
+          ],
+        },
       ],
       currentIndex: 2,
     },
@@ -598,9 +962,30 @@ export const ORDERS = [
     priceBreakup: { itemPrice: 54999, shipping: 0, discount: 0, tax: 0, total: 54999 },
     timeline: {
       steps: [
-        { label: 'Order Confirmed', timestamp: '15 Nov 2025, 11:00 AM' },
-        { label: 'Shipped', timestamp: '17 Nov 2025, 9:00 AM' },
-        { label: 'Delivered', timestamp: '20 Nov 2025, 2:00 PM' },
+        {
+          label: 'Order Confirmed',
+          timestamp: '15 Nov 2025, 11:00 AM',
+          updates: [
+            { text: 'Order has been confirmed', timestamp: '15 Nov 2025, 11:00 AM' },
+            { text: 'We are processing your order', timestamp: '15 Nov 2025, 2:00 PM' },
+          ],
+        },
+        {
+          label: 'Shipped',
+          timestamp: '17 Nov 2025, 9:00 AM',
+          updates: [
+            { text: 'Item has been handed over to courier', timestamp: '17 Nov 2025, 9:00 AM' },
+            { text: 'Item has reached the courier facility in Gurugram, Haryana', timestamp: '17 Nov 2025, 3:00 PM' },
+          ],
+        },
+        {
+          label: 'Delivered',
+          timestamp: '20 Nov 2025, 2:00 PM',
+          updates: [
+            { text: 'Out for delivery', timestamp: '20 Nov 2025, 9:00 AM' },
+            { text: 'Delivered — signed for at the doorstep', timestamp: '20 Nov 2025, 2:00 PM' },
+          ],
+        },
       ],
       currentIndex: 2,
     },
@@ -621,9 +1006,30 @@ export const ORDERS = [
     priceBreakup: { itemPrice: 54999, shipping: 0, discount: 0, tax: 0, total: 54999 },
     timeline: {
       steps: [
-        { label: 'Order Confirmed', timestamp: '15 Nov 2025, 11:00 AM' },
-        { label: 'Shipped', timestamp: '17 Nov 2025, 9:00 AM' },
-        { label: 'Delivered', timestamp: '20 Nov 2025, 2:00 PM' },
+        {
+          label: 'Order Confirmed',
+          timestamp: '15 Nov 2025, 11:00 AM',
+          updates: [
+            { text: 'Order has been confirmed', timestamp: '15 Nov 2025, 11:00 AM' },
+            { text: 'We are processing your order', timestamp: '15 Nov 2025, 2:00 PM' },
+          ],
+        },
+        {
+          label: 'Shipped',
+          timestamp: '17 Nov 2025, 9:00 AM',
+          updates: [
+            { text: 'Item has been handed over to courier', timestamp: '17 Nov 2025, 9:00 AM' },
+            { text: 'Item has reached the courier facility in Gurugram, Haryana', timestamp: '17 Nov 2025, 3:00 PM' },
+          ],
+        },
+        {
+          label: 'Delivered',
+          timestamp: '20 Nov 2025, 2:00 PM',
+          updates: [
+            { text: 'Out for delivery', timestamp: '20 Nov 2025, 9:00 AM' },
+            { text: 'Delivered — signed for at the doorstep', timestamp: '20 Nov 2025, 2:00 PM' },
+          ],
+        },
       ],
       currentIndex: 2,
     },
@@ -737,17 +1143,457 @@ export const ORDERS = [
     ],
     timeline: {
       steps: [
-        { label: 'Order Confirmed', timestamp: '05 Aug 2026, 10:05 AM' },
-        { label: 'Processing', timestamp: '05 Aug 2026, 3:00 PM' },
-        { label: 'Shipped', timestamp: '06 Aug 2026, 9:15 AM', description: 'First shipment left the warehouse' },
+        {
+          label: 'Order Confirmed',
+          timestamp: '05 Aug 2026, 10:05 AM',
+          updates: [{ text: 'Order has been confirmed', timestamp: '05 Aug 2026, 10:05 AM' }],
+        },
+        {
+          label: 'Processing',
+          timestamp: '05 Aug 2026, 3:00 PM',
+          updates: [{ text: 'We are preparing your items for shipment', timestamp: '05 Aug 2026, 3:00 PM' }],
+        },
+        {
+          label: 'Shipped',
+          timestamp: '06 Aug 2026, 9:15 AM',
+          description: 'First shipment left the warehouse',
+          updates: [
+            { text: 'Mattress and pillow shipment left the warehouse', timestamp: '06 Aug 2026, 9:15 AM' },
+            { text: 'Bed frame is backordered — will ship separately', timestamp: '06 Aug 2026, 9:20 AM' },
+          ],
+        },
         {
           label: 'Delivered',
           timestamp: '08 Aug 2026, 1:20 PM',
           description: '2 of 3 items delivered — Bed Frame still in transit',
+          updates: [
+            { text: 'Mattress and pillow delivered — signed for at the doorstep', timestamp: '08 Aug 2026, 1:20 PM' },
+            { text: 'Bed frame shipped separately — ETA 12 Aug 2026', timestamp: '09 Aug 2026, 11:30 AM' },
+          ],
         },
         { label: 'All Items Delivered', timestamp: null },
       ],
       currentIndex: 3,
+    },
+  },
+  // A larger cart (5 line items) than the 3-item bundle above, deliberately
+  // spread across every in-progress state at once (delivered, out for
+  // delivery, shipped, still packing) so LineItems/PrimaryItem get exercised
+  // at a size beyond the smallest interesting case.
+  {
+    id: 'TSC97500',
+    section: 'inProgress',
+    date: '02 Aug 2026',
+    product: 'Home Office & Bedroom Bundle (5 items)',
+    image: imgDeskAeroplus,
+    caption: '2 of 5 items delivered · 3 in progress',
+    actions: [{ label: 'Track Order', variant: 'secondary' }],
+    amount: 81186,
+    address: DEMO_ADDRESS,
+    payment: { method: 'UPI', status: 'Paid' },
+    priceBreakup: { itemPrice: 81186, shipping: 0, discount: 0, tax: 0, total: 81186 },
+    items: [
+      {
+        sku: 'TSC97500-1',
+        product: 'AeroPlus Adjustable Desk',
+        image: imgDeskAeroplus,
+        qty: 1,
+        price: 20999,
+        status: { dot: 'green', label: 'Delivered' },
+        caption: 'Delivered on 06 Aug 2026',
+        rating: 0,
+        tracker: { steps: ['Confirmed', 'Shipped', 'Delivered'], currentIndex: 2 },
+        timeline: {
+          steps: [
+            {
+              label: 'Confirmed',
+              timestamp: '02 Aug 2026, 10:05 AM',
+              updates: [{ text: 'Order has been confirmed', timestamp: '02 Aug 2026, 10:05 AM' }],
+            },
+            {
+              label: 'Shipped',
+              timestamp: '03 Aug 2026, 9:00 AM',
+              updates: [{ text: 'Item has been handed over to courier', timestamp: '03 Aug 2026, 9:00 AM' }],
+            },
+            {
+              label: 'Delivered',
+              timestamp: '06 Aug 2026, 3:00 PM',
+              updates: [
+                { text: 'Out for delivery', timestamp: '06 Aug 2026, 9:30 AM' },
+                { text: 'Delivered — signed for at the doorstep', timestamp: '06 Aug 2026, 3:00 PM' },
+              ],
+            },
+          ],
+          currentIndex: 2,
+        },
+      },
+      {
+        sku: 'TSC97500-2',
+        product: 'Stylux Ergonomic Office Chair',
+        image: imgChairStyluxErgonomic,
+        qty: 1,
+        price: 16999,
+        status: { dot: 'green', label: 'Delivered' },
+        caption: 'Delivered on 06 Aug 2026',
+        rating: 0,
+        tracker: { steps: ['Confirmed', 'Shipped', 'Delivered'], currentIndex: 2 },
+        timeline: {
+          steps: [
+            {
+              label: 'Confirmed',
+              timestamp: '02 Aug 2026, 10:05 AM',
+              updates: [{ text: 'Order has been confirmed', timestamp: '02 Aug 2026, 10:05 AM' }],
+            },
+            {
+              label: 'Shipped',
+              timestamp: '03 Aug 2026, 9:00 AM',
+              updates: [{ text: 'Packed with the rest of your order and handed to courier', timestamp: '03 Aug 2026, 9:00 AM' }],
+            },
+            {
+              label: 'Delivered',
+              timestamp: '06 Aug 2026, 3:00 PM',
+              updates: [{ text: 'Delivered together with your desk', timestamp: '06 Aug 2026, 3:00 PM' }],
+            },
+          ],
+          currentIndex: 2,
+        },
+      },
+      {
+        sku: 'TSC97500-3',
+        product: 'Smart Ortho Pro Mattress (Queen)',
+        image: imgMattressOrthoPro,
+        qty: 1,
+        price: 17990,
+        status: { dot: 'blue', label: 'Out for Delivery' },
+        caption: 'Arriving today',
+        tracker: { steps: ['Confirmed', 'Shipped', 'Out for Delivery', 'Delivered'], currentIndex: 2 },
+        timeline: {
+          steps: [
+            {
+              label: 'Confirmed',
+              timestamp: '02 Aug 2026, 10:05 AM',
+              updates: [{ text: 'Order has been confirmed', timestamp: '02 Aug 2026, 10:05 AM' }],
+            },
+            {
+              label: 'Shipped',
+              timestamp: '09 Aug 2026, 11:00 AM',
+              updates: [
+                { text: 'Item has been handed over to courier', timestamp: '09 Aug 2026, 11:00 AM' },
+                { text: 'Item has reached the courier facility in Gurugram, Haryana', timestamp: '09 Aug 2026, 4:20 PM' },
+              ],
+            },
+            {
+              label: 'Out for Delivery',
+              timestamp: '12 Aug 2026, 9:00 AM',
+              updates: [{ text: 'Out for delivery, arriving today', timestamp: '12 Aug 2026, 9:00 AM' }],
+            },
+            { label: 'Delivered', timestamp: null },
+          ],
+          currentIndex: 2,
+        },
+      },
+      {
+        sku: 'TSC97500-4',
+        product: 'Smart Cervical Pillow',
+        image: imgPillowCervical,
+        qty: 1,
+        price: 2199,
+        status: { dot: 'blue', label: 'Shipped' },
+        caption: 'ETA 13 Aug 2026',
+        tracker: { steps: ['Confirmed', 'Shipped', 'Delivered'], currentIndex: 1 },
+        timeline: {
+          steps: [
+            {
+              label: 'Confirmed',
+              timestamp: '02 Aug 2026, 10:05 AM',
+              updates: [{ text: 'Order has been confirmed', timestamp: '02 Aug 2026, 10:05 AM' }],
+            },
+            {
+              label: 'Shipped',
+              timestamp: '10 Aug 2026, 2:00 PM',
+              updates: [{ text: 'Item has been handed over to courier', timestamp: '10 Aug 2026, 2:00 PM' }],
+            },
+            { label: 'Delivered', timestamp: null },
+          ],
+          currentIndex: 1,
+        },
+      },
+      {
+        sku: 'TSC97500-5',
+        product: 'Elev8 Smart Adjustable Bed Frame',
+        image: imgBedElev8Adjustable,
+        qty: 1,
+        price: 22999,
+        status: { dot: 'blue', label: 'Confirmed · Packing' },
+        caption: 'Packed separately — ETA 14 Aug 2026',
+        tracker: { steps: ['Confirmed', 'Packing', 'Shipped', 'Delivered'], currentIndex: 1 },
+        timeline: {
+          steps: [
+            {
+              label: 'Confirmed',
+              timestamp: '02 Aug 2026, 10:05 AM',
+              updates: [{ text: 'Order has been confirmed', timestamp: '02 Aug 2026, 10:05 AM' }],
+            },
+            {
+              label: 'Packing',
+              timestamp: '11 Aug 2026, 10:00 AM',
+              updates: [{ text: 'We have started packing this item', timestamp: '11 Aug 2026, 10:00 AM' }],
+            },
+            { label: 'Shipped', timestamp: null },
+            { label: 'Delivered', timestamp: null },
+          ],
+          currentIndex: 1,
+        },
+      },
+    ],
+    timeline: {
+      steps: [
+        {
+          label: 'Order Confirmed',
+          timestamp: '02 Aug 2026, 10:05 AM',
+          updates: [{ text: 'Order has been confirmed', timestamp: '02 Aug 2026, 10:05 AM' }],
+        },
+        {
+          label: 'Processing',
+          timestamp: '02 Aug 2026, 3:00 PM',
+          updates: [{ text: 'We are preparing your items for shipment', timestamp: '02 Aug 2026, 3:00 PM' }],
+        },
+        {
+          label: 'Shipped',
+          timestamp: '03 Aug 2026, 9:00 AM',
+          description: 'Desk and chair shipped first',
+          updates: [{ text: 'Desk and chair shipment left the warehouse', timestamp: '03 Aug 2026, 9:00 AM' }],
+        },
+        {
+          label: 'Delivered',
+          timestamp: '06 Aug 2026, 3:00 PM',
+          description: '2 of 5 items delivered — mattress, pillow, and bed frame still in progress',
+          updates: [
+            { text: 'Desk and chair delivered — signed for at the doorstep', timestamp: '06 Aug 2026, 3:00 PM' },
+          ],
+        },
+        { label: 'All Items Delivered', timestamp: null },
+      ],
+      currentIndex: 3,
+    },
+  },
+  // Multi-item orders so far were all mid-flight (inProgress) — this one
+  // needs attention instead: one item delivered cleanly, the other flagged
+  // by getOrderStatus's dot:'red' check above, so the parent pill surfaces
+  // "Evidence Required" rather than a misleadingly calm "1 of 2 delivered".
+  {
+    id: 'TSC91850',
+    section: 'needsAttention',
+    date: '04 Aug 2026',
+    image: imgSofaLuxeGrande,
+    banner: { icon: 'alert', text: 'Action Required' },
+    product: 'Living Room Refresh (2 items)',
+    caption: '1 of 2 items delivered fine — the other needs evidence photos',
+    actions: [
+      { label: 'Upload Photos', variant: 'primary' },
+      { label: 'Get Help', variant: 'secondary' },
+    ],
+    amount: 55998,
+    address: DEMO_ADDRESS,
+    payment: { method: 'Credit Card', status: 'Paid' },
+    priceBreakup: { itemPrice: 55998, shipping: 0, discount: 0, tax: 0, total: 55998 },
+    items: [
+      {
+        sku: 'TSC91850-1',
+        product: 'Luxe Grande Recliner Sofa',
+        image: imgSofaLuxeGrande,
+        qty: 1,
+        price: 44999,
+        status: { dot: 'green', label: 'Delivered' },
+        caption: 'Delivered on 09 Aug 2026',
+        rating: 0,
+        tracker: { steps: ['Confirmed', 'Shipped', 'Delivered'], currentIndex: 2 },
+        timeline: {
+          steps: [
+            {
+              label: 'Confirmed',
+              timestamp: '04 Aug 2026, 11:15 AM',
+              updates: [{ text: 'Order has been confirmed', timestamp: '04 Aug 2026, 11:15 AM' }],
+            },
+            {
+              label: 'Shipped',
+              timestamp: '06 Aug 2026, 9:00 AM',
+              updates: [{ text: 'Item has been handed over to courier', timestamp: '06 Aug 2026, 9:00 AM' }],
+            },
+            {
+              label: 'Delivered',
+              timestamp: '09 Aug 2026, 2:30 PM',
+              updates: [
+                { text: 'Out for delivery', timestamp: '09 Aug 2026, 9:00 AM' },
+                { text: 'Delivered — signed for at the doorstep', timestamp: '09 Aug 2026, 2:30 PM' },
+              ],
+            },
+          ],
+          currentIndex: 2,
+        },
+      },
+      {
+        sku: 'TSC91850-2',
+        product: 'Onyx Orthopedic Office Chair',
+        image: imgChairOnyxOrthopedic,
+        qty: 1,
+        price: 10999,
+        status: { dot: 'red', label: 'Evidence Required' },
+        caption: 'Submit photos of damage to proceed with warranty claim',
+        tracker: { steps: ['Confirmed', 'Shipped', 'Delivered'], currentIndex: 2 },
+        timeline: {
+          steps: [
+            {
+              label: 'Confirmed',
+              timestamp: '04 Aug 2026, 11:15 AM',
+              updates: [{ text: 'Order has been confirmed', timestamp: '04 Aug 2026, 11:15 AM' }],
+            },
+            {
+              label: 'Delivered',
+              timestamp: '09 Aug 2026, 2:30 PM',
+              updates: [
+                { text: 'Item has been shipped', timestamp: '06 Aug 2026, 9:00 AM' },
+                { text: 'Delivered — signed for at the doorstep', timestamp: '09 Aug 2026, 2:30 PM' },
+              ],
+            },
+            {
+              label: 'Damage Reported',
+              timestamp: '10 Aug 2026, 6:40 PM',
+              description: 'Awaiting evidence photos',
+              updates: [
+                { text: 'Damage reported by customer', timestamp: '10 Aug 2026, 6:40 PM' },
+                { text: 'Warranty claim opened — awaiting evidence photos', timestamp: '10 Aug 2026, 6:45 PM' },
+              ],
+            },
+          ],
+          currentIndex: 2,
+        },
+      },
+    ],
+    timeline: {
+      steps: [
+        {
+          label: 'Order Confirmed',
+          timestamp: '04 Aug 2026, 11:15 AM',
+          updates: [{ text: 'Order has been confirmed', timestamp: '04 Aug 2026, 11:15 AM' }],
+        },
+        {
+          label: 'Delivered',
+          timestamp: '09 Aug 2026, 2:30 PM',
+          description: 'Both items delivered together',
+          updates: [{ text: 'Sofa and chair delivered — signed for at the doorstep', timestamp: '09 Aug 2026, 2:30 PM' }],
+        },
+        {
+          label: 'Damage Reported',
+          timestamp: '10 Aug 2026, 6:40 PM',
+          description: 'Chair damaged in transit — awaiting evidence photos',
+          updates: [{ text: 'Damage reported on the office chair', timestamp: '10 Aug 2026, 6:40 PM' }],
+        },
+      ],
+      currentIndex: 2,
+    },
+  },
+  // The smallest interesting multi-item case (2 items, not 3 or 5) and the
+  // first one to reach deliveredDone rather than sitting inProgress or
+  // needsAttention — both items delivered together, ratings still pending.
+  {
+    id: 'TSC86420',
+    section: 'deliveredDone',
+    date: '18 Jun 2026',
+    image: imgMattressOrthoRoyale,
+    product: 'Bedroom Essentials Duo (2 items)',
+    caption: '2 of 2 items delivered',
+    actions: [{ label: 'Track Order', variant: 'secondary' }],
+    amount: 43189,
+    address: DEMO_ADDRESS,
+    payment: { method: 'UPI', status: 'Paid' },
+    priceBreakup: { itemPrice: 43189, shipping: 0, discount: 0, tax: 0, total: 43189 },
+    items: [
+      {
+        sku: 'TSC86420-1',
+        product: 'Smart Ortho Royale Mattress (King)',
+        image: imgMattressOrthoRoyale,
+        qty: 1,
+        price: 40990,
+        status: { dot: 'green', label: 'Delivered' },
+        caption: 'Delivered on 22 Jun 2026',
+        rating: 0,
+        tracker: { steps: ['Confirmed', 'Shipped', 'Delivered'], currentIndex: 2 },
+        timeline: {
+          steps: [
+            {
+              label: 'Confirmed',
+              timestamp: '18 Jun 2026, 10:00 AM',
+              updates: [{ text: 'Order has been confirmed', timestamp: '18 Jun 2026, 10:00 AM' }],
+            },
+            {
+              label: 'Shipped',
+              timestamp: '19 Jun 2026, 3:00 PM',
+              updates: [{ text: 'Item has been handed over to courier', timestamp: '19 Jun 2026, 3:00 PM' }],
+            },
+            {
+              label: 'Delivered',
+              timestamp: '22 Jun 2026, 1:00 PM',
+              updates: [
+                { text: 'Out for delivery', timestamp: '22 Jun 2026, 9:00 AM' },
+                { text: 'Delivered — signed for at the doorstep', timestamp: '22 Jun 2026, 1:00 PM' },
+              ],
+            },
+          ],
+          currentIndex: 2,
+        },
+      },
+      {
+        sku: 'TSC86420-2',
+        product: 'Smart Cervical Pillow',
+        image: imgPillowCervical,
+        qty: 1,
+        price: 2199,
+        status: { dot: 'green', label: 'Delivered' },
+        caption: 'Delivered on 22 Jun 2026',
+        rating: 0,
+        tracker: { steps: ['Confirmed', 'Shipped', 'Delivered'], currentIndex: 2 },
+        timeline: {
+          steps: [
+            {
+              label: 'Confirmed',
+              timestamp: '18 Jun 2026, 10:00 AM',
+              updates: [{ text: 'Order has been confirmed', timestamp: '18 Jun 2026, 10:00 AM' }],
+            },
+            {
+              label: 'Shipped',
+              timestamp: '19 Jun 2026, 3:00 PM',
+              updates: [{ text: 'Packed with the rest of your order and handed to courier', timestamp: '19 Jun 2026, 3:00 PM' }],
+            },
+            {
+              label: 'Delivered',
+              timestamp: '22 Jun 2026, 1:00 PM',
+              updates: [{ text: 'Delivered together with your mattress', timestamp: '22 Jun 2026, 1:00 PM' }],
+            },
+          ],
+          currentIndex: 2,
+        },
+      },
+    ],
+    timeline: {
+      steps: [
+        {
+          label: 'Order Confirmed',
+          timestamp: '18 Jun 2026, 10:00 AM',
+          updates: [{ text: 'Order has been confirmed', timestamp: '18 Jun 2026, 10:00 AM' }],
+        },
+        {
+          label: 'Shipped',
+          timestamp: '19 Jun 2026, 3:00 PM',
+          updates: [{ text: 'Both items handed over to courier together', timestamp: '19 Jun 2026, 3:00 PM' }],
+        },
+        {
+          label: 'Delivered',
+          timestamp: '22 Jun 2026, 1:00 PM',
+          updates: [{ text: 'Delivered — signed for at the doorstep', timestamp: '22 Jun 2026, 1:00 PM' }],
+        },
+      ],
+      currentIndex: 2,
     },
   },
 ];

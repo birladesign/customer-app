@@ -1,0 +1,355 @@
+.installation-schedule {
+  height: 100%;
+  overflow-y: auto;
+  background: var(--color-bg-app);
+  display: flex;
+  flex-direction: column;
+}
+
+.installation-schedule__topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+}
+
+.installation-schedule__topbar h1 {
+  margin: 0;
+  font-size: var(--text-heading-size);
+  letter-spacing: var(--text-heading-tracking);
+  line-height: var(--text-heading-leading);
+  font-weight: 700;
+  color: var(--color-text-heading);
+}
+
+.installation-schedule__icon-btn {
+  border: none;
+  background: rgba(26, 43, 88, 0.06);
+  border-radius: var(--radius-full);
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-primary);
+  transition: transform 0.1s ease-out;
+}
+
+.installation-schedule__icon-btn:active {
+  transform: scale(0.92);
+}
+
+.installation-schedule__icon-btn-spacer {
+  width: 32px;
+  height: 32px;
+}
+
+.installation-schedule__content {
+  flex: 1;
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.installation-schedule__product-card {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3);
+}
+
+.installation-schedule__image {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-md);
+  object-fit: cover;
+  background: var(--color-bg-app);
+  flex-shrink: 0;
+}
+
+.installation-schedule__product {
+  margin: 0;
+  font-size: var(--text-product-size);
+  letter-spacing: var(--text-product-tracking);
+  line-height: var(--text-product-leading);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.installation-schedule__order-id {
+  margin: 2px 0 0;
+  font-size: var(--text-body-size);
+  color: var(--color-text-muted);
+}
+
+.installation-schedule__success {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  background: rgba(5, 150, 105, 0.08);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+}
+
+.installation-schedule__success-icon {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  background: var(--color-success);
+  color: var(--color-text-inverse);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.installation-schedule__success-title {
+  margin: 0;
+  font-size: var(--text-product-size);
+  font-weight: 700;
+  color: var(--color-text-heading);
+}
+
+.installation-schedule__success-body {
+  margin: 4px 0 0;
+  font-size: var(--text-caption-size);
+  color: var(--color-text-muted);
+}
+
+.installation-schedule__success-call {
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: var(--radius-full);
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-navy-900);
+  color: var(--color-text-inverse);
+  font-size: var(--text-body-size);
+  font-weight: 700;
+  text-decoration: none;
+  transition: transform 0.1s ease-out;
+}
+
+.installation-schedule__success-call:active {
+  transform: scale(0.96);
+}
+
+.installation-schedule__current {
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.installation-schedule__current-badge {
+  align-self: flex-start;
+  background: var(--color-success-tint);
+  color: var(--color-success);
+  border-radius: var(--radius-full);
+  padding: 3px 10px;
+  font-size: var(--text-caption-size);
+  font-weight: 700;
+  margin-bottom: var(--space-1);
+}
+
+.installation-schedule__current-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-product-size);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.installation-schedule__current-row svg {
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+}
+
+.installation-schedule__reschedule-link {
+  align-self: center;
+  border: none;
+  background: none;
+  padding: var(--space-2);
+  font-family: inherit;
+  font-size: var(--text-body-size);
+  font-weight: 600;
+  color: var(--color-navy-900);
+  text-decoration: underline;
+  transition: transform 0.1s ease-out;
+}
+
+.installation-schedule__reschedule-link:active {
+  transform: scale(0.97);
+}
+
+.installation-schedule__proposed-banner {
+  background: var(--color-accent-cyan-wash);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.installation-schedule__proposed-badge {
+  align-self: flex-start;
+  background: var(--color-bg-primary);
+  color: var(--color-navy-900);
+  border-radius: var(--radius-full);
+  padding: 3px 10px;
+  font-size: var(--text-caption-size);
+  font-weight: 700;
+}
+
+.installation-schedule__proposed-banner p {
+  margin: 0;
+  font-size: var(--text-body-size);
+  color: var(--color-text-secondary);
+}
+
+.installation-schedule__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.installation-schedule__section-heading {
+  margin: 0;
+  font-size: var(--text-caption-size);
+  font-weight: 700;
+  color: var(--color-text-muted);
+  letter-spacing: var(--text-label-tracking);
+}
+
+.installation-schedule__date-row {
+  display: flex;
+  gap: var(--space-2);
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.installation-schedule__date-chip {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 56px;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-primary);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  font-family: inherit;
+  transition: transform 0.1s ease-out, background 0.15s var(--ease-standard), color 0.15s var(--ease-standard);
+}
+
+.installation-schedule__date-chip:active {
+  transform: scale(0.96);
+}
+
+.installation-schedule__date-day {
+  font-size: var(--text-label-size);
+  color: var(--color-text-muted);
+}
+
+.installation-schedule__date-label {
+  font-size: var(--text-body-size);
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.installation-schedule__date-chip--selected {
+  background: var(--color-navy-900);
+  border-color: var(--color-navy-900);
+}
+
+.installation-schedule__date-chip--selected .installation-schedule__date-day,
+.installation-schedule__date-chip--selected .installation-schedule__date-label {
+  color: var(--color-text-inverse);
+}
+
+.installation-schedule__window-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.installation-schedule__window-chip {
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-primary);
+  border-radius: var(--radius-full);
+  padding: var(--space-2) var(--space-3);
+  font-family: inherit;
+  font-size: var(--text-body-size);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  transition: transform 0.1s ease-out, background 0.15s var(--ease-standard), color 0.15s var(--ease-standard);
+}
+
+.installation-schedule__window-chip:active {
+  transform: scale(0.96);
+}
+
+.installation-schedule__window-chip--selected {
+  background: var(--color-navy-900);
+  border-color: var(--color-navy-900);
+  color: var(--color-text-inverse);
+}
+
+.installation-schedule__footer {
+  padding: var(--space-4);
+  padding-bottom: calc(var(--space-4) + env(safe-area-inset-bottom));
+}
+
+.installation-schedule__confirm {
+  width: 100%;
+  border: none;
+  border-radius: var(--radius-full);
+  padding: var(--space-3);
+  font-family: inherit;
+  font-size: var(--text-product-size);
+  font-weight: 700;
+  background: var(--color-navy-900);
+  color: var(--color-text-inverse);
+  transition: transform 0.1s ease-out, opacity 0.15s var(--ease-standard);
+}
+
+.installation-schedule__confirm:disabled {
+  opacity: 0.4;
+}
+
+.installation-schedule__confirm:not(:disabled):active {
+  transform: scale(0.97);
+}
+
+.installation-schedule__not-found {
+  padding: var(--space-6) var(--space-4);
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .installation-schedule__icon-btn:active,
+  .installation-schedule__reschedule-link:active,
+  .installation-schedule__date-chip:active,
+  .installation-schedule__window-chip:active,
+  .installation-schedule__success-call:active,
+  .installation-schedule__confirm:not(:disabled):active {
+    transform: none;
+  }
+}

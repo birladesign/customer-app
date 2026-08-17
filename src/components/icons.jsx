@@ -273,6 +273,16 @@ export function FileTextIcon(props) {
   );
 }
 
+export function DownloadIcon(props) {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" strokeWidth="2" {...base} {...props}>
+      <path d="M12 3v12" />
+      <polyline points="7 11 12 16 17 11" />
+      <path d="M4 18v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
+    </svg>
+  );
+}
+
 export function ClockIcon(props) {
   return (
     <svg width="12" height="12" viewBox="0 0 24 24" strokeWidth="2" {...base} {...props}>
@@ -334,6 +344,15 @@ export function MailIcon(props) {
     <svg width="18" height="18" viewBox="0 0 24 24" strokeWidth="2" {...base} {...props}>
       <rect x="2.5" y="5" width="19" height="14" rx="2" />
       <path d="M3 6.5 12 13l9-6.5" />
+    </svg>
+  );
+}
+
+export function CameraIcon(props) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" strokeWidth="2" {...base} {...props}>
+      <path d="M4 8h3l1.5-2h7L17 8h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2Z" />
+      <circle cx="12" cy="13" r="3.5" />
     </svg>
   );
 }

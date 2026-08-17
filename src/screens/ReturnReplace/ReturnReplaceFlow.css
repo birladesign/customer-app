@@ -19,7 +19,7 @@
   font-size: var(--text-heading-size);
   letter-spacing: var(--text-heading-tracking);
   font-weight: 700;
-  color: var(--color-text-primary);
+  color: var(--color-text-heading);
 }
 
 .return-replace__icon-btn {

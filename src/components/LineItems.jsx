@@ -1,10 +1,10 @@
-import { useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { splitProductSpec } from '../data/orders.js';
 import { getItemIntents } from '../data/intents.js';
 import { SPRING_STANDARD, DURATION_REDUCED } from '../motion.js';
 import Tracker from './Tracker.jsx';
-import { ChevronDownIcon, FileTextIcon, ShieldIcon, ExternalLinkIcon, StarIcon } from './icons.jsx';
+import StarRating from './StarRating.jsx';
+import { ChevronDownIcon, FileTextIcon, ShieldIcon, ExternalLinkIcon } from './icons.jsx';
 import './LineItems.css';
 
 const STATUS_COLOR = {
@@ -29,16 +29,6 @@ function formatRupees(amount) {
 // it arrives, regardless of a still-in-transit bed frame in the same order.
 export default function LineItems({ items, openSku, onToggle, onTrack, onReturn, onRate }) {
   const reduceMotion = useReducedMotion();
-  // Confirms the tap actually registered — a rating is a "completion" event
-  // (Apple's four feedback kinds), and filling a star silently isn't enough
-  // on its own to read as confirmed.
-  const [justRatedSku, setJustRatedSku] = useState(null);
-
-  function handleRate(item, value) {
-    onRate(item, value);
-    setJustRatedSku(item.sku);
-    setTimeout(() => setJustRatedSku((current) => (current === item.sku ? null : current)), 1800);
-  }
 
   return (
     <div className="line-items">
@@ -93,25 +83,12 @@ export default function LineItems({ items, openSku, onToggle, onTrack, onReturn,
                     </button>
 
                     {typeof item.rating === 'number' && (
-                      <div className="line-items__rate">
-                        <span
-                          className={`line-items__rate-label${justRatedSku === item.sku ? ' line-items__rate-label--confirmed' : ''}`}
-                        >
-                          {justRatedSku === item.sku ? 'Thanks for rating!' : 'Rate this item'}
-                        </span>
-                        <span className="line-items__stars">
-                          {Array.from({ length: 5 }, (_, i) => (
-                            <button
-                              key={i}
-                              className="line-items__star-btn"
-                              onClick={() => handleRate(item, i + 1)}
-                              aria-label={`Rate ${item.product} ${i + 1} out of 5 stars`}
-                            >
-                              <StarIcon filled={i < item.rating} />
-                            </button>
-                          ))}
-                        </span>
-                      </div>
+                      <StarRating
+                        className="line-items__rate"
+                        value={item.rating}
+                        onRate={(value) => onRate(item, value)}
+                        itemName={item.product}
+                      />
                     )}
 
                     <div className="line-items__item-actions">

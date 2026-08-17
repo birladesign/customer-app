@@ -73,7 +73,7 @@
   font-size: 24px;
   letter-spacing: var(--text-heading-tracking);
   font-weight: 700;
-  color: var(--color-text-primary);
+  color: var(--color-text-heading);
 }
 
 .otp-step__subtext {

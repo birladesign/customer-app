@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react';
 import { SECTIONS, ORDERS, PROACTIVE_PROMPT, parseOrderDate } from '../data/orders.js';
+import { useNavigation } from '../navigation/NavigationContext.jsx';
 import OrderCard from '../components/OrderCard.jsx';
+import ShipmentCard from '../components/ShipmentCard.jsx';
 import ProactiveCard from '../components/ProactiveCard.jsx';
 import TabBar from '../components/TabBar.jsx';
 import SearchAndFilterBar from '../components/SearchAndFilterBar.jsx';
-import { InboxIcon } from '../components/icons.jsx';
+import { InboxIcon, HelpCircleIcon } from '../components/icons.jsx';
 import './MyOrders.css';
 
 const TABS = [
@@ -12,7 +14,38 @@ const TABS = [
   ...SECTIONS.filter((s) => s.tabKey === 'active' || s.tabKey === 'closed').map((s) => ({ key: s.tabKey, label: s.tabLabel })),
 ];
 
+// Orders sharing a shipmentId travelled together as multiple units of one SKU;
+// they collapse into a single ShipmentCard rather than repeating an identical
+// card per unit. Everything else passes through as its own entry. Order within
+// the list is preserved — a group takes the position of its first member, so
+// the date sort applied upstream still holds.
+function groupByShipment(orders) {
+  const entries = [];
+  const groupIndexById = new Map();
+
+  for (const order of orders) {
+    if (!order.shipmentId) {
+      entries.push({ key: order.id, order });
+      continue;
+    }
+    const existing = groupIndexById.get(order.shipmentId);
+    if (existing == null) {
+      groupIndexById.set(order.shipmentId, entries.length);
+      entries.push({ key: order.shipmentId, shipment: [order] });
+    } else {
+      entries[existing].shipment.push(order);
+    }
+  }
+
+  // A shipment that ends up with a single unit (the rest filtered out by tab
+  // or search) has nothing to collapse — show it as an ordinary card.
+  return entries.map((entry) =>
+    entry.shipment?.length === 1 ? { key: entry.shipment[0].id, order: entry.shipment[0] } : entry
+  );
+}
+
 export default function MyOrders() {
+  const { switchTab } = useNavigation();
   const [activeTab, setActiveTab] = useState('all');
   const [query, setQuery] = useState('');
 
@@ -44,6 +77,8 @@ export default function MyOrders() {
     return [...orders].sort((a, b) => parseOrderDate(b.date) - parseOrderDate(a.date));
   }, [activeTab, query]);
 
+  const listEntries = useMemo(() => groupByShipment(filteredOrders), [filteredOrders]);
+
   const hasAnyResults = filteredOrders.length > 0;
   const isFiltering = query.trim().length > 0 || activeTab !== 'all';
 
@@ -54,6 +89,10 @@ export default function MyOrders() {
           <div className="my-orders__topbar-left">
             <h1>My Orders</h1>
           </div>
+          <button className="my-orders__help-btn" onClick={() => switchTab('support', { openChat: true })}>
+            <HelpCircleIcon width="14" height="14" />
+            Need Help
+          </button>
         </header>
 
         <SearchAndFilterBar query={query} onQueryChange={setQuery} />
@@ -67,9 +106,13 @@ export default function MyOrders() {
 
         {hasAnyResults ? (
           <div className="my-orders__cards">
-            {filteredOrders.map((order) => (
-              <OrderCard key={order.id} order={order} />
-            ))}
+            {listEntries.map((entry) =>
+              entry.shipment ? (
+                <ShipmentCard key={entry.key} orders={entry.shipment} />
+              ) : (
+                <OrderCard key={entry.key} order={entry.order} />
+              )
+            )}
           </div>
         ) : (
           <div className="my-orders__empty">

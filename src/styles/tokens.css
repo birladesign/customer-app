@@ -4,9 +4,15 @@
 :root {
   /* Color */
   --color-bg-primary: #ffffff;
-  --color-bg-app: #f3f6fb;
+  /* Was #f3f6fb — the blue channel led the other two by enough to read as a
+     tinted page rather than a neutral one. Same lightness, flatter cast. */
+  --color-bg-app: #f4f4f6;
   --color-navy-900: #1a2b58;
   --color-text-primary: #1a2b58;
+  /* Dedicated to screen/nav-bar titles — deliberately not navy, since navy
+     is this app's clickable-button color and a title should never read as
+     tappable. */
+  --color-text-heading: #1a1a1a;
   --color-text-secondary: #43648a;
   --color-text-muted: #6b7280;
   --color-text-inverse: #ffffff;
@@ -18,6 +24,7 @@
   --color-success-tint: #e9f7ef;
   --color-warning: #816d26;
   --color-warning-tint: #fdf9da;
+  --color-rating-gold: #e8a723;
   --color-info-blue-tint: #dbeafe;
   --color-disabled-bg: #ececef;
   --color-disabled-text: #999999;
@@ -41,9 +48,11 @@
   --space-4: 16px;
   --space-6: 24px;
 
-  /* Persistent bottom tab bar — reserved space for screen content padding;
-     the bar itself adds env(safe-area-inset-bottom) on top of this in CSS. */
-  --bottom-tab-bar-height: 72px;
+  /* Persistent bottom tab bar — reserved space for screen content padding.
+     Docked flush to the screen edge (not floating), so this is just the
+     bar's own visible height; its safe-area-inset-bottom padding is inside
+     that dock and doesn't add to what content needs to clear. */
+  --bottom-tab-bar-height: 68px;
 
   /* Type family */
   --font-family: 'Montserrat', sans-serif;
@@ -81,11 +90,13 @@
   --spring-response: 0.35s;
   --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
 
-  /* Glassmorphism fallbacks for browsers that do not support prefers-reduced-transparency media query.
-     A light navy tint (not pure white) so the glass reads as darker and
-     matches the same navy-tinted shadow language used everywhere else. */
-  --glass-bg: rgba(224, 228, 236, 0.75);
-  --glass-blur: blur(20px) saturate(180%);
+  /* Shared by every sticky topbar, the bottom tab bar, and every bottom
+     sheet — a light navy tint (not pure white) so the glass reads as
+     darker and matches the same navy-tinted shadow language used
+     everywhere else. Kept deliberately subtle: a thin bar is a chip, not
+     a "big surface," and doesn't earn a heavy frosted-glass treatment. */
+  --glass-bg: rgba(224, 228, 236, 0.9);
+  --glass-blur: blur(6px) saturate(110%);
 }
 
 @media (prefers-reduced-transparency: reduce) {
