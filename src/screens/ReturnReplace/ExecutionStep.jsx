@@ -5,7 +5,7 @@ import './ExecutionStep.css';
 
 const LEVER_CONFIRMATION = {
   sendPart: 'Replacement part on its way',
-  replace: 'Replacement booked',
+  replace: 'Replacement Requested',
   return: 'Return booked',
 };
 
