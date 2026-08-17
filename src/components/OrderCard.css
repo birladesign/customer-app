@@ -135,7 +135,7 @@
 }
 
 .order-card__caption {
-  margin: var(--space-1) 0 0;
+  margin: var(--space-2) 0 0;
   font-size: var(--text-caption-size);
   letter-spacing: var(--text-caption-tracking);
   line-height: var(--text-caption-leading);
@@ -144,7 +144,7 @@
 
 .order-card__savings,
 .order-card__refund-note {
-  margin: var(--space-1) 0 0;
+  margin: var(--space-2) 0 0;
   display: flex;
   align-items: center;
   gap: 5px;
@@ -159,8 +159,11 @@
   flex-shrink: 0;
 }
 
+/* A bit more separation than the product→variant pair above — this is a
+   distinct fact (a delivery promise), not a continuation of the same line,
+   so it shouldn't read as glued to whatever caption sits right above it. */
 .order-card__edd {
-  margin: var(--space-1) 0 0;
+  margin: var(--space-2) 0 0;
   display: flex;
   align-items: center;
   gap: 5px;
