@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { getCaseById, updateCaseMessages } from '../../data/support.js';
+import { getCaseById, getOpenCaseForOrder, updateCaseMessages } from '../../data/support.js';
 import { useNavigation } from '../../navigation/NavigationContext.jsx';
 import PhotoUploadTile from '../../components/PhotoUploadTile.jsx';
 import { ChevronLeftIcon } from '../../components/icons.jsx';
@@ -19,7 +19,7 @@ function formatCaseDate(iso) {
 
 export default function RequestDetail({ params }) {
   const { goBack } = useNavigation();
-  const kase = getCaseById(params.caseId);
+  const kase = params.caseId ? getCaseById(params.caseId) : getOpenCaseForOrder(params.orderId);
   const [reply, setReply] = useState('');
   const [photo, setPhoto] = useState(null);
   const [photoKey, setPhotoKey] = useState(0);
