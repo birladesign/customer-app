@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { ORDERS } from '../../data/orders.js';
+import { getRemediationOptions } from '../../data/remediation.js';
 import { useNavigation } from '../../navigation/NavigationContext.jsx';
 import { SPRING_STANDARD, DURATION_REDUCED } from '../../motion.js';
 import { ChevronLeftIcon } from '../../components/icons.jsx';
@@ -9,6 +10,7 @@ import EvidenceStep from './EvidenceStep.jsx';
 import OptionsStep from './OptionsStep.jsx';
 import RefundMethodStep from './RefundMethodStep.jsx';
 import ExecutionStep from './ExecutionStep.jsx';
+import ApprovalPendingStep from './ApprovalPendingStep.jsx';
 import './ReturnReplaceFlow.css';
 
 const STEP_TITLES = {
@@ -56,6 +58,13 @@ export default function ReturnReplaceFlow({ params }) {
   const stepKeys = selectedLever === 'return' ? STEPS_WITH_REFUND : STEPS_WITHOUT_REFUND;
   const stepCount = stepKeys.length;
   const currentKey = stepKeys[step] ?? stepKeys[stepKeys.length - 1];
+  // A needsApproval lever (currently only Return for Refund) ends the flow
+  // at a plain "sent for review" screen instead of the automated tracker —
+  // there's no system-driven progression to show once a human takes over.
+  const needsApproval = Boolean(
+    selectedLever && order && getRemediationOptions(order, reason).find((o) => o.id === selectedLever)?.needsApproval
+  );
+  const headerTitle = currentKey === 'execution' && needsApproval ? 'Request Sent' : STEP_TITLES[currentKey];
 
   function goToStep(next) {
     directionRef.current = next > step ? 1 : -1;
@@ -90,7 +99,7 @@ export default function ReturnReplaceFlow({ params }) {
         <button className="return-replace__icon-btn" onClick={handleBack} aria-label="Back">
           <ChevronLeftIcon />
         </button>
-        <h1>{STEP_TITLES[currentKey]}</h1>
+        <h1>{headerTitle}</h1>
         <span className="return-replace__icon-btn-spacer" />
       </header>
 
@@ -141,7 +150,8 @@ export default function ReturnReplaceFlow({ params }) {
             {currentKey === 'refundMethod' && (
               <RefundMethodStep order={target} refundAmount={itemPrice} onSubmit={() => goToStep(4)} />
             )}
-            {currentKey === 'execution' && (
+            {currentKey === 'execution' && needsApproval && <ApprovalPendingStep onDone={goBack} />}
+            {currentKey === 'execution' && !needsApproval && (
               <ExecutionStep order={target} leverId={selectedLever} onDone={goBack} />
             )}
           </motion.div>
