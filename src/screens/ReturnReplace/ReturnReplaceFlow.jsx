@@ -21,6 +21,14 @@ export default function ReturnReplaceFlow({ params }) {
   // to them, so overriding it here is enough; no changes needed there.
   const item = order?.items?.find((i) => i.sku === params.sku);
   const target = item ? { ...order, product: item.product, image: item.image } : order;
+  // Per-item price for a multi-SKU order; for a single-item order, the item
+  // price net of its own discount (order.priceBreakup already scopes to just
+  // that one line, unlike order.amount which also folds in shipping/tax).
+  const itemPrice = item
+    ? item.price
+    : order
+    ? (order.priceBreakup?.itemPrice ?? order.amount) - (order.priceBreakup?.discount ?? 0)
+    : 0;
 
   const [step, setStep] = useState(0);
   const [reason, setReason] = useState(null);
@@ -113,7 +121,9 @@ export default function ReturnReplaceFlow({ params }) {
                 onContinue={() => goToStep(3)}
               />
             )}
-            {step === 3 && needsApproval && <ApprovalPendingStep onDone={goBack} />}
+            {step === 3 && needsApproval && (
+              <ApprovalPendingStep order={target} refundAmount={itemPrice} reason={reason} onDone={goBack} />
+            )}
             {step === 3 && !needsApproval && <ExecutionStep order={target} leverId={selectedLever} onDone={goBack} />}
           </motion.div>
         </AnimatePresence>
