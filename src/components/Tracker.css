@@ -31,17 +31,24 @@
   font-weight: 700;
   color: var(--color-text-inverse);
   background: var(--color-disabled-bg);
-  margin-left: -9px;
-}
-
-.tracker__step:first-child .tracker__dot {
-  margin-left: 0;
 }
 
 .tracker__line {
   flex: 1;
   height: 2px;
   background: var(--color-disabled-bg);
+}
+
+/* The outer half on the first/last step has no neighboring dot to connect
+   to — kept in the layout (not display:none) so it still claims equal flex
+   space, which is what keeps the dot centered on the column instead of
+   flush against the tracker's outer edge. */
+.tracker__line--hidden {
+  background: transparent;
+}
+
+.tracker__line--done {
+  background: var(--color-success);
 }
 
 .tracker__label {
@@ -58,8 +65,7 @@
   color: var(--color-text-muted);
 }
 
-.tracker__step--done .tracker__dot,
-.tracker__step--done .tracker__line {
+.tracker__step--done .tracker__dot {
   background: var(--color-success);
 }
 

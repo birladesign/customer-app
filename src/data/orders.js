@@ -276,7 +276,7 @@ export const ORDERS = [
     product: 'Smart Ortho Hybrid Pocketed Spring Mattress (Queen)',
     caption: 'Reported on 03 Aug 2026 · Investigation in progress',
     disabledReason: 'Manage Order unavailable — investigation in progress',
-    tracker: { steps: ['Reported', 'Investigation Started', 'Resolution'], currentIndex: 1 },
+    tracker: { steps: ['Reported', 'Investigation Started', 'Issue Resolved'], currentIndex: 1 },
     actions: [
       { label: 'Track Investigation', variant: 'secondary' },
       { label: 'Manage Order', variant: 'disabled' },
@@ -314,7 +314,7 @@ export const ORDERS = [
           timestamp: '03 Aug 2026, 3:00 PM',
           updates: [{ text: 'Case assigned to the quality investigation team', timestamp: '03 Aug 2026, 3:00 PM' }],
         },
-        { label: 'Resolution', timestamp: null },
+        { label: 'Issue Resolved', timestamp: null },
       ],
       currentIndex: 3,
     },
