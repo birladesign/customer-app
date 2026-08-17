@@ -294,6 +294,14 @@ export default function OrderDetails({ params }) {
   // "also in this order," not a second thing equally competing for it.
   const primaryItem = displayItems?.[0];
   const otherItems = displayItems?.slice(1) ?? [];
+  // A shipment's units are separate top-level orders (not one order's line
+  // items), so "other items" here means sibling orders sharing this order's
+  // shipmentId — same idea as otherItems above, just sourced from ORDERS
+  // instead of order.items, and each opens its own full Order Details by
+  // orderId rather than by sku within this same order.
+  const shipmentSiblings = order.shipmentId
+    ? ORDERS.filter((o) => o.shipmentId === order.shipmentId && o.id !== order.id)
+    : [];
   // Edit is order-level now, not per-item — for a multi-SKU order it targets
   // the primary item, the same "what this order is mainly about" item the
   // page already leads with.
@@ -356,6 +364,25 @@ export default function OrderDetails({ params }) {
             )}
           </>
         ) : null}
+
+        {shipmentSiblings.length > 0 && (
+          <div className="order-details__other-items">
+            <p className="order-details__other-items-heading">
+              Other Items in This Shipment ({shipmentSiblings.length})
+            </p>
+            <LineItems
+              items={shipmentSiblings.map((sibling) => ({
+                sku: sibling.id,
+                product: sibling.product,
+                image: sibling.image,
+                qty: sibling.qty,
+                status: sibling.status,
+                price: sibling.amount,
+              }))}
+              onMoreDetails={(item) => navigate('orderDetails', { orderId: item.sku })}
+            />
+          </div>
+        )}
 
         {/* One card for everything about this order — product, id/status,
             tracking, technician, warranty, rating, billing, and how to get
