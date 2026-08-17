@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { ORDERS, splitProductSpec, getOrderStatus, getShipmentInfo } from '../data/orders.js';
-import { getOrderIntents, getEditEligibility } from '../data/intents.js';
+import { getOrderIntents, getEditEligibility, getItemIntents } from '../data/intents.js';
 import { CURRENT_USER } from '../data/profile.js';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
 import { SPRING_STANDARD, DURATION_REDUCED } from '../motion.js';
@@ -92,6 +92,10 @@ export default function OrderDetails({ params }) {
   const [orderRatingOverride, setOrderRatingOverride] = useState(null);
   const reduceMotion = useReducedMotion();
   const order = ORDERS.find((o) => o.id === params.orderId);
+  // Scopes the whole page to one line item within a multi-item order —
+  // reached via a line item's "More Details" arrow. Null for both a
+  // genuine single-item order and an unscoped multi-item order view.
+  const scopedItem = params.sku ? order?.items?.find((i) => i.sku === params.sku) ?? null : null;
 
   if (!order) {
     return (
@@ -108,18 +112,23 @@ export default function OrderDetails({ params }) {
     );
   }
 
-  const { name: productName, spec } = splitProductSpec(order.product);
-  const status = getOrderStatus(order);
+  const { name: productName, spec } = splitProductSpec(scopedItem ? scopedItem.product : order.product);
+  const status = scopedItem ? scopedItem.status : getOrderStatus(order);
   const pill = STATUS_PILL[status.dot] ?? STATUS_PILL.muted;
   const intents = getOrderIntents(order);
   const returnIntent = intents.find((i) => i.key === 'returnReplace');
   const warrantyIntent = intents.find((i) => i.key === 'warranty');
   const cancelIntent = intents.find((i) => i.key === 'cancel');
+  const itemIntents = scopedItem ? getItemIntents(scopedItem) : null;
+  const effectiveWarrantyIntent = scopedItem ? itemIntents.warranty : warrantyIntent;
+  const effectiveReturnIntent = scopedItem ? itemIntents.returnReplace : returnIntent;
   // The invoice only exists once the order has actually shipped out — same
   // "available after delivery" window as Warranty, just also true for a
   // multi-item order once every line item (not just the order's headline
   // item) has arrived.
-  const isFullyDelivered = order.items
+  const isFullyDelivered = scopedItem
+    ? scopedItem.status.label === 'Delivered'
+    : order.items
     ? order.items.every((item) => item.status.label === 'Delivered')
     : Boolean(warrantyIntent?.enabled);
 
@@ -238,10 +247,12 @@ export default function OrderDetails({ params }) {
   // Edit is order-level now, not per-item — for a multi-SKU order it targets
   // the primary item, the same "what this order is mainly about" item the
   // page already leads with.
-  const editIntent = getEditEligibility(order.items ? primaryItem : order);
+  const editIntent = getEditEligibility(scopedItem ?? (order.items ? primaryItem : order));
 
-  const itemPrice = order.priceBreakup?.itemPrice ?? order.amount;
-  const discount = order.priceBreakup?.discount ?? 0;
+  const itemPrice = scopedItem ? scopedItem.price : order.priceBreakup?.itemPrice ?? order.amount;
+  const discount = scopedItem ? 0 : order.priceBreakup?.discount ?? 0;
+  const technician = scopedItem?.technician ?? order.technician;
+  const effectiveTimeline = scopedItem ? scopedItem.timeline : order.timeline;
 
   return (
     <div className="order-details">
@@ -254,13 +265,14 @@ export default function OrderDetails({ params }) {
       </header>
 
       <main className="order-details__content">
-        {order.items ? (
+        {order.items && !scopedItem ? (
           <>
             <PrimaryItem
               item={primaryItem}
               onTrack={(item) => openTracking(item.product, item.timeline, item.sku)}
               onReturn={(item) => navigate('returnReplace', { orderId: order.id, sku: item.sku })}
               onRate={handleRateItem}
+              onMoreDetails={(item) => navigate('orderDetails', { orderId: order.id, sku: item.sku })}
             />
             {otherItems.length > 0 && (
               <div className="order-details__other-items">
@@ -274,6 +286,7 @@ export default function OrderDetails({ params }) {
                   onTrack={(item) => openTracking(item.product, item.timeline, item.sku)}
                   onReturn={(item) => navigate('returnReplace', { orderId: order.id, sku: item.sku })}
                   onRate={handleRateItem}
+                  onMoreDetails={(item) => navigate('orderDetails', { orderId: order.id, sku: item.sku })}
                 />
               </div>
             )}
@@ -287,9 +300,13 @@ export default function OrderDetails({ params }) {
             `> * + *` rule in CSS), so which sections exist can vary freely
             without any manual divider bookkeeping here. */}
         <div className="order-details__summary-card">
-          {!order.items && (
+          {(!order.items || scopedItem) && (
             <div className="order-details__product-row">
-              <img className="order-details__image" src={order.image} alt={order.product} />
+              <img
+                className="order-details__image"
+                src={scopedItem ? scopedItem.image : order.image}
+                alt={scopedItem ? scopedItem.product : order.product}
+              />
               <div className="order-details__product-text">
                 <p className="order-details__product">{productName}</p>
                 {spec && <p className="order-details__spec">{spec}</p>}
@@ -311,19 +328,23 @@ export default function OrderDetails({ params }) {
                   steps below. Kept inside this column (not a sibling of the
                   row) so it reads as part of the same status line, not a
                   new divided section. */}
-              {order.caption && <p className="order-details__caption">{order.caption}</p>}
+              {(scopedItem ? scopedItem.caption : order.caption) && (
+                <p className="order-details__caption">{scopedItem ? scopedItem.caption : order.caption}</p>
+              )}
             </div>
             <span className="order-details__status-pill" style={{ background: pill.bg, color: pill.color }}>
               {status.label}
             </span>
           </div>
 
-          {order.timeline && (
+          {effectiveTimeline && (
             <div className="order-details__timeline-block">
-              <Timeline steps={order.timeline.steps} currentIndex={order.timeline.currentIndex} />
+              <Timeline steps={effectiveTimeline.steps} currentIndex={effectiveTimeline.currentIndex} />
               <button
                 className="order-details__tracking-link"
-                onClick={() => openTracking('Tracking Updates', order.timeline, order.id)}
+                onClick={() =>
+                  openTracking('Tracking Updates', effectiveTimeline, scopedItem ? scopedItem.sku : order.id)
+                }
               >
                 <span className="order-details__tracking-link-icon">
                   <FileTextIcon width="14" height="14" />
@@ -334,16 +355,16 @@ export default function OrderDetails({ params }) {
             </div>
           )}
 
-          {order.technician && (
+          {technician && (
             <div className="order-details__technician-row">
               <span className="order-details__technician-icon">
                 <UserIcon width="18" height="18" />
               </span>
               <div className="order-details__technician-text">
                 <p className="order-details__technician-label">Your Technician</p>
-                <p className="order-details__technician-name">{order.technician.name}</p>
+                <p className="order-details__technician-name">{technician.name}</p>
               </div>
-              <a className="order-details__technician-call" href={`tel:${order.technician.phone}`}>
+              <a className="order-details__technician-call" href={`tel:${technician.phone}`}>
                 <PhoneIcon width="14" height="14" />
                 Call
               </a>
@@ -360,8 +381,8 @@ export default function OrderDetails({ params }) {
               LineItems/PrimaryItem instead — a single order-level
               Warranty/Rate doesn't make sense once each SKU has its own
               delivery state and eligibility. */}
-          {!order.items &&
-            (warrantyIntent?.enabled ? (
+          {(!order.items || scopedItem) &&
+            (effectiveWarrantyIntent?.enabled ? (
               <button className="order-details__warranty-row">
                 <span className="order-details__warranty-icon">
                   <ShieldIcon />
@@ -376,23 +397,24 @@ export default function OrderDetails({ params }) {
                 </span>
                 <span className="order-details__warranty-text">
                   <span className="order-details__warranty-label">Warranty Details</span>
-                  <span className="order-details__warranty-reason">{warrantyIntent?.reason}</span>
+                  <span className="order-details__warranty-reason">{effectiveWarrantyIntent?.reason}</span>
                 </span>
               </div>
             ))}
 
-          {!order.items && typeof orderRating === 'number' && (
-            <div className="order-details__rating">
-              <img className="order-details__rating-image" src={order.image} alt="" />
-              <StarRating
-                className="order-details__rating-control"
-                value={orderRating}
-                onRate={setOrderRatingOverride}
-                idleLabel={`Rate ${productName}`}
-                itemName={productName}
-              />
-            </div>
-          )}
+          {(!order.items || scopedItem) &&
+            typeof (scopedItem ? itemRatings[scopedItem.sku] ?? scopedItem.rating : orderRating) === 'number' && (
+              <div className="order-details__rating">
+                <img className="order-details__rating-image" src={scopedItem ? scopedItem.image : order.image} alt="" />
+                <StarRating
+                  className="order-details__rating-control"
+                  value={scopedItem ? itemRatings[scopedItem.sku] ?? scopedItem.rating : orderRating}
+                  onRate={scopedItem ? (value) => handleRateItem(scopedItem, value) : setOrderRatingOverride}
+                  idleLabel={`Rate ${productName}`}
+                  itemName={productName}
+                />
+              </div>
+            )}
 
           {/* Bill Summary and the help toggle used to be their own separate
               cards below this one — folded in here instead, so "everything
@@ -422,7 +444,11 @@ export default function OrderDetails({ params }) {
                 <div className="order-details__disclosure-body">
                   <div className="order-details__payment-block">
                     <div className="order-details__payment-row">
-                      <span>{order.items ? `${order.items.length} Items` : `${productName}${spec ? ` (${spec})` : ''}`}</span>
+                      <span>
+                        {scopedItem || !order.items
+                          ? `${productName}${spec ? ` (${spec})` : ''}`
+                          : `${order.items.length} Items`}
+                      </span>
                       <span className="order-details__payment-item-total">
                         {discount > 0 && <s className="order-details__payment-mrp">{formatRupees(itemPrice)}</s>}
                         {formatRupees(itemPrice - discount)}
@@ -431,13 +457,17 @@ export default function OrderDetails({ params }) {
                     <div className="order-details__payment-row">
                       <span>Delivery &amp; Handling</span>
                       <span className="order-details__payment-positive">
-                        {order.priceBreakup?.shipping ? formatRupees(order.priceBreakup.shipping) : 'FREE'}
+                        {scopedItem
+                          ? 'FREE'
+                          : order.priceBreakup?.shipping
+                          ? formatRupees(order.priceBreakup.shipping)
+                          : 'FREE'}
                       </span>
                     </div>
                     <div className="order-details__payment-divider" />
                     <div className="order-details__payment-row order-details__payment-row--total">
                       <span>Total Bill</span>
-                      <span>{formatRupees(order.priceBreakup?.total ?? order.amount)}</span>
+                      <span>{formatRupees(scopedItem ? itemPrice : order.priceBreakup?.total ?? order.amount)}</span>
                     </div>
                     <div className="order-details__payment-divider" />
                     <div className="order-details__payment-row">
@@ -533,7 +563,14 @@ export default function OrderDetails({ params }) {
               editIntent.enabled
                 ? () => {
                     setHelpSectionOpen(false);
-                    navigate('editOrder', order.items ? { orderId: order.id, sku: primaryItem.sku } : { orderId: order.id });
+                    navigate(
+                      'editOrder',
+                      scopedItem
+                        ? { orderId: order.id, sku: scopedItem.sku }
+                        : order.items
+                        ? { orderId: order.id, sku: primaryItem.sku }
+                        : { orderId: order.id }
+                    );
                   }
                 : undefined
             }
@@ -543,16 +580,19 @@ export default function OrderDetails({ params }) {
           </button>
           {!editIntent.enabled && <p className="order-details__help-action-reason">{editIntent.reason}</p>}
 
-          {!order.items && (
+          {(!order.items || scopedItem) && (
             <>
               <button
                 className="order-details__help-action"
-                disabled={!returnIntent?.enabled}
+                disabled={!effectiveReturnIntent?.enabled}
                 onClick={
-                  returnIntent?.enabled
+                  effectiveReturnIntent?.enabled
                     ? () => {
                         setHelpSectionOpen(false);
-                        navigate('returnReplace', { orderId: order.id });
+                        navigate(
+                          'returnReplace',
+                          scopedItem ? { orderId: order.id, sku: scopedItem.sku } : { orderId: order.id }
+                        );
                       }
                     : undefined
                 }
@@ -560,7 +600,9 @@ export default function OrderDetails({ params }) {
                 <ExternalLinkIcon width="14" height="14" />
                 <span>Return or Replace</span>
               </button>
-              {!returnIntent?.enabled && <p className="order-details__help-action-reason">{returnIntent?.reason}</p>}
+              {!effectiveReturnIntent?.enabled && (
+                <p className="order-details__help-action-reason">{effectiveReturnIntent?.reason}</p>
+              )}
             </>
           )}
 
@@ -576,24 +618,28 @@ export default function OrderDetails({ params }) {
           </button>
         </div>
 
-        <button
-          className="order-details__help-sheet-cancel"
-          disabled={!cancelIntent?.enabled}
-          onClick={
-            cancelIntent?.enabled
-              ? () => {
-                  setHelpSectionOpen(false);
-                  openCancelFlow();
-                }
-              : undefined
-          }
-        >
-          Want to cancel order?
-        </button>
-        {!cancelIntent?.enabled && (
-          <p className="order-details__help-action-reason order-details__help-action-reason--center">
-            {cancelIntent?.reason}
-          </p>
+        {!scopedItem && (
+          <>
+            <button
+              className="order-details__help-sheet-cancel"
+              disabled={!cancelIntent?.enabled}
+              onClick={
+                cancelIntent?.enabled
+                  ? () => {
+                      setHelpSectionOpen(false);
+                      openCancelFlow();
+                    }
+                  : undefined
+              }
+            >
+              Want to cancel order?
+            </button>
+            {!cancelIntent?.enabled && (
+              <p className="order-details__help-action-reason order-details__help-action-reason--center">
+                {cancelIntent?.reason}
+              </p>
+            )}
+          </>
         )}
       </BottomSheet>
 

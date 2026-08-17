@@ -4,7 +4,7 @@ import { getItemIntents } from '../data/intents.js';
 import { SPRING_STANDARD, DURATION_REDUCED } from '../motion.js';
 import Tracker from './Tracker.jsx';
 import StarRating from './StarRating.jsx';
-import { ChevronDownIcon, FileTextIcon, ShieldIcon, ExternalLinkIcon } from './icons.jsx';
+import { ChevronDownIcon, ChevronRightIcon, FileTextIcon, ShieldIcon, ExternalLinkIcon } from './icons.jsx';
 import './LineItems.css';
 
 const STATUS_COLOR = {
@@ -27,7 +27,7 @@ function formatRupees(amount) {
 // Return/Warranty eligibility is computed per item (getItemIntents), not
 // inherited from the order — a delivered mattress is returnable the moment
 // it arrives, regardless of a still-in-transit bed frame in the same order.
-export default function LineItems({ items, openSku, onToggle, onTrack, onReturn, onRate }) {
+export default function LineItems({ items, openSku, onToggle, onTrack, onReturn, onRate, onMoreDetails }) {
   const reduceMotion = useReducedMotion();
 
   return (
@@ -80,6 +80,11 @@ export default function LineItems({ items, openSku, onToggle, onTrack, onReturn,
                     <button className="line-items__track" onClick={() => onTrack(item)}>
                       <FileTextIcon width="14" height="14" />
                       Track This Item
+                    </button>
+
+                    <button className="line-items__more-details" onClick={() => onMoreDetails(item)}>
+                      More Details
+                      <ChevronRightIcon width="14" height="14" />
                     </button>
 
                     {typeof item.rating === 'number' && (

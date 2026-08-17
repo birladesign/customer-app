@@ -137,6 +137,26 @@
   transform: scale(0.97);
 }
 
+.line-items__more-details {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  border: none;
+  background: none;
+  padding: 0;
+  font-family: inherit;
+  font-size: var(--text-body-size);
+  font-weight: 700;
+  letter-spacing: var(--text-label-tracking);
+  color: var(--color-navy-900);
+  transition: transform 0.1s ease-out;
+}
+
+.line-items__more-details:active {
+  transform: scale(0.97);
+}
+
 .line-items__rate {
   padding-top: var(--space-2);
   border-top: 1px solid var(--color-border);
@@ -203,6 +223,7 @@
 @media (prefers-reduced-motion: reduce) {
   .line-items__summary:active,
   .line-items__track:active,
+  .line-items__more-details:active,
   .line-items__action-link:active,
   .line-items__return:active {
     transform: none;
