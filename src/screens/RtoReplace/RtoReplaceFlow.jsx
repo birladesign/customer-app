@@ -85,7 +85,7 @@ export default function RtoReplaceFlow({ params }) {
               <p className="execution-step__confirm-title">Cancellation requested</p>
               <p className="execution-step__confirm-body">
                 We're attempting to intercept your order before it's delivered. If it can't be stopped in time,
-                it'll come back to us for a return-to-origin (RTO) before your refund is processed.
+                it'll be returned to our warehouse before your refund is processed.
               </p>
             </div>
           </div>
@@ -103,7 +103,7 @@ export default function RtoReplaceFlow({ params }) {
           </div>
 
           <div className="execution-step__card">
-            <p className="execution-step__card-heading">RTO-Replacement Tracker</p>
+            <p className="execution-step__card-heading">Delivery Delay Tracker</p>
             <Timeline steps={execution.steps} currentIndex={execution.currentIndex} />
           </div>
 
@@ -119,7 +119,7 @@ export default function RtoReplaceFlow({ params }) {
             </div>
             <div className="execution-step__detail-row">
               <span>Trigger</span>
-              <span>On RTO confirmation</span>
+              <span>On return confirmation</span>
             </div>
           </div>
 

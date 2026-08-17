@@ -5,7 +5,7 @@
 // replacement, for a post-dispatch order edit per OM-07) isn't wired up
 // anywhere yet, so this always ends in a refund.
 
-const TRACKER_LABELS = ['Delivery Re-Requested', 'RTO Confirmed', 'Refund Initiated'];
+const TRACKER_LABELS = ['Delivery Delayed', 'Return Confirmed', 'Refund Initiated'];
 
 export function getRtoExecutionSteps() {
   return { steps: TRACKER_LABELS.map((label) => ({ label })), currentIndex: 0 };
@@ -15,9 +15,9 @@ export function getRtoPostCancelUpdate() {
   return {
     status: { dot: 'blue', label: TRACKER_LABELS[0] },
     trackerSteps: TRACKER_LABELS,
-    caption: 'Return-to-origin in progress — refund follows once confirmed.',
+    caption: 'Return in progress — refund follows once confirmed.',
     description: 'Cancellation requested — attempting to intercept before delivery.',
-    actions: [{ label: 'Track RTO', variant: 'secondary' }],
-    overrideReason: 'An RTO-Replacement cancellation is already in progress for this order',
+    actions: [{ label: 'Track Delay', variant: 'secondary' }],
+    overrideReason: 'A delivery-delay cancellation is already in progress for this order',
   };
 }
