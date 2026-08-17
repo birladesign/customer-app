@@ -14,12 +14,32 @@ import {
 import { ORDERS } from '../data/orders.js';
 import { SPRING_STANDARD, DURATION_REDUCED } from '../motion.js';
 import SearchAndFilterBar from '../components/SearchAndFilterBar.jsx';
-import { ChevronDownIcon, ChevronRightIcon, ChevronLeftIcon } from '../components/icons.jsx';
+import {
+  ChevronDownIcon,
+  ChevronRightIcon,
+  ChevronLeftIcon,
+  TruckIcon,
+  WrenchIcon,
+  PackageIcon,
+  WalletIcon,
+  HelpCircleIcon,
+} from '../components/icons.jsx';
 import SupportChat from './SupportCase/SupportChat.jsx';
 import './Support.css';
 
 const CHAT_INTRO = {
   chat: "We'll connect you with a specialist over chat. First, what's this about?",
+};
+
+// One glance at the icon should say what kind of conversation this is,
+// before reading a word of the label — logistics/tech/returns/refunds each
+// get their own, "general" falls back to a plain question mark.
+const LANE_ICON = {
+  logistics: TruckIcon,
+  tech: WrenchIcon,
+  returns: PackageIcon,
+  refunds: WalletIcon,
+  general: HelpCircleIcon,
 };
 
 // A cross-tab deep link (My Orders' "Need Help", Order Details' "Get Help",
@@ -168,25 +188,30 @@ export default function Support({ params = {} }) {
               )}
             </div>
             <div className="support__conversation-list">
-              {visibleConversations.map((c) => (
-                <button
-                  key={c.id}
-                  className="support__conversation-row"
-                  onClick={() => openChat({ escalate: c.escalated, presetOrder: null, staleOrderId: null, resumeCase: c })}
-                >
-                  <span className="support__conversation-text">
-                    <span className="support__conversation-title">
-                      {c.laneLabel}
-                      {(c.itemProduct ?? c.orderProduct) ? ` · ${c.itemProduct ?? c.orderProduct}` : ''}
+              {visibleConversations.map((c) => {
+                const LaneIcon = LANE_ICON[c.lane] ?? HelpCircleIcon;
+                const product = c.itemProduct ?? c.orderProduct;
+                return (
+                  <button
+                    key={c.id}
+                    className="support__conversation-row"
+                    onClick={() => openChat({ escalate: c.escalated, presetOrder: null, staleOrderId: null, resumeCase: c })}
+                  >
+                    <span className="support__conversation-icon" aria-hidden="true">
+                      <LaneIcon width="16" height="16" />
                     </span>
-                    <span className="support__conversation-date">
-                      {c.orderId ? `${c.orderId} · ` : ''}
-                      {formatConversationDate(c.createdAt)}
+                    <span className="support__conversation-text">
+                      <span className="support__conversation-title">{c.laneLabel}</span>
+                      {product && <span className="support__conversation-product">{product}</span>}
+                      <span className="support__conversation-date">
+                        {c.orderId ? `${c.orderId} · ` : ''}
+                        {formatConversationDate(c.createdAt)}
+                      </span>
                     </span>
-                  </span>
-                  <ChevronRightIcon className="support__conversation-chevron" aria-hidden="true" />
-                </button>
-              ))}
+                    <ChevronRightIcon className="support__conversation-chevron" aria-hidden="true" />
+                  </button>
+                );
+              })}
             </div>
           </section>
         )}
