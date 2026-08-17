@@ -44,7 +44,7 @@ export default function RtoReplaceFlow({ params }) {
   function handleDone() {
     const update = getRtoPostCancelUpdate();
     Object.assign(order, {
-      section: 'rto',
+      section: 'inProgress',
       status: update.status,
       caption: update.caption,
       actions: update.actions,
