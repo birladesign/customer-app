@@ -1,19 +1,10 @@
-import { useState } from 'react';
 import { splitProductSpec } from '../../data/orders.js';
-import { generateCaseId } from '../../data/support.js';
 import { CURRENT_USER } from '../../data/profile.js';
-import { CheckIcon, CopyIcon, MapPinIcon } from '../../components/icons.jsx';
+import { CheckIcon, MapPinIcon } from '../../components/icons.jsx';
 import './ExecutionStep.css';
 
 function formatRupees(amount) {
   return `₹${amount.toLocaleString('en-IN')}`;
-}
-
-// Generated once per screen visit, not per render — a fresh reference id on
-// every re-render would make it look like a new request was filed each time.
-function useReferenceId() {
-  const [id] = useState(() => generateCaseId('RET'));
-  return id;
 }
 
 // Terminal screen for a needsApproval lever, once the customer has confirmed
@@ -22,19 +13,7 @@ function useReferenceId() {
 // asked for, for how much, and where it's going, all in one place instead
 // of forcing a trip back into Order Details to piece it together.
 export default function ApprovalPendingStep({ order, refundAmount, reason, onDone }) {
-  const referenceId = useReferenceId();
   const { name, spec } = splitProductSpec(order.product);
-  const [copied, setCopied] = useState(false);
-
-  async function handleCopy() {
-    try {
-      await navigator.clipboard.writeText(referenceId);
-    } catch {
-      // Clipboard API unavailable — the checkmark still confirms the tap.
-    }
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1200);
-  }
 
   return (
     <div className="execution-step">
@@ -46,14 +25,6 @@ export default function ApprovalPendingStep({ order, refundAmount, reason, onDon
           <p className="execution-step__confirm-title">Return request accepted</p>
           <p className="execution-step__confirm-body">Our agent will connect with you soon.</p>
         </div>
-      </div>
-
-      <div className="execution-step__reference">
-        <button className="execution-step__reference-id" onClick={handleCopy}>
-          {copied ? <CheckIcon width="13" height="13" strokeWidth="3" /> : <CopyIcon width="13" height="13" />}
-          <span>{referenceId}</span>
-        </button>
-        <p className="execution-step__reference-label">Reference ID for this request</p>
       </div>
 
       <div className="execution-step__card">
