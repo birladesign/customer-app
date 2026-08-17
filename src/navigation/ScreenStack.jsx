@@ -18,6 +18,7 @@ import OrderDetails from '../screens/OrderDetails.jsx';
 import EditOrder from '../screens/EditOrder.jsx';
 import InstallationSchedule from '../screens/InstallationSchedule.jsx';
 import ReturnReplaceFlow from '../screens/ReturnReplace/ReturnReplaceFlow.jsx';
+import RtoReplaceFlow from '../screens/RtoReplace/RtoReplaceFlow.jsx';
 import './ScreenStack.css';
 
 const SCREENS = {
@@ -37,6 +38,7 @@ const SCREENS = {
   editOrder: EditOrder,
   installationSchedule: InstallationSchedule,
   returnReplace: ReturnReplaceFlow,
+  rtoReplace: RtoReplaceFlow,
 };
 
 // Spatial consistency: a pushed screen slides in from the right while the one
