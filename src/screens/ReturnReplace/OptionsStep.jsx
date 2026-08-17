@@ -1,10 +1,25 @@
+import { useState } from 'react';
 import { getRemediationOptions } from '../../data/remediation.js';
+import ConfirmSheet from '../../components/ConfirmSheet.jsx';
 import './OptionsStep.css';
 
 // Retention-ladder ordered levers from the mocked C3 verdict — cheapest/least
 // drastic first, Return for Refund always last (PRD §7.2).
 export default function OptionsStep({ order, reason, selectedLever, onSelectLever, onContinue }) {
   const options = getRemediationOptions(order, reason);
+  const selectedOption = options.find((o) => o.id === selectedLever);
+  // A needsApproval lever isn't ours to grant on the spot — it goes to a
+  // human for review, so "Confirm Choice" asks the customer to actually
+  // confirm the submission instead of silently treating it as approved.
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
+  function handleConfirmChoice() {
+    if (selectedOption?.needsApproval) {
+      setConfirmOpen(true);
+    } else {
+      onContinue();
+    }
+  }
 
   return (
     <div className="options-step">
@@ -34,9 +49,21 @@ export default function OptionsStep({ order, reason, selectedLever, onSelectLeve
         ))}
       </div>
 
-      <button className="options-step__continue" disabled={!selectedLever} onClick={onContinue}>
+      <button className="options-step__continue" disabled={!selectedLever} onClick={handleConfirmChoice}>
         Confirm Choice
       </button>
+
+      <ConfirmSheet
+        open={confirmOpen}
+        title="Submit this request?"
+        body={`We'll send your ${selectedOption?.label.toLowerCase()} request to our team for review — this can't be undone once submitted.`}
+        confirmLabel="Submit Request"
+        onConfirm={() => {
+          setConfirmOpen(false);
+          onContinue();
+        }}
+        onClose={() => setConfirmOpen(false)}
+      />
     </div>
   );
 }
