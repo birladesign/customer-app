@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { splitProductSpec, getOrderStatus, getExpectedDelivery } from '../data/orders.js';
+import { splitProductSpec, getOrderStatus, getExpectedDelivery, getDeliveredDate } from '../data/orders.js';
 import { getOpenCaseForOrder } from '../data/support.js';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
 import { CopyIcon, CheckIcon, ChevronRightIcon, WalletIcon, CheckCircleIcon, CalendarIcon } from './icons.jsx';
@@ -68,11 +68,15 @@ function CopyOrderId({ id }) {
 }
 
 export default function OrderCard({ order }) {
-  const { banner, badge, product, caption, savings, refundNote, disabledReason, actions } = order;
+  const { banner, badge, product, caption, savings, refundNote, actions } = order;
   const status = getOrderStatus(order);
   const { navigate, switchTab } = useNavigation();
   const { name: productName, spec } = splitProductSpec(product);
   const expectedDelivery = getExpectedDelivery(order);
+  // Every other status already has its own hand-authored caption ("Exchange
+  // Completed on...", refund notes, etc.) — a plain "Delivered" is the one
+  // gap where nothing says which day it actually arrived.
+  const deliveredDate = !caption && status.label === 'Delivered' ? getDeliveredDate(order) : null;
   const visibleActions = actions.filter((a) => !a.label.startsWith('Track'));
   // No backend in this prototype — mutate the shared order object in place
   // (same pattern as elsewhere) so Order Details reflects the same rating
@@ -149,6 +153,7 @@ export default function OrderCard({ order }) {
               </p>
             )}
             {caption && <p className="order-card__caption">{caption}</p>}
+            {deliveredDate && <p className="order-card__caption">Delivered on {deliveredDate}</p>}
             {expectedDelivery && !caption?.includes(expectedDelivery) && (
               <p className="order-card__edd">
                 <CalendarIcon width="12" height="12" />
@@ -168,8 +173,6 @@ export default function OrderCard({ order }) {
           </div>
           <ChevronRightIcon className="order-card__chevron" aria-hidden="true" />
         </div>
-
-        {disabledReason && <p className="order-card__disabled-reason">{disabledReason}</p>}
 
         {visibleActions.length > 0 && (
           <div className="order-card__actions">

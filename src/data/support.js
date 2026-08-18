@@ -260,7 +260,7 @@ USER_CASES.push(
   seedCase({
     lane: 'logistics',
     orderId: 'TSC94500',
-    orderProduct: 'Bedroom Refresh Bundle (3 items)',
+    orderProduct: 'Smart Ortho Hybrid Pocketed Spring Mattress + 2 more',
     itemSku: 'TSC94500-3',
     itemProduct: 'Elev8 Smart Adjustable Bed Frame',
     escalate: false,
@@ -268,7 +268,7 @@ USER_CASES.push(
     transcript: [
       { from: 'bot', text: 'Hi! What can we help with?' },
       { from: 'user', text: 'Delivery & Logistics' },
-      { from: 'user', text: 'Bedroom Refresh Bundle (3 items) (TSC94500)' },
+      { from: 'user', text: 'Smart Ortho Hybrid Pocketed Spring Mattress + 2 more (TSC94500)' },
       { from: 'bot', text: 'Which item is this about?' },
       { from: 'user', text: 'Elev8 Smart Adjustable Bed Frame' },
       { from: 'bot', text: 'Tell us what happened — type your message below.' },
@@ -335,6 +335,13 @@ export function getRefundBannerLabel(order) {
   const { timeline } = order.refund;
   const isDone = timeline && timeline.currentIndex >= timeline.steps.length - 1;
   return isDone ? 'Refund Completed' : 'Refund Initiated';
+}
+
+// Support hub's "Refunds" widget — any order with a refund on it (moving or
+// already credited), most recent first, independent of whether it also has
+// a chat case behind it.
+export function getRefundOrders() {
+  return [...ORDERS].filter((o) => o.refund).sort((a, b) => parseOrderDate(b.date) - parseOrderDate(a.date));
 }
 
 export { getOrderStatus };

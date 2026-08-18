@@ -9,6 +9,7 @@ import {
   getActiveConversations,
   getOrdersForHelp,
   getRefundBannerLabel,
+  getRefundOrders,
   getOrderStatus,
 } from '../data/support.js';
 import { ORDERS, splitProductSpec } from '../data/orders.js';
@@ -73,6 +74,32 @@ function DeliveredDot() {
   return <span className="support__order-help-check" aria-hidden="true" />;
 }
 
+// Pinned under the chat header for the whole conversation — previously the
+// order was only ever named once, in a bot message that scrolled away with
+// the rest of the transcript, so there was nothing to check back against
+// once you'd scrolled a few messages down.
+function ChatOrderSummary({ order }) {
+  const status = getOrderStatus(order);
+  const delivered = /Delivered/.test(status.label);
+  const { name } = splitProductSpec(order.product);
+  const price = order.priceBreakup?.total ?? order.amount;
+
+  return (
+    <div className="support__chat-order-summary">
+      <img className="support__chat-order-summary-image" src={order.image} alt="" />
+      <div className="support__chat-order-summary-details">
+        <span className="support__chat-order-summary-status">
+          {delivered && <DeliveredDot />}
+          {status.label}
+        </span>
+        <p className="support__chat-order-summary-name">{name}</p>
+        <p className="support__chat-order-summary-id">{order.id}</p>
+      </div>
+      {typeof price === 'number' && <span className="support__chat-order-summary-amount">{formatRupees(price)}</span>}
+    </div>
+  );
+}
+
 function OrderHelpCard({ order, onClick }) {
   const status = getOrderStatus(order);
   const delivered = /Delivered/.test(status.label);
@@ -100,8 +127,31 @@ function OrderHelpCard({ order, onClick }) {
   );
 }
 
+// Support hub's "Refunds" widget — a quick status check for money already in
+// motion, separate from "Get Help on Orders" (which is about starting a new
+// request). Tapping goes straight to that order's own Bill Summary rather
+// than into chat, since there's nothing to ask yet if the refund's already
+// moving on schedule.
+function RefundCard({ order, onClick }) {
+  const banner = getRefundBannerLabel(order);
+  const { name } = splitProductSpec(order.product);
+
+  return (
+    <button className="support__order-help-card" onClick={onClick}>
+      <span className="support__order-help-banner">{banner}</span>
+      <div className="support__order-help-row">
+        <span className="support__order-help-status">{name}</span>
+        <span className="support__order-help-amount">{formatRupees(order.refund.amount)}</span>
+      </div>
+      <p className="support__order-help-date">
+        {banner === 'Refund Completed' ? 'Credited' : 'Expected'} {order.refund.expectedDate}
+      </p>
+    </button>
+  );
+}
+
 export default function Support({ params = {} }) {
-  const { switchTab, setHideTabBar } = useNavigation();
+  const { navigate, switchTab, setHideTabBar } = useNavigation();
   const reduceMotion = useReducedMotion();
   const [query, setQuery] = useState('');
   const [openId, setOpenId] = useState(null);
@@ -110,8 +160,6 @@ export default function Support({ params = {} }) {
   const [chatOrderId, setChatOrderId] = useState(
     () => initialChatConfig(params)?.presetOrder?.id ?? initialChatConfig(params)?.resumeCase?.orderId ?? null
   );
-  const [showAllConversations, setShowAllConversations] = useState(false);
-
   // The bottom tab bar has no place in a conversation — Support stays at its
   // tab root the whole time (chat is just local state, not a pushed route),
   // so nothing else would ever hide it otherwise. Cleared on unmount too, in
@@ -132,14 +180,16 @@ export default function Support({ params = {} }) {
   }
 
   if (chatConfig) {
+    const chatOrder = chatOrderId ? ORDERS.find((o) => o.id === chatOrderId) : null;
     return (
       <div className="support">
         <header className="support__topbar support__topbar--chat">
           <button className="support__icon-btn" onClick={closeChat} aria-label="Back">
             <ChevronLeftIcon />
           </button>
-          {chatOrderId && <span className="support__chat-order-id">Order ID: {chatOrderId}</span>}
+          {chatOrderId && !chatOrder && <span className="support__chat-order-id">Order ID: {chatOrderId}</span>}
         </header>
+        {chatOrder && <ChatOrderSummary order={chatOrder} />}
         <SupportChat
           escalate={chatConfig.escalate}
           presetOrder={chatConfig.presetOrder}
@@ -154,7 +204,8 @@ export default function Support({ params = {} }) {
   }
 
   const activeConversations = getActiveConversations();
-  const visibleConversations = showAllConversations ? activeConversations : activeConversations.slice(0, 2);
+  const visibleConversations = activeConversations.slice(0, 2);
+  const refundOrders = getRefundOrders();
   const helpOrders = getOrdersForHelp(3);
 
   const q = query.trim().toLowerCase();
@@ -182,8 +233,8 @@ export default function Support({ params = {} }) {
             <div className="support__section-heading">
               <h2>Active Conversations</h2>
               {activeConversations.length > 2 && (
-                <button className="support__see-all" onClick={() => setShowAllConversations((v) => !v)}>
-                  {showAllConversations ? 'Show Less' : 'See All'}
+                <button className="support__see-all" onClick={() => navigate('requests')}>
+                  See All
                 </button>
               )}
             </div>
@@ -213,6 +264,19 @@ export default function Support({ params = {} }) {
                   </button>
                 );
               })}
+            </div>
+          </section>
+        )}
+
+        {refundOrders.length > 0 && (
+          <section className="support__section">
+            <div className="support__section-heading">
+              <h2>Refunds</h2>
+            </div>
+            <div className="support__order-help-list">
+              {refundOrders.map((order) => (
+                <RefundCard key={order.id} order={order} onClick={() => navigate('orderDetails', { orderId: order.id })} />
+              ))}
             </div>
           </section>
         )}

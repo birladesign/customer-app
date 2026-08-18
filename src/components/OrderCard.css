@@ -184,14 +184,6 @@
   transition: transform 0.2s var(--ease-standard);
 }
 
-.order-card__disabled-reason {
-  margin: 0;
-  font-size: var(--text-caption-size);
-  letter-spacing: var(--text-caption-tracking);
-  line-height: var(--text-caption-leading);
-  color: var(--color-text-muted);
-}
-
 .order-card__actions {
   display: flex;
   gap: var(--space-2);
