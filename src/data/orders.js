@@ -1025,15 +1025,6 @@ export const ORDERS = [
       currentIndex: 2,
     },
   },
-  // A genuine multi-SKU shipment — four different products travelling
-  // together in one parcel. A shipment always moves and arrives as one
-  // unit, so every order below shares the exact same timeline/status —
-  // only the product, qty, and price differ per line. Still full orders in
-  // their own right — OrderDetails/Warranty work per unit — but
-  // ShipmentCard renders these as individual product cards under one
-  // shipment header, always shown, rather than the same-SKU case's
-  // "N units" summary behind a tap-to-expand toggle.
-
   // The large end of the combination range (5 items). All five travelled
   // and were delivered together on the same shared timeline below — the one
   // unit that's damaged only diverges *after* that shared delivery, via its
@@ -1362,7 +1353,152 @@ export const ORDERS = [
   // ships and tracks independently, so OrderDetails renders them as their
   // own expandable rows instead of one product card, and the parent status
   // above is computed from these items via getOrderStatus, not authored here.
-
+  {
+    id: 'TSC94500',
+    section: 'deliveredDone',
+    date: '05 Aug 2026',
+    product: 'Smart Ortho Hybrid Pocketed Spring Mattress + 2 more',
+    image: imgMattressOrthoHybrid,
+    caption: 'All 3 items delivered on 12 Aug 2026',
+    actions: [{ label: 'Track Order', variant: 'secondary' }],
+    amount: 46488,
+    address: DEMO_ADDRESS,
+    payment: { method: 'UPI', status: 'Paid' },
+    priceBreakup: { itemPrice: 46488, shipping: 0, discount: 0, tax: 0, total: 46488 },
+    items: [
+      {
+        sku: 'TSC94500-1',
+        product: 'Smart Ortho Hybrid Pocketed Spring Mattress (Queen / 8 inch / 60x78 in)',
+        image: imgMattressOrthoHybrid,
+        qty: 1,
+        price: 21290,
+        status: { dot: 'green', label: 'Delivered' },
+        caption: 'Delivered on 08 Aug 2026',
+        rating: 0,
+        tracker: { steps: ['Confirmed', 'Shipped', 'Delivered'], currentIndex: 2 },
+        timeline: {
+          steps: [
+            { label: 'Confirmed', timestamp: '05 Aug 2026, 10:05 AM' },
+            {
+              label: 'Shipped',
+              timestamp: '06 Aug 2026, 9:15 AM',
+              updates: [
+                { text: 'We have handed over the item to courier', timestamp: '06 Aug 2026, 9:15 AM' },
+                { text: 'Item has reached the courier facility in Gurugram, Haryana', timestamp: '06 Aug 2026, 1:40 PM' },
+              ],
+            },
+            {
+              label: 'Delivered',
+              timestamp: '08 Aug 2026, 1:20 PM',
+              updates: [
+                { text: 'Out for delivery', timestamp: '08 Aug 2026, 9:00 AM' },
+                { text: 'Delivered — signed for at the doorstep', timestamp: '08 Aug 2026, 1:20 PM' },
+              ],
+            },
+          ],
+          currentIndex: 2,
+        },
+      },
+      {
+        sku: 'TSC94500-2',
+        product: 'Smart Hybrid Pillow (Set of 2 / Memory Foam)',
+        image: imgPillowHybrid,
+        qty: 1,
+        price: 2199,
+        status: { dot: 'green', label: 'Delivered' },
+        caption: 'Delivered on 08 Aug 2026',
+        rating: 0,
+        tracker: { steps: ['Confirmed', 'Shipped', 'Delivered'], currentIndex: 2 },
+        timeline: {
+          steps: [
+            { label: 'Confirmed', timestamp: '05 Aug 2026, 10:05 AM' },
+            {
+              label: 'Shipped',
+              timestamp: '06 Aug 2026, 9:15 AM',
+              updates: [
+                { text: 'Packed with the rest of your order and handed to courier', timestamp: '06 Aug 2026, 9:15 AM' },
+              ],
+            },
+            {
+              label: 'Delivered',
+              timestamp: '08 Aug 2026, 1:20 PM',
+              updates: [{ text: 'Delivered together with your mattress', timestamp: '08 Aug 2026, 1:20 PM' }],
+            },
+          ],
+          currentIndex: 2,
+        },
+      },
+      {
+        sku: 'TSC94500-3',
+        product: 'Elev8 Smart Adjustable Bed Frame (Queen / Grey)',
+        image: imgBedElev8Adjustable,
+        qty: 1,
+        price: 22999,
+        status: { dot: 'green', label: 'Delivered' },
+        caption: 'Delivered on 12 Aug 2026',
+        rating: 0,
+        tracker: { steps: ['Confirmed', 'Shipped', 'Out for Delivery', 'Delivered'], currentIndex: 3 },
+        timeline: {
+          steps: [
+            { label: 'Confirmed', timestamp: '05 Aug 2026, 10:05 AM' },
+            {
+              label: 'Shipped',
+              timestamp: '09 Aug 2026, 11:30 AM',
+              updates: [
+                { text: 'Item was on backorder — now packed and handed to courier', timestamp: '09 Aug 2026, 11:30 AM' },
+                { text: 'Item has reached the courier facility in Gurugram, Haryana', timestamp: '09 Aug 2026, 4:50 PM' },
+              ],
+            },
+            { label: 'Out for Delivery', timestamp: '12 Aug 2026, 9:00 AM' },
+            {
+              label: 'Delivered',
+              timestamp: '12 Aug 2026, 2:15 PM',
+              updates: [{ text: 'Delivered — signed for at the doorstep', timestamp: '12 Aug 2026, 2:15 PM' }],
+            },
+          ],
+          currentIndex: 3,
+        },
+      },
+    ],
+    timeline: {
+      steps: [
+        {
+          label: 'Order Confirmed',
+          timestamp: '05 Aug 2026, 10:05 AM',
+          updates: [{ text: 'Order has been confirmed', timestamp: '05 Aug 2026, 10:05 AM' }],
+        },
+        {
+          label: 'Processing',
+          timestamp: '05 Aug 2026, 3:00 PM',
+          updates: [{ text: 'We are preparing your items for shipment', timestamp: '05 Aug 2026, 3:00 PM' }],
+        },
+        {
+          label: 'Shipped',
+          timestamp: '06 Aug 2026, 9:15 AM',
+          description: 'First shipment left the warehouse',
+          updates: [
+            { text: 'Mattress and pillow shipment left the warehouse', timestamp: '06 Aug 2026, 9:15 AM' },
+            { text: 'Bed frame is backordered — will ship separately', timestamp: '06 Aug 2026, 9:20 AM' },
+          ],
+        },
+        {
+          label: 'Delivered',
+          timestamp: '08 Aug 2026, 1:20 PM',
+          description: '2 of 3 items delivered — Bed Frame still in transit',
+          updates: [
+            { text: 'Mattress and pillow delivered — signed for at the doorstep', timestamp: '08 Aug 2026, 1:20 PM' },
+            { text: 'Bed frame shipped separately — ETA 12 Aug 2026', timestamp: '09 Aug 2026, 11:30 AM' },
+          ],
+        },
+        {
+          label: 'All Items Delivered',
+          timestamp: '12 Aug 2026, 2:15 PM',
+          updates: [{ text: 'Bed frame delivered — signed for at the doorstep', timestamp: '12 Aug 2026, 2:15 PM' }],
+        },
+      ],
+      currentIndex: 4,
+    },
+  },
   // A larger cart (5 line items) than the 3-item bundle above, deliberately
   // spread across every in-progress state at once (delivered, out for
   // delivery, shipped, still packing) so LineItems/PrimaryItem get exercised
