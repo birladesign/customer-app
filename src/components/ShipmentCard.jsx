@@ -105,20 +105,21 @@ function SameProductShipmentCard({ orders, first }) {
           <span className="order-card__date">{first.date}</span>
         </div>
 
+        <div className="order-card__status-row">
+          <span className="order-card__status-label" style={{ color: DOT_COLOR[status.dot] }}>
+            {status.label}
+          </span>
+          {edd && (
+            <p className="order-card__edd">
+              <CalendarIcon width="12" height="12" />
+              Est. Delivery: {edd}
+            </p>
+          )}
+        </div>
+
         <div className="order-card__main">
           <img className="order-card__image" src={first.image} alt={first.product} />
           <div className="order-card__details">
-            <div className="order-card__status-row">
-              <span className="order-card__status-label" style={{ color: DOT_COLOR[status.dot] }}>
-                {status.label}
-              </span>
-              {edd && (
-                <p className="order-card__edd">
-                  <CalendarIcon width="12" height="12" />
-                  Est. Delivery: {edd}
-                </p>
-              )}
-            </div>
             <p className="order-card__product">{productName}</p>
             {spec && (
               <p className="order-card__variant">
