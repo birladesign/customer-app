@@ -164,13 +164,16 @@
    so it shouldn't read as glued to whatever caption sits right above it. */
 .order-card__edd {
   margin: var(--space-2) 0 0;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 5px;
+  padding: 3px 8px;
+  border-radius: var(--radius-xs);
+  background: var(--color-accent-cyan-wash);
   font-size: var(--text-caption-size);
   letter-spacing: var(--text-caption-tracking);
-  color: var(--color-text-muted);
-  font-weight: 500;
+  color: var(--color-navy-900);
+  font-weight: 700;
 }
 
 .order-card__edd svg {

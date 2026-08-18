@@ -8,7 +8,6 @@ import { useNavigation } from '../navigation/NavigationContext.jsx';
 import { SPRING_STANDARD, DURATION_REDUCED } from '../motion.js';
 import Timeline from '../components/Timeline.jsx';
 import DetailedTracking from '../components/DetailedTracking.jsx';
-import LineItems from '../components/LineItems.jsx';
 import PrimaryItem from '../components/PrimaryItem.jsx';
 import StarRating from '../components/StarRating.jsx';
 import ConfirmSheet from '../components/ConfirmSheet.jsx';
@@ -336,7 +335,10 @@ export default function OrderDetails({ params }) {
           </button>
           <h1>Order Details</h1>
         </div>
-        <button className="order-details__help-btn" onClick={() => setHelpSectionOpen(true)}>
+        <button
+          className="order-details__help-btn"
+          onClick={() => switchTab('support', { openChat: true, orderId: order.id })}
+        >
           <HelpCircleIcon width="14" height="14" />
           Get Help
         </button>
@@ -348,7 +350,6 @@ export default function OrderDetails({ params }) {
             <PrimaryItem
               item={primaryItem}
               onTrack={(item) => openTracking(item.product, item.timeline, item.sku)}
-              onReturn={(item) => navigate('returnReplace', { orderId: order.id, sku: item.sku })}
               onRate={handleRateItem}
             />
             {otherItems.length > 0 && (
@@ -356,10 +357,19 @@ export default function OrderDetails({ params }) {
                 <p className="order-details__other-items-heading">
                   Other Items in This Order ({otherItems.length})
                 </p>
-                <LineItems
-                  items={otherItems}
-                  onMoreDetails={(item) => navigate('orderDetails', { orderId: order.id, sku: item.sku })}
-                />
+                <div className="order-details__item-thumbs">
+                  {otherItems.map((item) => (
+                    <button
+                      key={item.sku}
+                      className="order-details__item-thumb"
+                      onClick={() => navigate('orderDetails', { orderId: order.id, sku: item.sku })}
+                      aria-label={item.product}
+                    >
+                      <img src={item.image} alt={item.product} />
+                      <ChevronRightIcon className="order-details__item-thumb-chevron" aria-hidden="true" />
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
           </>
@@ -450,9 +460,9 @@ export default function OrderDetails({ params }) {
           )}
 
           {/* Multi-item orders get these scoped per line item inside
-              LineItems/PrimaryItem instead — a single order-level
-              Warranty/Rate doesn't make sense once each SKU has its own
-              delivery state and eligibility. */}
+              PrimaryItem instead — a single order-level Warranty/Rate
+              doesn't make sense once each SKU has its own delivery state
+              and eligibility. */}
           {(!order.items || scopedItem) &&
             (effectiveWarrantyIntent?.enabled ? (
               <button className="order-details__warranty-row">
@@ -650,19 +660,33 @@ export default function OrderDetails({ params }) {
                 getShipmentStatus in orders.js) — the same status/date this
                 page already shows once above, so repeating a name/status/
                 price per row would just restate it. The image alone is
-                enough to recognize which item each row is. */}
-            <div className="order-details__shipment-thumbs">
-              {shipmentSiblings.map((sibling) => (
-                <button
-                  key={sibling.id}
-                  className="order-details__shipment-thumb"
-                  onClick={() => navigate('orderDetails', { orderId: sibling.id })}
-                  aria-label={sibling.product}
-                >
-                  <img src={sibling.image} alt={sibling.product} />
-                  <ChevronRightIcon className="order-details__shipment-thumb-chevron" aria-hidden="true" />
-                </button>
-              ))}
+                enough to recognize which item each row is — except when a
+                unit has genuinely diverged from the rest (e.g. one flagged
+                damaged after an otherwise-shared delivery), which still
+                needs its own visible flag here so it isn't mistaken for
+                just another delivered item. */}
+            <div className="order-details__item-thumbs">
+              {shipmentSiblings.map((sibling) => {
+                const diverges = sibling.status.label !== order.status.label;
+                return (
+                  <button
+                    key={sibling.id}
+                    className="order-details__item-thumb"
+                    onClick={() => navigate('orderDetails', { orderId: sibling.id })}
+                    aria-label={diverges ? `${sibling.product} — ${sibling.status.label}` : sibling.product}
+                  >
+                    <img src={sibling.image} alt={sibling.product} />
+                    {diverges && (
+                      <span
+                        className="order-details__item-thumb-flag"
+                        style={{ background: (STATUS_PILL[sibling.status.dot] ?? STATUS_PILL.muted).color }}
+                        aria-hidden="true"
+                      />
+                    )}
+                    <ChevronRightIcon className="order-details__item-thumb-chevron" aria-hidden="true" />
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}

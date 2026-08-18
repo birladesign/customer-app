@@ -16,6 +16,24 @@ function withSpec(name, spec) {
   return spec ? `${name} (${spec})` : name;
 }
 
+// VARIANTS labels (getVariants) are a bare size — "Queen", "King" — but a
+// product's own spec is "Size / Thickness / Dimensions" (e.g. "Queen / 8
+// inch / 60x78 in"). Comparing/writing the size chip against the *whole*
+// spec string would never match a variant label, and would silently drop
+// the thickness/dimensions when saving a new size. These keep the size
+// chip scoped to just the first segment, leaving the rest of the spec
+// untouched.
+function sizeFromSpec(spec) {
+  return spec ? spec.split(' / ')[0] : spec;
+}
+
+function specWithSize(spec, newSize) {
+  if (!spec) return newSize;
+  const parts = spec.split(' / ');
+  parts[0] = newSize;
+  return parts.join(' / ');
+}
+
 function formatAddressLine(address) {
   return `${address.lines.join(', ')}`;
 }
@@ -45,7 +63,7 @@ export default function EditOrder({ params }) {
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [qty, setQty] = useState(initialQty);
-  const [selectedSize, setSelectedSize] = useState(currentSpec);
+  const [selectedSize, setSelectedSize] = useState(sizeFromSpec(currentSpec));
   const [selectedAddress, setSelectedAddress] = useState('current');
   // Same reasoning as InstallationSchedule's bookingConfirmed — saving
   // shouldn't just dump the customer back on Order Details. Captured here
@@ -98,7 +116,7 @@ export default function EditOrder({ params }) {
   const newLinePrice = newUnitPrice * qty;
   const delta = newLinePrice - oldLinePrice;
   const newOrderTotal = oldOrderTotal + delta;
-  const hasChanges = qty !== initialQty || selectedSize !== currentSpec || selectedAddress !== 'current';
+  const hasChanges = qty !== initialQty || selectedSize !== sizeFromSpec(currentSpec) || selectedAddress !== 'current';
 
   const sheetCopy =
     delta > 0
@@ -120,7 +138,7 @@ export default function EditOrder({ params }) {
         };
 
   function handleConfirm() {
-    const newProduct = variants ? withSpec(baseName, selectedSize) : target.product;
+    const newProduct = variants ? withSpec(baseName, specWithSize(currentSpec, selectedSize)) : target.product;
     const addressChanged = selectedAddress !== 'current';
     const newAddress = addressChanged ? ADDRESSES.find((a) => a.id === selectedAddress) : null;
 
@@ -142,7 +160,7 @@ export default function EditOrder({ params }) {
     setSavedSummary({
       qtyChanged: qty !== initialQty,
       newQty: qty,
-      sizeChanged: Boolean(variants) && selectedSize !== currentSpec,
+      sizeChanged: Boolean(variants) && selectedSize !== sizeFromSpec(currentSpec),
       newSize: selectedSize,
       addressChanged: Boolean(newAddress),
       newAddressText: newAddress ? formatAddressLine(newAddress) : null,

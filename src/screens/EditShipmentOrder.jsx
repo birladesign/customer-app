@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ORDERS, splitProductSpec, getOrderStatus } from '../data/orders.js';
+import { ORDERS, splitProductSpec, getShipmentStatus } from '../data/orders.js';
 import { getVariants } from '../data/variants.js';
 import { getShipmentEditEligibility } from '../data/intents.js';
 import { ADDRESSES } from '../data/profile.js';
@@ -15,6 +15,24 @@ function formatRupees(amount) {
 
 function withSpec(name, spec) {
   return spec ? `${name} (${spec})` : name;
+}
+
+// VARIANTS labels (getVariants) are a bare size — "Queen", "King" — but a
+// product's own spec is "Size / Thickness / Dimensions" (e.g. "Queen / 8
+// inch / 60x78 in"). Comparing/writing the size chip against the *whole*
+// spec string would never match a variant label, and would silently drop
+// the thickness/dimensions when saving a new size. These keep the size
+// chip scoped to just the first segment, leaving the rest of the spec
+// untouched.
+function sizeFromSpec(spec) {
+  return spec ? spec.split(' / ')[0] : spec;
+}
+
+function specWithSize(spec, newSize) {
+  if (!spec) return newSize;
+  const parts = spec.split(' / ');
+  parts[0] = newSize;
+  return parts.join(' / ');
 }
 
 function formatAddressLine(address) {
@@ -52,9 +70,9 @@ export default function EditShipmentOrder({ params }) {
   // fall back to safe defaults rather than reading off unit[0] directly.
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [sharedQty, setSharedQty] = useState(units[0]?.qty ?? 1);
-  const [sharedSize, setSharedSize] = useState(sharedCurrentSpec);
+  const [sharedSize, setSharedSize] = useState(sizeFromSpec(sharedCurrentSpec));
   const [lineEdits, setLineEdits] = useState(() =>
-    units.map((u) => ({ qty: u.qty ?? 1, selectedSize: splitProductSpec(u.product).spec }))
+    units.map((u) => ({ qty: u.qty ?? 1, selectedSize: sizeFromSpec(splitProductSpec(u.product).spec) }))
   );
   const [selectedAddress, setSelectedAddress] = useState('current');
   // Same reasoning as EditOrder's savedSummary — saving shouldn't just dump
@@ -106,6 +124,7 @@ export default function EditShipmentOrder({ params }) {
 
   const computed = units.map((unit, i) => {
     const { name, spec: currentSpec } = splitProductSpec(unit.product);
+    const currentSize = sizeFromSpec(currentSpec);
     const variants = getVariants(name);
     const initialQty = unit.qty ?? 1;
     const { qty, selectedSize } = perUnitChanges[i];
@@ -116,15 +135,28 @@ export default function EditShipmentOrder({ params }) {
     const delta = newLinePrice - oldLinePrice;
     const oldTotal = unit.priceBreakup?.total ?? unit.amount;
     const newTotal = oldTotal + delta;
-    const newProduct = variants ? withSpec(name, selectedSize) : unit.product;
-    return { unit, name, currentSpec, variants, initialQty, qty, selectedSize, newProduct, newLinePrice, delta, newTotal };
+    const newProduct = variants ? withSpec(name, specWithSize(currentSpec, selectedSize)) : unit.product;
+    return {
+      unit,
+      name,
+      currentSpec,
+      currentSize,
+      variants,
+      initialQty,
+      qty,
+      selectedSize,
+      newProduct,
+      newLinePrice,
+      delta,
+      newTotal,
+    };
   });
 
   const totalDelta = computed.reduce((sum, c) => sum + c.delta, 0);
   const oldShipmentTotal = units.reduce((sum, u) => sum + (u.priceBreakup?.total ?? u.amount), 0);
   const newShipmentTotal = oldShipmentTotal + totalDelta;
   const hasChanges =
-    computed.some((c) => c.qty !== c.initialQty || c.selectedSize !== c.currentSpec) || selectedAddress !== 'current';
+    computed.some((c) => c.qty !== c.initialQty || c.selectedSize !== c.currentSize) || selectedAddress !== 'current';
 
   function updateLineQty(index, dir) {
     setLineEdits((prev) =>
@@ -172,7 +204,7 @@ export default function EditShipmentOrder({ params }) {
         product: c.newProduct,
         qtyChanged: c.qty !== c.initialQty,
         newQty: c.qty,
-        sizeChanged: Boolean(c.variants) && c.selectedSize !== c.currentSpec,
+        sizeChanged: Boolean(c.variants) && c.selectedSize !== c.currentSize,
         newSize: c.selectedSize,
       };
     });
@@ -215,9 +247,9 @@ export default function EditShipmentOrder({ params }) {
             <div className="edit-order__status-row">
               <span
                 className="edit-order__status-dot"
-                style={{ background: DOT_COLOR[getOrderStatus(units[0]).dot] }}
+                style={{ background: DOT_COLOR[getShipmentStatus(units).dot] }}
               />
-              <span className="edit-order__status-label">Shipment Status: {getOrderStatus(units[0]).label}</span>
+              <span className="edit-order__status-label">Shipment Status: {getShipmentStatus(units).label}</span>
             </div>
 
             {savedSummary.addressChanged && (

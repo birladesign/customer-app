@@ -268,13 +268,13 @@
   letter-spacing: var(--text-label-tracking);
 }
 
-.order-details__shipment-thumbs {
+.order-details__item-thumbs {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
 }
 
-.order-details__shipment-thumb {
+.order-details__item-thumb {
   position: relative;
   width: 56px;
   height: 56px;
@@ -285,14 +285,14 @@
   flex-shrink: 0;
 }
 
-.order-details__shipment-thumb img {
+.order-details__item-thumb img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
 }
 
-.order-details__shipment-thumb-chevron {
+.order-details__item-thumb-chevron {
   position: absolute;
   bottom: 2px;
   right: 2px;
@@ -300,6 +300,19 @@
   height: 12px;
   color: var(--color-text-inverse);
   filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.6));
+}
+
+/* Only rendered when a unit's status has actually diverged from the rest
+   of the shipment (e.g. flagged damaged) — a small flag rather than full
+   text, since the image alone is enough for every unit that hasn't. */
+.order-details__item-thumb-flag {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  border: 1.5px solid var(--color-bg-primary);
 }
 
 .order-details__tracking-link {

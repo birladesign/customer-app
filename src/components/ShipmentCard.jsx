@@ -73,7 +73,17 @@ function SameProductShipmentCard({ orders, first }) {
   const { navigate } = useNavigation();
   const [expanded, setExpanded] = useState(false);
   const { name: productName, spec } = splitProductSpec(first.product);
-  const status = first.status;
+  // Reads as first.status for every current fixture (identical units share
+  // one status by construction), but a flagged unit always wins the header
+  // regardless of position — otherwise a non-first unit that diverges after
+  // delivery (e.g. one gets flagged damaged) would be masked by unit #1's
+  // own (unflagged) status. Deliberately not getShipmentStatus's full
+  // rollup here — that would rename the common case to "All Items
+  // Delivered" instead of the plainer "Delivered" this header already shows.
+  const status = orders.find((o) => o.status.dot === 'red')?.status ?? first.status;
+  // Whether every unit still shares one status — used below to decide if a
+  // unit's own status row would just repeat what the header already says.
+  const allUnitsSameStatus = orders.every((o) => o.status.label === orders[0].status.label);
   const edd = getExpectedDelivery(first);
   const deliveredDate = getDeliveredDate(first);
 
@@ -111,11 +121,11 @@ function SameProductShipmentCard({ orders, first }) {
                 <span>{spec}</span>
               </p>
             )}
-            <p className="order-card__caption">
-              {status.dot === 'green'
-                ? `All ${orders.length} units delivered together on ${deliveredDate ?? first.date}`
-                : `All ${orders.length} units arriving together on ${first.date}`}
-            </p>
+            {status.dot === 'green' && (
+              <p className="order-card__caption">
+                All {orders.length} units delivered together on {deliveredDate ?? first.date}
+              </p>
+            )}
             {edd && (
               <p className="order-card__edd">
                 <CalendarIcon width="12" height="12" />
@@ -143,7 +153,7 @@ function SameProductShipmentCard({ orders, first }) {
               image={order.image}
               alt={first.product}
               title={order.id}
-              status={order.status.label === status.label ? null : order.status}
+              status={allUnitsSameStatus ? null : order.status}
               onClick={(e) => {
                 e.stopPropagation();
                 navigate('orderDetails', { orderId: order.id });
@@ -170,6 +180,14 @@ function MultiProductShipmentCard({ orders, first }) {
   const shipmentEdd = orders.map(getExpectedDelivery).find(Boolean);
   const shipmentDeliveredDate =
     shipmentStatus.label === 'All Items Delivered' ? orders.map(getDeliveredDate).find(Boolean) : null;
+  // The rolled-up shipmentStatus label is often a synthesized phrase ("3
+  // Items · In Transit") that never string-matches any single unit's own
+  // label ("Confirmed · Packing") even when every unit is genuinely
+  // identical — comparing against that would leave every row's status
+  // showing. Compare units to each other instead: identical across the
+  // board means nothing new to say per row; a real difference (e.g. one
+  // unit flagged after delivery) still needs its own row to call it out.
+  const allUnitsSameStatus = orders.every((o) => o.status.label === orders[0].status.label);
 
   return (
     <article className="order-card shipment-card--multi">
@@ -183,7 +201,6 @@ function MultiProductShipmentCard({ orders, first }) {
             {shipmentStatus.label}
           </span>
         </div>
-        <p className="order-card__caption">{orders.length} items in this shipment</p>
         {shipmentDeliveredDate && <p className="order-card__caption">Delivered on {shipmentDeliveredDate}</p>}
         {shipmentEdd && (
           <p className="order-card__edd">
@@ -210,7 +227,11 @@ function MultiProductShipmentCard({ orders, first }) {
               alt={order.product}
               title={name}
               meta={meta}
-              status={order.status}
+              // Repeating the shipment's own status on every row said nothing
+              // new when every unit matched it — only show a row's own status
+              // when it has actually diverged (e.g. one unit flagged damaged
+              // while the rest are delivered), same rule as the same-SKU case.
+              status={allUnitsSameStatus ? null : order.status}
               onClick={() => navigate('orderDetails', { orderId: order.id })}
             />
           );

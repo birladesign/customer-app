@@ -66,26 +66,21 @@ export default function Requests() {
                 onClick={() => navigate('requestDetail', { caseId: c.id })}
               >
                 <div className="requests__card-top">
-                  <div className="requests__id-row">
-                    <p className="requests__id">{c.id}</p>
-                    <span className="requests__pill" style={{ background: pill.bg, color: pill.color }}>
-                      {pill.label}
-                    </span>
-                  </div>
+                  <span className="requests__pill" style={{ background: pill.bg, color: pill.color }}>
+                    {pill.label}
+                  </span>
                   {c.escalated && <span className="requests__escalated-badge">Escalated</span>}
                 </div>
-                <div className="requests__divider" />
-                <p className="requests__ordered-on">
-                  {c.orderId ? `${c.orderId} · ` : ''}Opened {formatCaseDate(c.createdAt)}
-                </p>
-                <div className="requests__divider" />
                 <p className="requests__case-title">{c.laneLabel}</p>
                 {(c.itemProduct ?? c.orderProduct) && (
                   <p className="requests__case-desc">{c.itemProduct ?? c.orderProduct}</p>
                 )}
-                <div className="requests__sla">
+                <p className="requests__meta">
+                  {c.id} · {c.orderId ? `${c.orderId} · ` : ''}Opened {formatCaseDate(c.createdAt)}
+                </p>
+                <p className="requests__sla">
                   <strong>Next SLA:</strong> {c.slaLabel}
-                </div>
+                </p>
               </button>
             );
           })

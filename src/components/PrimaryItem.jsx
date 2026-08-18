@@ -19,8 +19,8 @@ function formatRupees(amount) {
 // The order's headline item — always shown in full, not behind a tap, so a
 // multi-item order still reads at a glance the way a single-item order does:
 // here's what this is mainly about. The remaining items sit in their own,
-// visually quieter list below (LineItems), each needing a tap to open.
-export default function PrimaryItem({ item, onTrack, onReturn, onRate }) {
+// visually quieter thumbnail list below, each needing a tap to open.
+export default function PrimaryItem({ item, onTrack, onRate }) {
   const { name, spec } = splitProductSpec(item.product);
   const intents = getItemIntents(item);
 
@@ -69,19 +69,7 @@ export default function PrimaryItem({ item, onTrack, onReturn, onRate }) {
             Warranty
             {intents.warranty.enabled && <ExternalLinkIcon width="12" height="12" />}
           </button>
-          <button
-            className="primary-item__return"
-            disabled={!intents.returnReplace.enabled}
-            onClick={intents.returnReplace.enabled ? () => onReturn(item) : undefined}
-          >
-            Return / Replace
-          </button>
         </div>
-        {/* A native `title` tooltip never appears on touch, so a disabled
-            action's reason needs to be real, visible text. */}
-        {!intents.returnReplace.enabled && (
-          <p className="primary-item__action-reason">{intents.returnReplace.reason}</p>
-        )}
       </div>
     </div>
   );
