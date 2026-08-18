@@ -897,7 +897,7 @@ export const ORDERS = [
   // OrderDetails/ReturnReplace continue to work per line item, unchanged.
   {
     id: 'TSC93001',
-    shipmentId: 'SHP93001',
+    shipmentId: 'TSC93001',
     section: 'deliveredDone',
     date: '20 Nov 2025',
     image: imgBedElev8Adjustable,
@@ -941,7 +941,7 @@ export const ORDERS = [
   },
   {
     id: 'TSC93002',
-    shipmentId: 'SHP93001',
+    shipmentId: 'TSC93001',
     section: 'deliveredDone',
     date: '20 Nov 2025',
     image: imgBedElev8Adjustable,
@@ -985,7 +985,7 @@ export const ORDERS = [
   },
   {
     id: 'TSC93003',
-    shipmentId: 'SHP93001',
+    shipmentId: 'TSC93001',
     section: 'deliveredDone',
     date: '20 Nov 2025',
     image: imgBedElev8Adjustable,
@@ -1035,7 +1035,7 @@ export const ORDERS = [
   // as a flagged line item would in a multi-SKU order.
   {
     id: 'TSC98801',
-    shipmentId: 'SHP98801',
+    shipmentId: 'TSC98801',
     section: 'needsAttention',
     date: '13 Aug 2026',
     image: imgMattressLuxeRoyale,
@@ -1070,7 +1070,7 @@ export const ORDERS = [
   },
   {
     id: 'TSC98802',
-    shipmentId: 'SHP98801',
+    shipmentId: 'TSC98801',
     section: 'needsAttention',
     date: '13 Aug 2026',
     image: imgChairOnyxOrthopedic,
@@ -1105,7 +1105,7 @@ export const ORDERS = [
   },
   {
     id: 'TSC98803',
-    shipmentId: 'SHP98801',
+    shipmentId: 'TSC98801',
     section: 'needsAttention',
     date: '13 Aug 2026',
     image: imgPillowHybrid,
@@ -1147,7 +1147,7 @@ export const ORDERS = [
   },
   {
     id: 'TSC98804',
-    shipmentId: 'SHP98801',
+    shipmentId: 'TSC98801',
     section: 'needsAttention',
     date: '13 Aug 2026',
     image: imgBedElev8Adjustable,
@@ -1182,7 +1182,7 @@ export const ORDERS = [
   },
   {
     id: 'TSC98805',
-    shipmentId: 'SHP98801',
+    shipmentId: 'TSC98801',
     section: 'needsAttention',
     date: '13 Aug 2026',
     image: imgPillowCervical,
@@ -1217,10 +1217,10 @@ export const ORDERS = [
   },
   // A same-SKU shipment still in progress (not yet delivered) — exercises
   // ShipmentCard's "arriving together" caption branch, since the one other
-  // same-SKU demo (SHP93001) is already fully delivered.
+  // same-SKU demo (TSC93001) is already fully delivered.
   {
     id: 'TSC99401',
-    shipmentId: 'SHP99401',
+    shipmentId: 'TSC99401',
     section: 'inProgress',
     date: '15 Aug 2026',
     image: imgMattressOrthoRoyale,
@@ -1251,7 +1251,7 @@ export const ORDERS = [
   },
   {
     id: 'TSC99402',
-    shipmentId: 'SHP99401',
+    shipmentId: 'TSC99401',
     section: 'inProgress',
     date: '15 Aug 2026',
     image: imgMattressOrthoRoyale,
@@ -1288,7 +1288,7 @@ export const ORDERS = [
   // Delivery/Delivered, which every other shipment here already has.
   {
     id: 'TSC95301',
-    shipmentId: 'SHP95300',
+    shipmentId: 'TSC95300',
     section: 'inProgress',
     date: '17 Aug 2026',
     image: imgMattressOrthoPro,
@@ -1320,7 +1320,7 @@ export const ORDERS = [
   },
   {
     id: 'TSC95302',
-    shipmentId: 'SHP95300',
+    shipmentId: 'TSC95300',
     section: 'inProgress',
     date: '17 Aug 2026',
     image: imgChairOnyxOrthopedic,
@@ -1528,7 +1528,7 @@ export const ORDERS = [
         image: imgMattressOrthoHybrid,
         qty: 1,
         price: 27990,
-        shipmentGroupId: 'SHP99510',
+        shipmentGroupId: 'TSC99510',
         shipmentGroupLabel: 'Shipment 1',
         status: { dot: 'blue', label: 'Out for Delivery' },
         tracker: { steps: ['Confirmed', 'Shipped', 'Delivered'], currentIndex: 1 },
@@ -1560,7 +1560,7 @@ export const ORDERS = [
         image: imgChairOnyxOrthopedic,
         qty: 1,
         price: 21999,
-        shipmentGroupId: 'SHP99510',
+        shipmentGroupId: 'TSC99510',
         shipmentGroupLabel: 'Shipment 1',
         status: { dot: 'blue', label: 'Out for Delivery' },
         tracker: { steps: ['Confirmed', 'Shipped', 'Delivered'], currentIndex: 1 },
@@ -1592,7 +1592,7 @@ export const ORDERS = [
         image: imgMattressOrthoRoyale,
         qty: 1,
         price: 47990,
-        shipmentGroupId: 'SHP99511',
+        shipmentGroupId: 'TSC99511',
         shipmentGroupLabel: 'Shipment 2',
         status: { dot: 'blue', label: 'Shipped' },
         caption: 'Backordered — shipped separately once restocked',
