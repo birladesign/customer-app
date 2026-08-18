@@ -7,7 +7,6 @@
 }
 
 .shipment-card__units {
-  border-top: 1px solid var(--color-border);
 }
 
 .shipment-card__unit-chevron {
