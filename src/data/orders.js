@@ -1219,8 +1219,8 @@ export const ORDERS = [
   // ShipmentCard's "arriving together" caption branch, since the one other
   // same-SKU demo (TSC93001) is already fully delivered.
   {
-    id: 'TSC99401',
-    shipmentId: 'TSC99401',
+    id: 'TSC99501',
+    shipmentId: 'TSC99501',
     section: 'inProgress',
     date: '15 Aug 2026',
     image: imgMattressOrthoRoyale,
@@ -1250,8 +1250,8 @@ export const ORDERS = [
     },
   },
   {
-    id: 'TSC99402',
-    shipmentId: 'TSC99401',
+    id: 'TSC99502',
+    shipmentId: 'TSC99501',
     section: 'inProgress',
     date: '15 Aug 2026',
     image: imgMattressOrthoRoyale,
