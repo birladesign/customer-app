@@ -1218,81 +1218,6 @@ export const ORDERS = [
       currentIndex: 1,
     },
   },
-  // A smaller multi-product shipment (2 items) — the light end of the
-  // combination range, next to the 4-item and 5-item shipments below. Same
-  // rule as SHP96601: one parcel, one shared timeline for every unit in it.
-  {
-    id: 'TSC97701',
-    shipmentId: 'SHP97701',
-    section: 'inProgress',
-    date: '14 Aug 2026',
-    image: imgMattressOrthoHybrid,
-    status: { dot: 'blue', label: 'Out for Delivery' },
-    product: 'Smart Ortho Hybrid Pocketed Spring Mattress (Queen / 8 inch / 60x78 in)',
-    qty: 1,
-    actions: [{ label: 'Track Order', variant: 'secondary' }],
-    amount: 27990,
-    address: DEMO_ADDRESS,
-    payment: { method: 'UPI', status: 'Paid' },
-    priceBreakup: { itemPrice: 27990, shipping: 0, discount: 0, tax: 0, total: 27990 },
-    timeline: {
-      steps: [
-        {
-          label: 'Order Confirmed',
-          timestamp: '14 Aug 2026, 11:00 AM',
-          updates: [{ text: 'Order has been confirmed', timestamp: '14 Aug 2026, 11:00 AM' }],
-        },
-        {
-          label: 'Shipped',
-          timestamp: '15 Aug 2026, 9:00 AM',
-          updates: [{ text: 'Item has been handed over to courier', timestamp: '15 Aug 2026, 9:00 AM' }],
-        },
-        {
-          label: 'Out for Delivery',
-          timestamp: '17 Aug 2026, 9:00 AM',
-          updates: [{ text: 'Out for delivery, arriving today', timestamp: '17 Aug 2026, 9:00 AM' }],
-        },
-        { label: 'Delivered', timestamp: null, expectedDate: '17 Aug 2026' },
-      ],
-      currentIndex: 2,
-    },
-  },
-  {
-    id: 'TSC97702',
-    shipmentId: 'SHP97701',
-    section: 'inProgress',
-    date: '14 Aug 2026',
-    image: imgPillowHybrid,
-    status: { dot: 'blue', label: 'Out for Delivery' },
-    product: 'Smart Hybrid Pillow (Set of 2 / Memory Foam)',
-    qty: 1,
-    actions: [{ label: 'Track Order', variant: 'secondary' }],
-    amount: 2499,
-    address: DEMO_ADDRESS,
-    payment: { method: 'UPI', status: 'Paid' },
-    priceBreakup: { itemPrice: 2499, shipping: 0, discount: 0, tax: 0, total: 2499 },
-    timeline: {
-      steps: [
-        {
-          label: 'Order Confirmed',
-          timestamp: '14 Aug 2026, 11:00 AM',
-          updates: [{ text: 'Order has been confirmed', timestamp: '14 Aug 2026, 11:00 AM' }],
-        },
-        {
-          label: 'Shipped',
-          timestamp: '15 Aug 2026, 9:00 AM',
-          updates: [{ text: 'Item has been handed over to courier', timestamp: '15 Aug 2026, 9:00 AM' }],
-        },
-        {
-          label: 'Out for Delivery',
-          timestamp: '17 Aug 2026, 9:00 AM',
-          updates: [{ text: 'Out for delivery, arriving today', timestamp: '17 Aug 2026, 9:00 AM' }],
-        },
-        { label: 'Delivered', timestamp: null, expectedDate: '17 Aug 2026' },
-      ],
-      currentIndex: 2,
-    },
-  },
   // The large end of the combination range (5 items). All five travelled
   // and were delivered together on the same shared timeline below — the one
   // unit that's damaged only diverges *after* that shared delivery, via its
@@ -2085,7 +2010,7 @@ export const ORDERS = [
     date: '18 Jun 2026',
     image: imgMattressOrthoRoyale,
     product: 'Smart Ortho Royale Mattress + 1 more',
-    caption: '2 of 2 items delivered',
+    caption: 'Both items delivered on 22 Jun 2026',
     actions: [{ label: 'Track Order', variant: 'secondary' }],
     amount: 43189,
     address: DEMO_ADDRESS,

@@ -66,12 +66,11 @@ function ShipmentUnitRow({ image, alt, title, meta, status, onClick }) {
 // They share a status and a date, so repeating a full OrderCard per unit says
 // "Delivered" three times and reads as three unrelated purchases. This shows
 // the shipment once, using the same order-card chrome as every other card in
-// the list, with the unit count in place of a badge and the individual order
-// IDs (each with its own product image and status) revealed on tap — each
-// still opens its own Order Details, since returns and warranty are per-unit.
+// the list, and taps straight into the first unit's Order Details — same as
+// any other order card — which already lists every sibling unit under "Other
+// Items in This Shipment", so there's no separate expand step to duplicate it.
 function SameProductShipmentCard({ orders, first }) {
   const { navigate } = useNavigation();
-  const [expanded, setExpanded] = useState(false);
   const { name: productName, spec } = splitProductSpec(first.product);
   // Reads as first.status for every current fixture (identical units share
   // one status by construction), but a flagged unit always wins the header
@@ -92,12 +91,11 @@ function SameProductShipmentCard({ orders, first }) {
       className="order-card"
       role="button"
       tabIndex={0}
-      aria-expanded={expanded}
-      onClick={() => setExpanded((v) => !v)}
+      onClick={() => navigate('orderDetails', { orderId: first.id })}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
-          setExpanded((v) => !v);
+          navigate('orderDetails', { orderId: first.id });
         }
       }}
     >
@@ -133,35 +131,9 @@ function SameProductShipmentCard({ orders, first }) {
               </p>
             )}
           </div>
-          <ChevronRightIcon
-            className={`order-card__chevron${expanded ? ' shipment-card__chevron--open' : ''}`}
-            aria-hidden="true"
-          />
+          <ChevronRightIcon className="order-card__chevron" aria-hidden="true" />
         </div>
       </div>
-
-      {expanded && (
-        <div className="shipment-card__units shipment-card__units--products">
-          {orders.map((order) => (
-            // A unit's status only shows here when it has actually diverged
-            // from the shipment's own (e.g. one unit gets flagged after
-            // delivery) — every unit still travels and is delivered
-            // together, so repeating the identical label on every row below
-            // an already-shown shipment status says nothing new.
-            <ShipmentUnitRow
-              key={order.id}
-              image={order.image}
-              alt={first.product}
-              title={order.id}
-              status={allUnitsSameStatus ? null : order.status}
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate('orderDetails', { orderId: order.id });
-              }}
-            />
-          ))}
-        </div>
-      )}
     </article>
   );
 }
