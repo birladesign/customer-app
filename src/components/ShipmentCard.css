@@ -94,3 +94,11 @@
     transition: none;
   }
 }
+
+.shipment-card--multi .order-card__body {
+  padding-bottom: 0;
+}
+
+.shipment-card--multi .order-card__status-row {
+  margin-bottom: 0;
+}
