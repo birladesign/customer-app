@@ -229,20 +229,7 @@ USER_CASES.push(
       { from: 'user', text: 'The bed frame arrived with a visible dent on one side panel.' },
     ],
   }),
-  seedCase({
-    lane: 'logistics',
-    orderId: 'TSC97821',
-    orderProduct: 'Smart Ortho Hybrid Pocketed Spring Mattress (Queen)',
-    escalate: false,
-    createdAt: '2026-08-15T14:05:00.000Z',
-    transcript: [
-      { from: 'bot', text: 'Hi! What can we help with?' },
-      { from: 'user', text: 'Delivery & Logistics' },
-      { from: 'user', text: 'Smart Ortho Hybrid Pocketed Spring Mattress (Queen) (TSC97821)' },
-      { from: 'bot', text: 'Tell us what happened — type your message below.' },
-      { from: 'user', text: 'Mattress cover is torn on the corner, looks like transit damage.' },
-    ],
-  }),
+
   seedCase({
     lane: 'tech',
     orderId: 'TSC96210',
@@ -255,24 +242,6 @@ USER_CASES.push(
       { from: 'user', text: 'Elev8 Smart Adjustable Bed Frame (TSC96210)' },
       { from: 'bot', text: 'Tell us what happened — type your message below.' },
       { from: 'user', text: "Need to reschedule the installation slot — 12 Aug doesn't work anymore." },
-    ],
-  }),
-  seedCase({
-    lane: 'logistics',
-    orderId: 'TSC94500',
-    orderProduct: 'Smart Ortho Hybrid Pocketed Spring Mattress + 2 more',
-    itemSku: 'TSC94500-3',
-    itemProduct: 'Elev8 Smart Adjustable Bed Frame',
-    escalate: false,
-    createdAt: '2026-08-13T11:00:00.000Z',
-    transcript: [
-      { from: 'bot', text: 'Hi! What can we help with?' },
-      { from: 'user', text: 'Delivery & Logistics' },
-      { from: 'user', text: 'Smart Ortho Hybrid Pocketed Spring Mattress + 2 more (TSC94500)' },
-      { from: 'bot', text: 'Which item is this about?' },
-      { from: 'user', text: 'Elev8 Smart Adjustable Bed Frame' },
-      { from: 'bot', text: 'Tell us what happened — type your message below.' },
-      { from: 'user', text: 'One of the three items — the bed frame — is still showing as shipped, not delivered.' },
     ],
   })
 );
