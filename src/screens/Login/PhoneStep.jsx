@@ -68,12 +68,6 @@ export default function PhoneStep({ onContinue, onSkip }) {
           Continue
         </button>
 
-        <div className="phone-step__divider">
-          <span>or</span>
-        </div>
-
-        <button className="phone-step__email">Continue with Email</button>
-
         <p className="phone-step__terms">
           By signing up, you are agreeing to The Sleep Company's Terms and Privacy Policy
         </p>
