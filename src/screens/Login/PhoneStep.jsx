@@ -7,7 +7,7 @@ import './PhoneStep.css';
 // number.") rather than a generic "invalid input" message.
 const VALID_PHONE = /^[6-9]\d{9}$/;
 
-export default function PhoneStep({ onContinue, onSkip }) {
+export default function PhoneStep({ mode = 'login', onContinue, onSkip, onSwitchMode }) {
   const [phone, setPhone] = useState('');
   const [error, setError] = useState(false);
 
@@ -44,7 +44,7 @@ export default function PhoneStep({ onContinue, onSkip }) {
       )}
 
       <div className="phone-step__sheet">
-        <h1 className="phone-step__heading">Login or sign up</h1>
+        <h1 className="phone-step__heading">{mode === 'signup' ? 'Sign up' : 'Login'}</h1>
 
         <div className={`phone-step__pill${error ? ' phone-step__pill--error' : ''}`}>
           <span className="phone-step__prefix">+91</span>
@@ -73,6 +73,10 @@ export default function PhoneStep({ onContinue, onSkip }) {
         </div>
 
         <button className="phone-step__email">Continue with Email</button>
+
+        <button className="phone-step__switch-mode" onClick={onSwitchMode}>
+          {mode === 'signup' ? 'Already have an account? Log in' : 'New here? Sign up instead'}
+        </button>
 
         <p className="phone-step__terms">
           By signing up, you are agreeing to The Sleep Company's Terms and Privacy Policy
