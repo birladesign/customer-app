@@ -1,8 +1,6 @@
-import { useState } from 'react';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
 import { CURRENT_USER } from '../data/profile.js';
 import Avatar from '../components/Avatar.jsx';
-import ConfirmSheet from '../components/ConfirmSheet.jsx';
 import {
   UserIcon,
   MapPinIcon,
@@ -11,7 +9,6 @@ import {
   ShieldIcon,
   HeadsetIcon,
   ChevronRightIcon,
-  LogoutIcon,
 } from '../components/icons.jsx';
 import './Profile.css';
 
@@ -30,16 +27,9 @@ const MENU = [
 
 export default function Profile() {
   const { navigate, replace, switchTab } = useNavigation();
-  const [confirmingLogout, setConfirmingLogout] = useState(false);
-
   function handleMenuClick(key) {
     if (key === 'support') switchTab('support');
     else navigate(key);
-  }
-
-  function handleLogout() {
-    setConfirmingLogout(false);
-    replace('login');
   }
 
   return (
@@ -71,22 +61,7 @@ export default function Profile() {
             </button>
           ))}
         </div>
-
-        <button className="profile__logout" onClick={() => setConfirmingLogout(true)}>
-          <LogoutIcon width="16" height="16" />
-          Logout
-        </button>
       </main>
-
-      <ConfirmSheet
-        open={confirmingLogout}
-        title="Log out?"
-        body="You'll need to verify your phone number again next time you open the app."
-        confirmLabel="Logout"
-        danger
-        onConfirm={handleLogout}
-        onClose={() => setConfirmingLogout(false)}
-      />
     </div>
   );
 }
