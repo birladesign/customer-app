@@ -49,7 +49,7 @@ const DOT_COLOR = {
 };
 
 export default function EditOrder({ params }) {
-  const { goBack } = useNavigation();
+  const { goBack, navigate } = useNavigation();
   const order = ORDERS.find((o) => o.id === params.orderId);
   const item = order?.items?.find((i) => i.sku === params.sku) ?? null;
   const target = item ?? order;
@@ -303,6 +303,9 @@ export default function EditOrder({ params }) {
                   <span className="edit-order__address-text">{formatAddressLine(a)}</span>
                 </button>
               ))}
+              <button className="edit-order__add-address" onClick={() => navigate('addAddress')}>
+                + Add New Address
+              </button>
             </section>
 
             <section className="edit-order__summary">
