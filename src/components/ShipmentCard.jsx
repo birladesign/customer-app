@@ -76,15 +76,10 @@ function SameProductShipmentCard({ orders, first }) {
   // one status by construction), but a flagged unit always wins the header
   // regardless of position — otherwise a non-first unit that diverges after
   // delivery (e.g. one gets flagged damaged) would be masked by unit #1's
-  // own (unflagged) status. Deliberately not getShipmentStatus's full
-  // rollup here — that would rename the common case to "All Items
-  // Delivered" instead of the plainer "Delivered" this header already shows.
   const status = orders.find((o) => o.status.dot === 'red')?.status ?? first.status;
-  // Whether every unit still shares one status — used below to decide if a
-  // unit's own status row would just repeat what the header already says.
-  const allUnitsSameStatus = orders.every((o) => o.status.label === orders[0].status.label);
   const edd = getExpectedDelivery(first);
   const deliveredDate = getDeliveredDate(first);
+  const totalQty = orders.reduce((sum, o) => sum + (o.qty || 1), 0);
 
   return (
     <article
@@ -121,9 +116,11 @@ function SameProductShipmentCard({ orders, first }) {
           <img className="order-card__image" src={first.image} alt={first.product} />
           <div className="order-card__details">
             <p className="order-card__product">{productName}</p>
-            {spec && (
+            {(totalQty > 0 || spec) && (
               <p className="order-card__variant">
-                <span>{spec}</span>
+                {totalQty > 0 && <span>Qty: {totalQty}</span>}
+                {totalQty > 0 && spec && <span className="order-card__variant-dot" aria-hidden="true" />}
+                {spec && <span>{spec}</span>}
               </p>
             )}
             {status.dot === 'green' && (
