@@ -302,6 +302,25 @@
   border-width: 2px;
 }
 
+.edit-order__add-address {
+  width: 100%;
+  margin-top: var(--space-2);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  background: none;
+  padding: var(--space-3);
+  text-align: center;
+  font-family: inherit;
+  font-size: var(--text-body-size);
+  font-weight: 700;
+  color: var(--color-navy-900);
+  transition: transform 0.1s ease-out;
+}
+
+.edit-order__add-address:active {
+  transform: scale(0.99);
+}
+
 .edit-order__address-badge {
   flex-shrink: 0;
   padding: 3px 8px;
@@ -413,6 +432,7 @@
   .edit-order__stepper-btn:not(:disabled):active,
   .edit-order__chip:active,
   .edit-order__address-card:active,
+  .edit-order__add-address:active,
   .edit-order__continue:not(:disabled):active {
     transform: none;
   }

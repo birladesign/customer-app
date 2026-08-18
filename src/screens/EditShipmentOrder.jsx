@@ -56,7 +56,7 @@ const DOT_COLOR = {
 // when every unit is the same SKU, since they're interchangeable there the
 // same way ShipmentCard already treats them).
 export default function EditShipmentOrder({ params }) {
-  const { goBack } = useNavigation();
+  const { goBack, navigate } = useNavigation();
   const units = params.shipmentId ? ORDERS.filter((o) => o.shipmentId === params.shipmentId) : [];
   const sameProduct = units.length > 0 && units.every((u) => u.product === units[0].product);
 
@@ -414,6 +414,9 @@ export default function EditShipmentOrder({ params }) {
                   <span className="edit-order__address-text">{formatAddressLine(a)}</span>
                 </button>
               ))}
+              <button className="edit-order__add-address" onClick={() => navigate('addAddress')}>
+                + Add New Address
+              </button>
             </section>
 
             <section className="edit-order__summary">
