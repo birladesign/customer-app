@@ -65,7 +65,6 @@ export default function MultiShipmentOrderCard({ order }) {
       <div className="multi-shipment-order-card__groups">
         {shipmentGroups.map((group) => {
           const groupStatus = group.items[0].status;
-          const pill = STATUS_PILL[groupStatus.dot] ?? STATUS_PILL.muted;
           const edd = getExpectedDelivery(group.items[0]);
           return (
             <div key={group.id} className="multi-shipment-order-card__group">
@@ -73,20 +72,18 @@ export default function MultiShipmentOrderCard({ order }) {
                 <CopyId id={group.id} label="shipment number" />
               </div>
 
-              <div className="multi-shipment-order-card__group-status-row">
-                <span
-                  className="multi-shipment-order-card__group-pill"
-                  style={{ background: pill.bg, color: pill.color }}
-                >
-                  {groupStatus.label}
-                </span>
-                {edd && (
-                  <span className="multi-shipment-order-card__group-edd">
-                    <CalendarIcon width="12" height="12" />
-                    Est. Delivery: {edd}
-                  </span>
-                )}
-              </div>
+              <span
+                className="order-card__status-label"
+                style={{ color: DOT_COLOR[groupStatus.dot] }}
+              >
+                {groupStatus.label}
+              </span>
+              {edd && (
+                <p className="order-card__edd">
+                  <CalendarIcon width="12" height="12" />
+                  Est. Delivery: {edd}
+                </p>
+              )}
 
               <div className="multi-shipment-order-card__group-items">
                 {group.items.map((item) => {

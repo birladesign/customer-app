@@ -20,33 +20,6 @@
   justify-content: space-between;
 }
 
-.multi-shipment-order-card__group-status-row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  flex-wrap: wrap;
-}
-
-.multi-shipment-order-card__group-pill {
-  flex-shrink: 0;
-  border-radius: var(--radius-full);
-  padding: 4px 10px;
-  font-size: var(--text-caption-size);
-  font-weight: 700;
-}
-
-.multi-shipment-order-card__group-edd {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 3px 8px;
-  border-radius: var(--radius-xs);
-  background: var(--color-accent-cyan-wash);
-  font-size: var(--text-caption-size);
-  font-weight: 700;
-  color: var(--color-navy-900);
-}
-
 .multi-shipment-order-card__group-items {
   display: flex;
   flex-direction: column;

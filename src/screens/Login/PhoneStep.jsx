@@ -68,11 +68,7 @@ export default function PhoneStep({ mode = 'login', onContinue, onSkip, onSwitch
           Continue
         </button>
 
-        <div className="phone-step__divider">
-          <span>or</span>
-        </div>
 
-        <button className="phone-step__email">Continue with Email</button>
 
         <button className="phone-step__switch-mode" onClick={onSwitchMode}>
           {mode === 'signup' ? 'Already have an account? Log in' : 'New here? Sign up instead'}
