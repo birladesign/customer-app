@@ -442,10 +442,7 @@ export const ORDERS = [
     caption: 'Delivered — confirm your installation slot',
     installationStatus: 'pending',
     installationSlot: { date: '12 Aug 2026', window: '10 AM – 12 PM' },
-    actions: [
-      { label: 'Schedule Installation', variant: 'primary' },
-      { label: 'Report an Issue', variant: 'secondary' },
-    ],
+    actions: [{ label: 'Schedule Installation', variant: 'secondary' }],
     amount: 22999,
     address: DEMO_ADDRESS,
     payment: { method: 'UPI', status: 'Paid' },
