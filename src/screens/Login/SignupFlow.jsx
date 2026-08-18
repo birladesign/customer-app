@@ -12,7 +12,7 @@ import OnboardingStep from './OnboardingStep.jsx';
 // onSwitchToLogin.
 export default function SignupFlow({ onSwitchToLogin }) {
   const { replace } = useNavigation();
-  const [step, setStep] = useState('phone');
+  const [step, setStep] = useState('onboarding');
   const [phone, setPhone] = useState('');
 
   function handlePhoneContinue(value) {
@@ -24,10 +24,11 @@ export default function SignupFlow({ onSwitchToLogin }) {
     setStep('onboarding');
   }
 
-  function handleOnboardingComplete(profile) {
+  function handleOnboardingComplete(profile, enteredPhone) {
     // No backend in this prototype — the verified phone plus the details
     // just collected become the app's CURRENT_USER going forward.
-    Object.assign(CURRENT_USER, profile, { phone });
+    const finalPhone = phone || enteredPhone;
+    Object.assign(CURRENT_USER, profile, { phone: finalPhone });
     replace('home');
   }
 
@@ -39,7 +40,7 @@ export default function SignupFlow({ onSwitchToLogin }) {
     return <OtpStep phone={phone} onVerified={handleOtpVerified} onBack={() => setStep('phone')} onSkip={handleSkip} />;
   }
   if (step === 'onboarding') {
-    return <OnboardingStep phone={phone} onComplete={handleOnboardingComplete} />;
+    return <OnboardingStep phone={phone} onComplete={handleOnboardingComplete} onSwitchToLogin={onSwitchToLogin} />;
   }
   return (
     <PhoneStep
