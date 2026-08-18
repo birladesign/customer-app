@@ -87,8 +87,8 @@ export default function OrderCard({ order }) {
   // else on this card stays present-but-inert until it has one too, same
   // discipline as the rest of this prototype.
   function getActionHandler(label) {
-    if (label === 'Schedule Installation' || label === 'Reschedule') {
-      return () => navigate('installationSchedule', { orderId: order.id, reschedule: label === 'Reschedule' });
+    if (label === 'Schedule Installation' || label === 'Reschedule Installation' || label === 'Reschedule') {
+      return () => navigate('installationSchedule', { orderId: order.id, reschedule: label.startsWith('Reschedule') });
     }
     if (label === 'View Slot') {
       return () => navigate('installationSchedule', { orderId: order.id });
