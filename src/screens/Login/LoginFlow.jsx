@@ -3,6 +3,7 @@ import { useNavigation } from '../../navigation/NavigationContext.jsx';
 import PhoneStep from './PhoneStep.jsx';
 import OtpStep from './OtpStep.jsx';
 import SignupFlow from './SignupFlow.jsx';
+import { CURRENT_USER } from '../../data/profile.js';
 
 // Login and signup are separate flows reached from the same screen: this is
 // the login half (phone -> otp -> done, no name/details — a returning
@@ -24,6 +25,7 @@ export default function LoginFlow() {
   }
 
   function handleOtpVerified() {
+    CURRENT_USER.phone = phone;
     replace('home');
   }
 
