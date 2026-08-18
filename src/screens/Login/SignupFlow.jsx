@@ -1,33 +1,28 @@
 import { useState } from 'react';
 import { useNavigation } from '../../navigation/NavigationContext.jsx';
 import { CURRENT_USER } from '../../data/profile.js';
-import PhoneStep from './PhoneStep.jsx';
+import SignupForm from './SignupForm.jsx';
 import OtpStep from './OtpStep.jsx';
-import OnboardingStep from './OnboardingStep.jsx';
 
 // The signup half of auth, reached via "Sign up instead" on the login
-// screen: phone -> otp -> name/details, always — unlike login, a fresh
-// signup has nothing on file yet so the details step always runs.
+// screen: the full signup form (name, phone, email) is collected up front,
+// then OTP verifies the phone from that form, then straight to home.
 // "Already have an account? Log in" hands back to LoginFlow via
 // onSwitchToLogin.
 export default function SignupFlow({ onSwitchToLogin }) {
   const { replace } = useNavigation();
-  const [step, setStep] = useState('phone');
-  const [phone, setPhone] = useState('');
+  const [step, setStep] = useState('form');
+  const [profile, setProfile] = useState(null);
 
-  function handlePhoneContinue(value) {
-    setPhone(value);
+  function handleFormContinue(collectedProfile) {
+    setProfile(collectedProfile);
     setStep('otp');
   }
 
   function handleOtpVerified() {
-    setStep('onboarding');
-  }
-
-  function handleOnboardingComplete(profile) {
-    // No backend in this prototype — the verified phone plus the details
-    // just collected become the app's CURRENT_USER going forward.
-    Object.assign(CURRENT_USER, profile, { phone });
+    // No backend in this prototype — the details collected on the form,
+    // now phone-verified, become the app's CURRENT_USER going forward.
+    Object.assign(CURRENT_USER, profile);
     replace('home');
   }
 
@@ -36,17 +31,9 @@ export default function SignupFlow({ onSwitchToLogin }) {
   }
 
   if (step === 'otp') {
-    return <OtpStep phone={phone} onVerified={handleOtpVerified} onBack={() => setStep('phone')} onSkip={handleSkip} />;
+    return (
+      <OtpStep phone={profile.phone} onVerified={handleOtpVerified} onBack={() => setStep('form')} onSkip={handleSkip} />
+    );
   }
-  if (step === 'onboarding') {
-    return <OnboardingStep phone={phone} onComplete={handleOnboardingComplete} />;
-  }
-  return (
-    <PhoneStep
-      mode="signup"
-      onContinue={handlePhoneContinue}
-      onSkip={handleSkip}
-      onSwitchMode={onSwitchToLogin}
-    />
-  );
+  return <SignupForm onContinue={handleFormContinue} onSwitchToLogin={onSwitchToLogin} />;
 }
