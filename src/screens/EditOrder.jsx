@@ -243,28 +243,7 @@ export default function EditOrder({ params }) {
               </div>
             </div>
 
-            <section className="edit-order__section">
-              <p className="edit-order__section-heading">Quantity</p>
-              <div className="edit-order__stepper">
-                <button
-                  className="edit-order__stepper-btn"
-                  disabled={qty <= QTY_MIN}
-                  onClick={() => setQty((q) => Math.max(QTY_MIN, q - 1))}
-                  aria-label="Decrease quantity"
-                >
-                  −
-                </button>
-                <span className="edit-order__stepper-value">{qty}</span>
-                <button
-                  className="edit-order__stepper-btn"
-                  disabled={qty >= QTY_MAX}
-                  onClick={() => setQty((q) => Math.min(QTY_MAX, q + 1))}
-                  aria-label="Increase quantity"
-                >
-                  +
-                </button>
-              </div>
-            </section>
+
 
             {variants && (
               <section className="edit-order__section">

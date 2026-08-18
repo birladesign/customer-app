@@ -297,28 +297,7 @@ export default function EditShipmentOrder({ params }) {
                   </div>
                 </div>
 
-                <section className="edit-order__section">
-                  <p className="edit-order__section-heading">Quantity (applies to all {units.length} units)</p>
-                  <div className="edit-order__stepper">
-                    <button
-                      className="edit-order__stepper-btn"
-                      disabled={sharedQty <= QTY_MIN}
-                      onClick={() => setSharedQty((q) => Math.max(QTY_MIN, q - 1))}
-                      aria-label="Decrease quantity"
-                    >
-                      −
-                    </button>
-                    <span className="edit-order__stepper-value">{sharedQty}</span>
-                    <button
-                      className="edit-order__stepper-btn"
-                      disabled={sharedQty >= QTY_MAX}
-                      onClick={() => setSharedQty((q) => Math.min(QTY_MAX, q + 1))}
-                      aria-label="Increase quantity"
-                    >
-                      +
-                    </button>
-                  </div>
-                </section>
+
 
                 {sharedVariants && (
                   <section className="edit-order__section">
@@ -349,28 +328,7 @@ export default function EditShipmentOrder({ params }) {
                     </div>
                   </div>
 
-                  <section className="edit-order__section">
-                    <p className="edit-order__section-heading">Quantity</p>
-                    <div className="edit-order__stepper">
-                      <button
-                        className="edit-order__stepper-btn"
-                        disabled={lineEdits[i].qty <= QTY_MIN}
-                        onClick={() => updateLineQty(i, -1)}
-                        aria-label="Decrease quantity"
-                      >
-                        −
-                      </button>
-                      <span className="edit-order__stepper-value">{lineEdits[i].qty}</span>
-                      <button
-                        className="edit-order__stepper-btn"
-                        disabled={lineEdits[i].qty >= QTY_MAX}
-                        onClick={() => updateLineQty(i, 1)}
-                        aria-label="Increase quantity"
-                      >
-                        +
-                      </button>
-                    </div>
-                  </section>
+
 
                   {c.variants && (
                     <section className="edit-order__section">
