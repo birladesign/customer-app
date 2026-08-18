@@ -721,10 +721,6 @@ export default function OrderDetails({ params }) {
                       <div className="order-details__shipping-row">
                         <p className="order-details__shipping-label">Contact Details</p>
                         <p className="order-details__contact-line">
-                          <MailIcon width="13" height="13" />
-                          {CURRENT_USER.email}
-                        </p>
-                        <p className="order-details__contact-line">
                           <PhoneIcon width="13" height="13" />
                           +91 {CURRENT_USER.phone}
                         </p>

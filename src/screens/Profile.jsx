@@ -56,7 +56,6 @@ export default function Profile() {
               {CURRENT_USER.firstName} {CURRENT_USER.lastName}
             </p>
             <p className="profile__contact">{CURRENT_USER.phone}</p>
-            <p className="profile__contact">{CURRENT_USER.email}</p>
           </div>
         </div>
 
