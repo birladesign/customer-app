@@ -45,11 +45,15 @@ function CaseResultCard({ caseResult }) {
 
   return (
     <div className="support-chat__case-result">
+      <div className="support-chat__case-result-heading">
+        <CheckIcon width="13" height="13" strokeWidth="3" />
+        <span>Request Filed</span>
+      </div>
       <button className="support-chat__case-id" onClick={handleCopy}>
         {copied ? <CheckIcon width="13" height="13" strokeWidth="3" /> : <CopyIcon width="13" height="13" />}
         <span>{caseResult.id}</span>
       </button>
-      <p className="support-chat__case-sla">{caseResult.slaLabel}</p>
+      <p className="support-chat__case-sla">Next: {caseResult.slaLabel}</p>
     </div>
   );
 }
@@ -141,6 +145,10 @@ export default function SupportChat({ escalate, presetOrder, staleOrderId, resum
   // order list) — reshown verbatim if the user types something unrelated
   // instead of tapping it, rather than the flow silently losing its place.
   const pendingPromptRef = useRef(null);
+  // Whether the follow-up stage has already sent its one specific
+  // acknowledgement — after that, further messages get a shorter, plainer
+  // ack instead of repeating the same sentence verbatim every time.
+  const followupAckedRef = useRef(false);
   // Holds whatever text is about to become the case description — either
   // typed through the composer (describe stage) or filled in by a quick
   // chip like "Did not Receive" — so handleSubmit always has a single
@@ -434,7 +442,15 @@ export default function SupportChat({ escalate, presetOrder, staleOrderId, resum
 
     if (stage === 'followup') {
       pushUser({ text, photoUrl: attachSentPhoto() });
-      pushBot({ text: "Thanks — we've added this to your request. Our team will follow up if there's anything more to share." });
+      if (!followupAckedRef.current) {
+        followupAckedRef.current = true;
+        pushBot({
+          text: `Got it — added to ${caseIdRef.current}. Anything else, or are you all set?`,
+          chips: [{ key: 'done', label: "I'm All Set", onClick: onClose }],
+        });
+      } else {
+        pushBot({ text: 'Noted — thanks for the extra detail.' });
+      }
       return;
     }
 
@@ -458,11 +474,11 @@ export default function SupportChat({ escalate, presetOrder, staleOrderId, resum
     });
     caseIdRef.current = record.id;
     pushBot({
-      text: 'Request filed.',
+      text: "You're all set — we've logged this and the team will take it from here.",
       caseResult: record,
       chips: [
-        { key: 'view', label: 'View in My Requests', onClick: () => navigate('requests') },
-        { key: 'close', label: 'End Chat', onClick: onClose },
+        { key: 'view', label: 'Track This Request', onClick: () => navigate('requestDetail', { caseId: record.id }) },
+        { key: 'close', label: "I'm Done", onClick: onClose },
       ],
     });
     setStage('followup');
