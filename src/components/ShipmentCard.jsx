@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { splitProductSpec, getShipmentStatus, getExpectedDelivery } from '../data/orders.js';
+import { splitProductSpec, getShipmentStatus, getExpectedDelivery, getDeliveredDate } from '../data/orders.js';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
 import { CopyIcon, CheckIcon, ChevronRightIcon, CalendarIcon } from './icons.jsx';
 import './OrderCard.css';
@@ -40,15 +40,20 @@ function CopyShipmentId({ id }) {
 
 // One row in a shipment's expanded unit list — shared by the same-SKU and
 // multi-product cards below so every unit, regardless of shipment type,
-// shows its own product image rather than a plain text-only row.
+// shows its own product image rather than a plain text-only row. `status`
+// is optional: a same-SKU unit whose status matches the shipment header
+// above it has nothing new to say, so that caller omits it rather than
+// repeating the same label on every row.
 function ShipmentUnitRow({ image, alt, title, meta, status, onClick }) {
   return (
     <button className="shipment-card__product" onClick={onClick}>
       <img className="shipment-card__product-image" src={image} alt={alt} />
       <div className="shipment-card__product-details">
-        <span className="shipment-card__product-status" style={{ color: DOT_COLOR[status.dot] }}>
-          {status.label}
-        </span>
+        {status && (
+          <span className="shipment-card__product-status" style={{ color: DOT_COLOR[status.dot] }}>
+            {status.label}
+          </span>
+        )}
         <p className="shipment-card__product-name">{title}</p>
         {meta && <p className="shipment-card__product-meta">{meta}</p>}
       </div>
@@ -70,6 +75,7 @@ function SameProductShipmentCard({ orders, first }) {
   const { name: productName, spec } = splitProductSpec(first.product);
   const status = first.status;
   const edd = getExpectedDelivery(first);
+  const deliveredDate = getDeliveredDate(first);
 
   return (
     <article
@@ -106,7 +112,9 @@ function SameProductShipmentCard({ orders, first }) {
               </p>
             )}
             <p className="order-card__caption">
-              All {orders.length} units {status.dot === 'green' ? 'delivered' : 'arriving'} together on {first.date}
+              {status.dot === 'green'
+                ? `All ${orders.length} units delivered together on ${deliveredDate ?? first.date}`
+                : `All ${orders.length} units arriving together on ${first.date}`}
             </p>
             {edd && (
               <p className="order-card__edd">
@@ -125,17 +133,17 @@ function SameProductShipmentCard({ orders, first }) {
       {expanded && (
         <div className="shipment-card__units shipment-card__units--products">
           {orders.map((order) => (
-            // Each unit keeps its own status rather than repeating the
-            // shipment's — they travel and are delivered together, but a
-            // return/warranty claim on one unit is per-order, so this is the
-            // one place that has to stay live per unit, not inherited from
-            // the group above.
+            // A unit's status only shows here when it has actually diverged
+            // from the shipment's own (e.g. one unit gets flagged after
+            // delivery) — every unit still travels and is delivered
+            // together, so repeating the identical label on every row below
+            // an already-shown shipment status says nothing new.
             <ShipmentUnitRow
               key={order.id}
               image={order.image}
               alt={first.product}
               title={order.id}
-              status={order.status}
+              status={order.status.label === status.label ? null : order.status}
               onClick={(e) => {
                 e.stopPropagation();
                 navigate('orderDetails', { orderId: order.id });
@@ -160,6 +168,8 @@ function MultiProductShipmentCard({ orders, first }) {
   // Every unit in one shipment travels and arrives together — one shared
   // delivery day for the whole card, not a different EDD per row.
   const shipmentEdd = orders.map(getExpectedDelivery).find(Boolean);
+  const shipmentDeliveredDate =
+    shipmentStatus.label === 'All Items Delivered' ? orders.map(getDeliveredDate).find(Boolean) : null;
 
   return (
     <article className="order-card shipment-card--multi">
@@ -174,6 +184,7 @@ function MultiProductShipmentCard({ orders, first }) {
           </span>
         </div>
         <p className="order-card__caption">{orders.length} items in this shipment</p>
+        {shipmentDeliveredDate && <p className="order-card__caption">Delivered on {shipmentDeliveredDate}</p>}
         {shipmentEdd && (
           <p className="order-card__edd">
             <CalendarIcon width="12" height="12" />

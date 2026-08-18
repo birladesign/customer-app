@@ -16,6 +16,7 @@ import Requests from '../screens/Profile/Requests.jsx';
 import RequestDetail from '../screens/Profile/RequestDetail.jsx';
 import OrderDetails from '../screens/OrderDetails.jsx';
 import EditOrder from '../screens/EditOrder.jsx';
+import EditShipmentOrder from '../screens/EditShipmentOrder.jsx';
 import InstallationSchedule from '../screens/InstallationSchedule.jsx';
 import ReturnReplaceFlow from '../screens/ReturnReplace/ReturnReplaceFlow.jsx';
 import RtoReplaceFlow from '../screens/RtoReplace/RtoReplaceFlow.jsx';
@@ -36,6 +37,7 @@ const SCREENS = {
   requestDetail: RequestDetail,
   orderDetails: OrderDetails,
   editOrder: EditOrder,
+  editShipmentOrder: EditShipmentOrder,
   installationSchedule: InstallationSchedule,
   returnReplace: ReturnReplaceFlow,
   rtoReplace: RtoReplaceFlow,

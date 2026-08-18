@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { ORDERS, splitProductSpec, getOrderStatus, getShipmentInfo, getExpectedDelivery } from '../data/orders.js';
-import { getOrderIntents, getEditEligibility, getItemIntents, isPostDispatch } from '../data/intents.js';
+import { getOrderIntents, getEditEligibility, getShipmentEditEligibility, getItemIntents, isPostDispatch } from '../data/intents.js';
 import { getOpenCaseForOrder } from '../data/support.js';
 import { CURRENT_USER } from '../data/profile.js';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
@@ -29,6 +29,7 @@ import {
   UserIcon,
   EditIcon,
   TruckIcon,
+  HelpCircleIcon,
 } from '../components/icons.jsx';
 import './OrderDetails.css';
 
@@ -112,11 +113,12 @@ export default function OrderDetails({ params }) {
     return (
       <div className="order-details">
         <header className="order-details__topbar">
-          <button className="order-details__icon-btn" onClick={goBack} aria-label="Back">
-            <ChevronLeftIcon />
-          </button>
-          <h1>Order Details</h1>
-          <span className="order-details__icon-btn-spacer" />
+          <div className="order-details__topbar-left">
+            <button className="order-details__icon-btn" onClick={goBack} aria-label="Back">
+              <ChevronLeftIcon />
+            </button>
+            <h1>Order Details</h1>
+          </div>
         </header>
         <p className="order-details__not-found">Order not found.</p>
       </div>
@@ -308,8 +310,13 @@ export default function OrderDetails({ params }) {
     : [];
   // Edit is order-level now, not per-item — for a multi-SKU order it targets
   // the primary item, the same "what this order is mainly about" item the
-  // page already leads with.
-  const editIntent = getEditEligibility(scopedItem ?? (order.items ? primaryItem : order));
+  // page already leads with. A shipment (order.items and order.shipmentId
+  // are mutually exclusive) is edited as one unit instead — every sibling
+  // ships and arrives together, so eligibility is one decision for the
+  // whole parcel, not just the unit currently open.
+  const editIntent = order.shipmentId
+    ? getShipmentEditEligibility([order, ...shipmentSiblings])
+    : getEditEligibility(scopedItem ?? (order.items ? primaryItem : order));
 
   const itemPrice = scopedItem ? scopedItem.price : order.priceBreakup?.itemPrice ?? order.amount;
   const discount = scopedItem ? 0 : order.priceBreakup?.discount ?? 0;
@@ -323,11 +330,16 @@ export default function OrderDetails({ params }) {
   return (
     <div className="order-details">
       <header className="order-details__topbar">
-        <button className="order-details__icon-btn" onClick={goBack} aria-label="Back">
-          <ChevronLeftIcon />
+        <div className="order-details__topbar-left">
+          <button className="order-details__icon-btn" onClick={goBack} aria-label="Back">
+            <ChevronLeftIcon />
+          </button>
+          <h1>Order Details</h1>
+        </div>
+        <button className="order-details__help-btn" onClick={() => setHelpSectionOpen(true)}>
+          <HelpCircleIcon width="14" height="14" />
+          Get Help
         </button>
-        <h1>Order Details</h1>
-        <span className="order-details__icon-btn-spacer" />
       </header>
 
       <main className="order-details__content">
@@ -634,17 +646,24 @@ export default function OrderDetails({ params }) {
             <p className="order-details__other-items-heading">
               Other Items in This Shipment ({shipmentSiblings.length})
             </p>
-            <LineItems
-              items={shipmentSiblings.map((sibling) => ({
-                sku: sibling.id,
-                product: sibling.product,
-                image: sibling.image,
-                qty: sibling.qty,
-                status: sibling.status,
-                price: sibling.amount,
-              }))}
-              onMoreDetails={(item) => navigate('orderDetails', { orderId: item.sku })}
-            />
+            {/* Every sibling here ships and arrives together (see
+                getShipmentStatus in orders.js) — the same status/date this
+                page already shows once above, so repeating a name/status/
+                price per row would just restate it. The image alone is
+                enough to recognize which item each row is. */}
+            <div className="order-details__shipment-thumbs">
+              {shipmentSiblings.map((sibling) => (
+                <button
+                  key={sibling.id}
+                  className="order-details__shipment-thumb"
+                  onClick={() => navigate('orderDetails', { orderId: sibling.id })}
+                  aria-label={sibling.product}
+                >
+                  <img src={sibling.image} alt={sibling.product} />
+                  <ChevronRightIcon className="order-details__shipment-thumb-chevron" aria-hidden="true" />
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
@@ -667,8 +686,10 @@ export default function OrderDetails({ params }) {
                     ? () => {
                         setHelpSectionOpen(false);
                         navigate(
-                          'editOrder',
-                          scopedItem
+                          order.shipmentId ? 'editShipmentOrder' : 'editOrder',
+                          order.shipmentId
+                            ? { shipmentId: order.shipmentId }
+                            : scopedItem
                             ? { orderId: order.id, sku: scopedItem.sku }
                             : order.items
                             ? { orderId: order.id, sku: primaryItem.sku }

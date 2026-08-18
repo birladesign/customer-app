@@ -90,3 +90,18 @@ export function getEditEligibility(entity) {
   if (isPostDispatch(entity)) return { enabled: false, reason: 'Editing is locked once it ships' };
   return { enabled: true };
 }
+
+// Shipment-aware counterpart to getEditEligibility — a shipment's units
+// always ship and arrive together, so editing (qty/size/address) is one
+// availability decision for the whole parcel: if any unit has already left
+// the warehouse (or is closed), every unit is locked, not just the one the
+// customer happens to be looking at. `units` is the full set for the
+// shipment — the order being viewed plus its shipmentId siblings, in any
+// order.
+export function getShipmentEditEligibility(units) {
+  if (units.some((u) => u.section === 'closed')) return { enabled: false, reason: 'Order already closed' };
+  if (units.some((u) => isPostDispatch(u))) {
+    return { enabled: false, reason: 'Editing is locked once the shipment ships' };
+  }
+  return { enabled: true };
+}
