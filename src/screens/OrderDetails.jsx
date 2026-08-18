@@ -496,7 +496,6 @@ export default function OrderDetails({ params }) {
               </span>
               <div className="order-details__technician-text">
                 <p className="order-details__technician-label">Missed the delivery?</p>
-                <p className="order-details__technician-name">Ask for one more attempt</p>
               </div>
               <button
                 className="order-details__technician-reschedule"
