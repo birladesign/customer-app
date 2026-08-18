@@ -77,6 +77,7 @@ export default function InstallationSchedule({ params }) {
       status: { dot: 'blue', label: 'Installation Scheduled' },
       caption: `Technician visit: ${slotText}`,
       actions: [
+        { label: 'View Slot', variant: 'secondary' },
         { label: 'Reschedule', variant: 'secondary' },
       ],
     });

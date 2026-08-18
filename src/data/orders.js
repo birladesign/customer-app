@@ -383,6 +383,7 @@ export const ORDERS = [
     installationSlot: { date: '12 Aug 2026', window: '10 AM – 12 PM' },
     technician: { name: 'Rajesh Kumar', phone: '+919876543210', phoneDisplay: '+91 98765 43210' },
     actions: [
+      { label: 'View Slot', variant: 'secondary' },
       { label: 'Reschedule', variant: 'secondary' },
     ],
     amount: 22999,
