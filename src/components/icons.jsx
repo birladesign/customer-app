@@ -44,6 +44,15 @@ export function ChevronRightIcon(props) {
   );
 }
 
+export function ArrowUpIcon(props) {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" strokeWidth="2.5" {...base} {...props}>
+      <line x1="12" y1="19" x2="12" y2="5" />
+      <polyline points="6 11 12 5 18 11" />
+    </svg>
+  );
+}
+
 export function ChevronDownIcon(props) {
   return (
     <svg width="10" height="10" viewBox="0 0 24 24" strokeWidth="3" {...base} {...props}>

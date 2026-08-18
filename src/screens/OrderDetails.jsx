@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { ORDERS, splitProductSpec, getOrderStatus, getShipmentInfo } from '../data/orders.js';
+import { ORDERS, splitProductSpec, getOrderStatus, getShipmentInfo, getExpectedDelivery } from '../data/orders.js';
 import { getOrderIntents, getEditEligibility, getItemIntents, isPostDispatch } from '../data/intents.js';
 import { getOpenCaseForOrder } from '../data/support.js';
 import { CURRENT_USER } from '../data/profile.js';
@@ -126,6 +126,10 @@ export default function OrderDetails({ params }) {
   const { name: productName, spec } = splitProductSpec(scopedItem ? scopedItem.product : order.product);
   const status = scopedItem ? scopedItem.status : getOrderStatus(order);
   const pill = STATUS_PILL[status.dot] ?? STATUS_PILL.muted;
+  // A closed order has nothing left to edit — unlike the "locked once it
+  // ships" case, which still explains itself, this one doesn't even offer
+  // the option disabled-with-reason.
+  const isClosedOrder = order.section === 'closed';
   const intents = getOrderIntents(order);
   const returnIntent = intents.find((i) => i.key === 'returnReplace');
   const warrantyIntent = intents.find((i) => i.key === 'warranty');
@@ -134,7 +138,7 @@ export default function OrderDetails({ params }) {
   // already has it (Hold no longer makes sense) and the real ETA to show
   // instead of a generic "we'll speed this up".
   const postDispatch = isPostDispatch(order);
-  const expectedDelivery = order.timeline?.steps.find((s) => s.expectedDate)?.expectedDate;
+  const expectedDelivery = getExpectedDelivery(order);
   const itemIntents = scopedItem ? getItemIntents(scopedItem) : null;
   const effectiveWarrantyIntent = scopedItem ? itemIntents.warranty : warrantyIntent;
   const effectiveReturnIntent = scopedItem ? itemIntents.returnReplace : returnIntent;
@@ -294,6 +298,14 @@ export default function OrderDetails({ params }) {
   // "also in this order," not a second thing equally competing for it.
   const primaryItem = displayItems?.[0];
   const otherItems = displayItems?.slice(1) ?? [];
+  // A shipment's units are separate top-level orders (not one order's line
+  // items), so "other items" here means sibling orders sharing this order's
+  // shipmentId — same idea as otherItems above, just sourced from ORDERS
+  // instead of order.items, and each opens its own full Order Details by
+  // orderId rather than by sku within this same order.
+  const shipmentSiblings = order.shipmentId
+    ? ORDERS.filter((o) => o.shipmentId === order.shipmentId && o.id !== order.id)
+    : [];
   // Edit is order-level now, not per-item — for a multi-SKU order it targets
   // the primary item, the same "what this order is mainly about" item the
   // page already leads with.
@@ -319,22 +331,6 @@ export default function OrderDetails({ params }) {
       </header>
 
       <main className="order-details__content">
-        {openCase && (
-          <button
-            className="order-details__ticket-banner"
-            onClick={() => switchTab('support', { resumeCaseId: openCase.id })}
-          >
-            <span className="order-details__ticket-banner-icon">
-              <HeadsetIcon width="16" height="16" />
-            </span>
-            <span className="order-details__ticket-banner-text">
-              <span className="order-details__ticket-banner-title">Support Ticket {openCase.id}</span>
-              <span className="order-details__ticket-banner-sub">{openCase.slaLabel}</span>
-            </span>
-            <ChevronRightIcon className="order-details__ticket-banner-chevron" aria-hidden="true" />
-          </button>
-        )}
-
         {order.items && !scopedItem ? (
           <>
             <PrimaryItem
@@ -617,6 +613,41 @@ export default function OrderDetails({ params }) {
           </div>
         </div>
 
+        {openCase && (
+          <button
+            className="order-details__ticket-banner"
+            onClick={() => switchTab('support', { resumeCaseId: openCase.id })}
+          >
+            <span className="order-details__ticket-banner-icon">
+              <HeadsetIcon width="16" height="16" />
+            </span>
+            <span className="order-details__ticket-banner-text">
+              <span className="order-details__ticket-banner-title">Support Ticket {openCase.id}</span>
+              <span className="order-details__ticket-banner-sub">{openCase.slaLabel}</span>
+            </span>
+            <ChevronRightIcon className="order-details__ticket-banner-chevron" aria-hidden="true" />
+          </button>
+        )}
+
+        {shipmentSiblings.length > 0 && (
+          <div className="order-details__other-items">
+            <p className="order-details__other-items-heading">
+              Other Items in This Shipment ({shipmentSiblings.length})
+            </p>
+            <LineItems
+              items={shipmentSiblings.map((sibling) => ({
+                sku: sibling.id,
+                product: sibling.product,
+                image: sibling.image,
+                qty: sibling.qty,
+                status: sibling.status,
+                price: sibling.amount,
+              }))}
+              onMoreDetails={(item) => navigate('orderDetails', { orderId: item.sku })}
+            />
+          </div>
+        )}
+
         <button className="order-details__help-toggle" onClick={() => setHelpSectionOpen(true)}>
           <span>Do you need help with the existing order?</span>
           <ChevronRightIcon className="order-details__help-chevron" />
@@ -626,29 +657,33 @@ export default function OrderDetails({ params }) {
       <BottomSheet open={helpSectionOpen} onClose={() => setHelpSectionOpen(false)}>
         <h2 className="confirm-sheet__title">Need help with this order?</h2>
         <div className="order-details__help-actions">
-          <button
-            className="order-details__help-action"
-            disabled={!editIntent.enabled}
-            onClick={
-              editIntent.enabled
-                ? () => {
-                    setHelpSectionOpen(false);
-                    navigate(
-                      'editOrder',
-                      scopedItem
-                        ? { orderId: order.id, sku: scopedItem.sku }
-                        : order.items
-                        ? { orderId: order.id, sku: primaryItem.sku }
-                        : { orderId: order.id }
-                    );
-                  }
-                : undefined
-            }
-          >
-            <EditIcon width="15" height="15" />
-            <span>Edit Order</span>
-          </button>
-          {!editIntent.enabled && <p className="order-details__help-action-reason">{editIntent.reason}</p>}
+          {!isClosedOrder && (
+            <>
+              <button
+                className="order-details__help-action"
+                disabled={!editIntent.enabled}
+                onClick={
+                  editIntent.enabled
+                    ? () => {
+                        setHelpSectionOpen(false);
+                        navigate(
+                          'editOrder',
+                          scopedItem
+                            ? { orderId: order.id, sku: scopedItem.sku }
+                            : order.items
+                            ? { orderId: order.id, sku: primaryItem.sku }
+                            : { orderId: order.id }
+                        );
+                      }
+                    : undefined
+                }
+              >
+                <EditIcon width="15" height="15" />
+                <span>Edit Order</span>
+              </button>
+              {!editIntent.enabled && <p className="order-details__help-action-reason">{editIntent.reason}</p>}
+            </>
+          )}
 
           {(!order.items || scopedItem) && (
             <>
