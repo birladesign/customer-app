@@ -3,6 +3,7 @@ import { SECTIONS, ORDERS, parseOrderDate } from '../data/orders.js';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
 import OrderCard from '../components/OrderCard.jsx';
 import ShipmentCard from '../components/ShipmentCard.jsx';
+import MultiShipmentOrderCard from '../components/MultiShipmentOrderCard.jsx';
 import TabBar from '../components/TabBar.jsx';
 import SearchAndFilterBar from '../components/SearchAndFilterBar.jsx';
 import { InboxIcon, HelpCircleIcon } from '../components/icons.jsx';
@@ -105,6 +106,8 @@ export default function MyOrders() {
             {listEntries.map((entry) =>
               entry.shipment ? (
                 <ShipmentCard key={entry.key} orders={entry.shipment} />
+              ) : entry.order.items?.[0]?.shipmentGroupId ? (
+                <MultiShipmentOrderCard key={entry.key} order={entry.order} />
               ) : (
                 <OrderCard key={entry.key} order={entry.order} />
               )
