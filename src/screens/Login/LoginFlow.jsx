@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigation } from '../../navigation/NavigationContext.jsx';
 import { CURRENT_USER } from '../../data/profile.js';
+import { ORDERS } from '../../data/orders.js';
 import PhoneStep from './PhoneStep.jsx';
 import OtpStep from './OtpStep.jsx';
 import OnboardingStep from './OnboardingStep.jsx';
@@ -20,7 +21,10 @@ export default function LoginFlow() {
   }
 
   function handleOtpVerified() {
-    const isReturningUser = phone === CURRENT_USER.phone;
+    // A customer who has already punched an order is a known account —
+    // skip asking for their name again, same as an exact phone match.
+    const hasPlacedOrder = ORDERS.length > 0;
+    const isReturningUser = phone === CURRENT_USER.phone || hasPlacedOrder;
     if (isReturningUser) {
       replace('home');
     } else {

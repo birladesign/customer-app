@@ -18,7 +18,7 @@ const INTENT_ORDER = ['returnReplace', 'cancel', 'warranty', 'needHelp'];
 // each with its own dedicated on-page treatment rather than a generic list.
 export const NAVIGABLE_INTENTS = new Set(['returnReplace']);
 
-function hasReachedStep(order, label) {
+export function hasReachedStep(order, label) {
   if (!order.timeline) return false;
   const idx = order.timeline.steps.findIndex((s) => s.label === label);
   return idx !== -1 && idx <= order.timeline.currentIndex;

@@ -147,6 +147,7 @@ export default function ReturnReplaceFlow({ params }) {
           >
             {currentKey === 'reason' && (
               <ReasonStep
+                order={target}
                 selected={reason}
                 onSelect={setReason}
                 onContinue={() => goToStep(1)}
@@ -171,6 +172,7 @@ export default function ReturnReplaceFlow({ params }) {
                 selectedLever={selectedLever}
                 onSelectLever={setSelectedLever}
                 onContinue={() => goToStep(3)}
+                onDone={goBack}
               />
             )}
             {currentKey === 'refundMethod' && (

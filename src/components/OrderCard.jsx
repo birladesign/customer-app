@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { splitProductSpec, getOrderStatus, getExpectedDelivery, getDeliveredDate } from '../data/orders.js';
+import { splitProductSpec, getOrderStatus, getExpectedDelivery, getDeliveredDate, getOrderTat } from '../data/orders.js';
 import { getOpenCaseForOrder } from '../data/support.js';
+import { getOrderIntents, getEditEligibility } from '../data/intents.js';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
 import { CopyIcon, CheckIcon, ChevronRightIcon, WalletIcon, CheckCircleIcon, CalendarIcon } from './icons.jsx';
 import StarRating from './StarRating.jsx';
@@ -70,6 +71,7 @@ function CopyOrderId({ id }) {
 export default function OrderCard({ order }) {
   const { banner, badge, product, caption, savings, refundNote, actions } = order;
   const status = getOrderStatus(order);
+  const tat = getOrderTat(order);
   const { navigate, switchTab } = useNavigation();
   const { name: productName, spec } = splitProductSpec(product);
   const expectedDelivery = getExpectedDelivery(order);
@@ -77,7 +79,25 @@ export default function OrderCard({ order }) {
   // Completed on...", refund notes, etc.) — a plain "Delivered" is the one
   // gap where nothing says which day it actually arrived.
   const deliveredDate = !caption && status.label === 'Delivered' ? getDeliveredDate(order) : null;
-  const visibleActions = actions.filter((a) => !a.label.startsWith('Track'));
+  const isDelivered = status.label === 'Delivered' || status.label === 'All Items Delivered';
+  // Once delivered, the status pill already says everything — no CTA belongs
+  // beside it, so every action drops away and "Delivered" stands alone.
+  // Pre-delivery, Edit Address/Cancel ride alongside whatever the order's
+  // own actions already are, whenever intents.js says they're still allowed
+  // (single-item orders only — a multi-item order's edit/cancel eligibility
+  // is a shipment-wide decision this card isn't scoped to make).
+  const editIntent = !isDelivered && !order.items ? getEditEligibility(order) : null;
+  const cancelIntent = !isDelivered && !order.items ? getOrderIntents(order).find((i) => i.key === 'cancel') : null;
+  const preDeliveryActions = [];
+  if (editIntent?.enabled && !actions.some((a) => a.label === 'Edit Address')) {
+    preDeliveryActions.push({ label: 'Edit Address', variant: 'secondary' });
+  }
+  if (cancelIntent?.enabled && !actions.some((a) => a.label === 'Cancel')) {
+    preDeliveryActions.push({ label: 'Cancel', variant: 'secondary-danger' });
+  }
+  const visibleActions = isDelivered
+    ? []
+    : [...actions.filter((a) => !a.label.startsWith('Track')), ...preDeliveryActions];
   // No backend in this prototype — mutate the shared order object in place
   // (same pattern as elsewhere) so Order Details reflects the same rating
   // if the customer taps through after rating from the list.
@@ -87,8 +107,8 @@ export default function OrderCard({ order }) {
   // else on this card stays present-but-inert until it has one too, same
   // discipline as the rest of this prototype.
   function getActionHandler(label) {
-    if (label === 'Schedule Installation' || label === 'Reschedule') {
-      return () => navigate('installationSchedule', { orderId: order.id, reschedule: label === 'Reschedule' });
+    if (label === 'Schedule Installation' || label === 'Reschedule Installation' || label === 'Reschedule') {
+      return () => navigate('installationSchedule', { orderId: order.id, reschedule: label !== 'Schedule Installation' });
     }
     if (label === 'View Slot') {
       return () => navigate('installationSchedule', { orderId: order.id });
@@ -102,6 +122,12 @@ export default function OrderCard({ order }) {
         if (openCase) navigate('requestDetail', { caseId: openCase.id });
         else switchTab('support', { openChat: true, orderId: order.id });
       };
+    }
+    if (label === 'Edit Address') {
+      return () => navigate(order.shipmentId ? 'editShipmentOrder' : 'editOrder', order.shipmentId ? { shipmentId: order.shipmentId } : { orderId: order.id });
+    }
+    if (label === 'Cancel') {
+      return () => navigate('orderDetails', { orderId: order.id, openCancel: true });
     }
     return undefined;
   }
@@ -142,6 +168,7 @@ export default function OrderCard({ order }) {
               <span className="order-card__status-label" style={{ color: DOT_COLOR[status.dot] }}>
                 {status.label}
               </span>
+              {tat && <span className="order-card__tat-badge">{tat}</span>}
               {badge && <span className="order-card__pill-badge">{badge}</span>}
             </div>
             <p className="order-card__product">{productName}</p>
