@@ -29,6 +29,7 @@ import {
   EditIcon,
   TruckIcon,
   HelpCircleIcon,
+  CalendarIcon,
 } from '../components/icons.jsx';
 import './OrderDetails.css';
 
@@ -76,6 +77,11 @@ export default function OrderDetails({ params }) {
   // sheet rather than reusing confirmingCancel, since confirming it doesn't
   // cancel outright, it hands off into the RTO-Replacement tracker instead.
   const [showRtoIntercept, setShowRtoIntercept] = useState(false);
+  // A failed-delivery order still sitting with the courier (not yet RTO'd
+  // back to warehouse) can ask for one more attempt instead of just waiting
+  // to be returned — its own sheet since confirming it reverses the RTO
+  // narrative rather than cancelling or editing anything.
+  const [rescheduleDeliveryOpen, setRescheduleDeliveryOpen] = useState(false);
   // Edit and Cancel are both rare, one-off actions — neither belongs sitting
   // on the page by default. Both live behind this one closed-by-default
   // "need help" disclosure instead of two separate always-visible controls.
@@ -244,6 +250,26 @@ export default function OrderDetails({ params }) {
     goBack();
   }
 
+  // Offered while the parcel is still marked "Delivery Delayed" (i.e. still
+  // with the courier, not yet back at the warehouse) — one more attempt
+  // instead of letting it complete the RTO round trip. Same in-place mutate
+  // + navigate-away pattern as handleCancelOrder/handlePutOnHold above.
+  function handleRescheduleDelivery() {
+    Object.assign(order, {
+      status: { dot: 'blue', label: 'Redelivery Scheduled' },
+      caption: 'Redelivery attempt scheduled — we will try again shortly.',
+      actions: [{ label: 'Track Order', variant: 'secondary' }],
+    });
+    order.timeline?.steps.push({
+      label: 'Redelivery Scheduled',
+      timestamp: null,
+      description: 'Customer requested another delivery attempt',
+    });
+    if (order.timeline) order.timeline.currentIndex = order.timeline.steps.length - 1;
+    setRescheduleDeliveryOpen(false);
+    goBack();
+  }
+
   async function handleCopy() {
     try {
       await navigator.clipboard.writeText(order.id);
@@ -340,7 +366,7 @@ export default function OrderDetails({ params }) {
           onClick={() => switchTab('support', { openChat: true, orderId: order.id })}
         >
           <HelpCircleIcon width="14" height="14" />
-          Get Help
+          Needs Help
         </button>
       </header>
 
@@ -455,6 +481,28 @@ export default function OrderDetails({ params }) {
                 onClick={() => navigate('installationSchedule', { orderId: order.id, reschedule: true })}
               >
                 Reschedule
+              </button>
+            </div>
+          )}
+
+          {/* Only while it's still marked "Delivery Delayed" (with the
+              courier, not yet back at the warehouse) — once it's actually
+              received at the warehouse or refunded, another attempt isn't
+              on the table anymore. */}
+          {!scopedItem && status.label === 'Delivery Delayed' && (
+            <div className="order-details__technician-row">
+              <span className="order-details__technician-icon">
+                <CalendarIcon width="18" height="18" />
+              </span>
+              <div className="order-details__technician-text">
+                <p className="order-details__technician-label">Missed the delivery?</p>
+                <p className="order-details__technician-name">Ask for one more attempt</p>
+              </div>
+              <button
+                className="order-details__technician-reschedule"
+                onClick={() => setRescheduleDeliveryOpen(true)}
+              >
+                Reschedule Delivery
               </button>
             </div>
           )}
@@ -800,6 +848,15 @@ export default function OrderDetails({ params }) {
         confirmLabel="Cancel Order"
         onConfirm={handleCancelOrder}
         onClose={() => setConfirmingCancel(false)}
+      />
+
+      <ConfirmSheet
+        open={rescheduleDeliveryOpen}
+        title="Reschedule delivery?"
+        body={`We'll ask the courier for one more attempt on ${productName} instead of returning it to the warehouse.`}
+        confirmLabel="Reschedule Delivery"
+        onConfirm={handleRescheduleDelivery}
+        onClose={() => setRescheduleDeliveryOpen(false)}
       />
 
       <BottomSheet open={cancelStep === 'reason'} onClose={closeCancelFlow}>
