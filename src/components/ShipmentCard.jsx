@@ -112,6 +112,12 @@ function SameProductShipmentCard({ orders, first }) {
               <span className="order-card__status-label" style={{ color: DOT_COLOR[status.dot] }}>
                 {status.label}
               </span>
+              {edd && (
+                <p className="order-card__edd">
+                  <CalendarIcon width="12" height="12" />
+                  Est. Delivery: {edd}
+                </p>
+              )}
             </div>
             <p className="order-card__product">{productName}</p>
             {spec && (
@@ -122,12 +128,6 @@ function SameProductShipmentCard({ orders, first }) {
             {status.dot === 'green' && (
               <p className="order-card__caption">
                 All {orders.length} units delivered together on {deliveredDate ?? first.date}
-              </p>
-            )}
-            {edd && (
-              <p className="order-card__edd">
-                <CalendarIcon width="12" height="12" />
-                Est. Delivery: {edd}
               </p>
             )}
           </div>
@@ -172,14 +172,14 @@ function MultiProductShipmentCard({ orders, first }) {
           <span className="order-card__status-label" style={{ color: DOT_COLOR[shipmentStatus.dot] }}>
             {shipmentStatus.label}
           </span>
+          {shipmentEdd && (
+            <p className="order-card__edd">
+              <CalendarIcon width="12" height="12" />
+              Est. Delivery: {shipmentEdd}
+            </p>
+          )}
         </div>
         {shipmentDeliveredDate && <p className="order-card__caption">Delivered on {shipmentDeliveredDate}</p>}
-        {shipmentEdd && (
-          <p className="order-card__edd">
-            <CalendarIcon width="12" height="12" />
-            Est. Delivery: {shipmentEdd}
-          </p>
-        )}
       </div>
 
       <div className="shipment-card__units shipment-card__units--products">

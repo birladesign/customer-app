@@ -72,18 +72,20 @@ export default function MultiShipmentOrderCard({ order }) {
                 <CopyId id={group.id} label="shipment number" />
               </div>
 
-              <span
-                className="order-card__status-label"
-                style={{ color: DOT_COLOR[groupStatus.dot] }}
-              >
-                {groupStatus.label}
-              </span>
-              {edd && (
-                <p className="order-card__edd">
-                  <CalendarIcon width="12" height="12" />
-                  Est. Delivery: {edd}
-                </p>
-              )}
+              <div className="order-card__status-row">
+                <span
+                  className="order-card__status-label"
+                  style={{ color: DOT_COLOR[groupStatus.dot] }}
+                >
+                  {groupStatus.label}
+                </span>
+                {edd && (
+                  <p className="order-card__edd">
+                    <CalendarIcon width="12" height="12" />
+                    Est. Delivery: {edd}
+                  </p>
+                )}
+              </div>
 
               <div className="multi-shipment-order-card__group-items">
                 {group.items.map((item) => {

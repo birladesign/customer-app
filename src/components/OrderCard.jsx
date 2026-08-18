@@ -139,10 +139,18 @@ export default function OrderCard({ order }) {
           <img className="order-card__image" src={order.image} alt={product} />
           <div className="order-card__details">
             <div className="order-card__status-row">
-              <span className="order-card__status-label" style={{ color: DOT_COLOR[status.dot] }}>
-                {status.label}
+              <span className="order-card__status-group">
+                <span className="order-card__status-label" style={{ color: DOT_COLOR[status.dot] }}>
+                  {status.label}
+                </span>
+                {badge && <span className="order-card__pill-badge">{badge}</span>}
               </span>
-              {badge && <span className="order-card__pill-badge">{badge}</span>}
+              {expectedDelivery && !caption?.includes(expectedDelivery) && (
+                <p className="order-card__edd">
+                  <CalendarIcon width="12" height="12" />
+                  Est. Delivery: {expectedDelivery}
+                </p>
+              )}
             </div>
             <p className="order-card__product">{productName}</p>
             {(order.qty || spec) && (
@@ -154,12 +162,6 @@ export default function OrderCard({ order }) {
             )}
             {caption && <p className="order-card__caption">{caption}</p>}
             {deliveredDate && <p className="order-card__caption">Delivered on {deliveredDate}</p>}
-            {expectedDelivery && !caption?.includes(expectedDelivery) && (
-              <p className="order-card__edd">
-                <CalendarIcon width="12" height="12" />
-                Est. Delivery: {expectedDelivery}
-              </p>
-            )}
             {savings && (
               <p className="order-card__savings">
                 <WalletIcon /> {savings}
