@@ -5,7 +5,7 @@ import { ORDERS, parseOrderDate } from './orders.js';
 export const CURRENT_USER = {
   firstName: 'Sudarshan',
   lastName: 'Birla',
-  phone: '99999999',
+  phone: '9999999999',
   email: 'sudarshanbirla@testemail.com',
   dob: '1996-04-12',
   avatarInitial: 'S',
@@ -32,7 +32,7 @@ export const ADDRESSES = [
     isDefault: true,
     name: 'Sudarshan Birla',
     lines: ['H.No. 24, Sector 44', 'Gurugram, Haryana', '122003', 'India'],
-    phone: '99999999',
+    phone: '9999999999',
   },
   {
     id: 'addr-office',
@@ -40,7 +40,7 @@ export const ADDRESSES = [
     isDefault: false,
     name: 'Sudarshan Birla',
     lines: ['Tower B, Cyber Hub', 'DLF Phase 2, Gurugram', 'Haryana 122002', 'India'],
-    phone: '99999999',
+    phone: '9999999999',
   },
 ];
 
