@@ -122,9 +122,7 @@ export default function OtpStep({ phone, onVerified, onBack, onSkip }) {
         <button className="otp-step__icon-btn" onClick={onBack} aria-label="Back">
           <ChevronLeftIcon />
         </button>
-        <button className="otp-step__skip" onClick={onSkip}>
-          Skip
-        </button>
+
       </header>
 
       {isInvalid && (
