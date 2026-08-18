@@ -340,7 +340,7 @@ export default function OrderDetails({ params }) {
           onClick={() => switchTab('support', { openChat: true, orderId: order.id })}
         >
           <HelpCircleIcon width="14" height="14" />
-          Get Help
+          Needs Help
         </button>
       </header>
 
