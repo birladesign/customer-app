@@ -325,6 +325,23 @@ export default function OrderDetails({ params }) {
   // "also in this order," not a second thing equally competing for it.
   const primaryItem = displayItems?.[0];
   const otherItems = displayItems?.slice(1) ?? [];
+  // One order can still be fulfilled across more than one physical parcel —
+  // each item's shipmentGroupId/-Label cluster them for display, so this
+  // shows "Shipment 1"/"Shipment 2" as their own cards instead of the plain
+  // primary+other-items list. Items sharing a group always share one
+  // status/timeline, the same invariant a real shipmentId group keeps.
+  const shipmentGroups = displayItems?.[0]?.shipmentGroupId
+    ? Object.values(
+        displayItems.reduce((acc, item) => {
+          (acc[item.shipmentGroupId] ??= {
+            id: item.shipmentGroupId,
+            label: item.shipmentGroupLabel,
+            items: [],
+          }).items.push(item);
+          return acc;
+        }, {})
+      )
+    : null;
   // A shipment's units are separate top-level orders (not one order's line
   // items), so "other items" here means sibling orders sharing this order's
   // shipmentId — same idea as otherItems above, just sourced from ORDERS
@@ -371,7 +388,62 @@ export default function OrderDetails({ params }) {
       </header>
 
       <main className="order-details__content">
-        {order.items && !scopedItem ? (
+        {shipmentGroups && !scopedItem ? (
+          <div className="order-details__shipment-groups">
+            {shipmentGroups.map((group) => {
+              const groupStatus = group.items[0].status;
+              const groupPill = STATUS_PILL[groupStatus.dot] ?? STATUS_PILL.muted;
+              const groupEdd = getExpectedDelivery(group.items[0]);
+              return (
+                <div key={group.id} className="order-details__shipment-group">
+                  <div className="order-details__shipment-group-header">
+                    <span className="order-details__shipment-group-id">
+                      <CopyIcon width="14" height="14" />
+                      {group.id}
+                    </span>
+                    <span className="order-details__shipment-group-label">{group.label}</span>
+                  </div>
+                  <span
+                    className="order-details__status-pill"
+                    style={{ background: groupPill.bg, color: groupPill.color }}
+                  >
+                    {groupStatus.label}
+                  </span>
+                  {groupEdd && (
+                    <p className="order-details__caption">
+                      <CalendarIcon width="12" height="12" /> Est. Delivery: {groupEdd}
+                    </p>
+                  )}
+                  <div className="order-details__shipment-group-items">
+                    {group.items.map((item) => {
+                      const { name, spec } = splitProductSpec(item.product);
+                      return (
+                        <button
+                          key={item.sku}
+                          className="order-details__shipment-group-item"
+                          onClick={() => navigate('orderDetails', { orderId: order.id, sku: item.sku })}
+                        >
+                          <img src={item.image} alt={item.product} />
+                          <span className="order-details__shipment-group-item-text">
+                            <span className="order-details__shipment-group-item-name">{name}</span>
+                            {(item.qty || spec) && (
+                              <span className="order-details__shipment-group-item-meta">
+                                {item.qty && `Qty: ${item.qty}`}
+                                {item.qty && spec && ' · '}
+                                {spec}
+                              </span>
+                            )}
+                          </span>
+                          <ChevronRightIcon aria-hidden="true" />
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : order.items && !scopedItem ? (
           <>
             <PrimaryItem
               item={primaryItem}
