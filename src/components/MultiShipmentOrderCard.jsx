@@ -5,11 +5,11 @@ import { CopyIcon, CheckIcon, ChevronRightIcon, CalendarIcon } from './icons.jsx
 import './OrderCard.css';
 import './MultiShipmentOrderCard.css';
 
-const STATUS_PILL = {
-  red: { bg: 'var(--color-action-red-tint)', color: 'var(--color-action-red)' },
-  blue: { bg: 'var(--color-info-blue-tint)', color: 'var(--color-info-blue)' },
-  green: { bg: 'var(--color-success-tint)', color: 'var(--color-success)' },
-  muted: { bg: 'var(--color-disabled-bg)', color: 'var(--color-disabled-text)' },
+const DOT_COLOR = {
+  red: 'var(--color-action-red)',
+  blue: 'var(--color-info-blue)',
+  green: 'var(--color-success)',
+  muted: 'var(--color-text-muted)',
 };
 
 function CopyId({ id, label }) {
