@@ -37,7 +37,7 @@ export default function Home() {
         {ongoingOrders.length > 0 && (
           <section className="home__section">
             <div className="home__section-heading">
-              <h2>{ongoingOrders.length > 1 ? 'Current Orders' : 'Current Order'}</h2>
+              <h2>{ongoingOrders.length > 1 ? 'Active Orders' : 'Active Order'}</h2>
               <button className="home__view-all" onClick={() => switchTab('orders')}>
                 View all
               </button>
