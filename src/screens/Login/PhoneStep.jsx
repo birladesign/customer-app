@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AlertTriangleIcon } from '../../components/icons.jsx';
 import './PhoneStep.css';
 
@@ -10,6 +10,11 @@ const VALID_PHONE = /^[6-9]\d{9}$/;
 export default function PhoneStep({ mode = 'login', onContinue, onSkip, onSwitchMode }) {
   const [phone, setPhone] = useState('');
   const [error, setError] = useState(false);
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
 
   function handleChange(e) {
     const digits = e.target.value.replace(/\D/g, '').slice(0, 10);
@@ -44,6 +49,7 @@ export default function PhoneStep({ mode = 'login', onContinue, onSkip, onSwitch
         <div className={`phone-step__pill${error ? ' phone-step__pill--error' : ''}`}>
           <span className="phone-step__prefix">+91</span>
           <input
+            ref={inputRef}
             type="tel"
             inputMode="numeric"
             autoComplete="tel-national"
