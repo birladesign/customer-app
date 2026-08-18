@@ -29,28 +29,15 @@
 
 .phone-step__hero {
   flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: var(--space-4);
-  padding: var(--space-6) var(--space-6) var(--space-4);
-  min-height: 220px;
-  color: var(--color-text-inverse);
-}
-
-.phone-step__hero-title {
-  margin: 0;
-  font-size: var(--text-heading-size);
-  font-weight: 700;
-  text-align: center;
+  width: 100%;
+  height: 240px;
+  position: relative;
+  overflow: hidden;
 }
 
 .phone-step__hero-image {
   width: 100%;
-  max-width: 280px;
-  height: 140px;
-  border-radius: var(--radius-lg);
+  height: 100%;
   background-image: url('../../assets/login-hero.jpg');
   background-size: cover;
   background-position: center;

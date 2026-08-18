@@ -27,12 +27,7 @@ export default function PhoneStep({ mode = 'login', onContinue, onSkip, onSwitch
 
   return (
     <div className="phone-step">
-      <button className="phone-step__skip" onClick={onSkip}>
-        Skip
-      </button>
-
       <div className="phone-step__hero" aria-hidden="true">
-        <p className="phone-step__hero-title">Real-time Order Tracking</p>
         <div className="phone-step__hero-image" />
       </div>
 
