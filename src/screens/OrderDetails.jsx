@@ -418,16 +418,20 @@ export default function OrderDetails({ params }) {
     ? getShipmentEditEligibility([order, ...shipmentSiblings])
     : getEditEligibility(scopedItem ?? (order.items ? primaryItem : order));
 
+  // Address editing now lives at the order level only (My Orders' own Edit
+  // Address CTA/kebab) — this button is for qty/variant edits, so it hides
+  // the Delivery Address section on the screen it opens rather than letting
+  // the same address edit be reachable two different ways.
   function handleEditOrder() {
     navigate(
       order.shipmentId ? 'editShipmentOrder' : 'editOrder',
       order.shipmentId
-        ? { shipmentId: order.shipmentId }
+        ? { shipmentId: order.shipmentId, hideAddress: true }
         : scopedItem
-        ? { orderId: order.id, sku: scopedItem.sku }
+        ? { orderId: order.id, sku: scopedItem.sku, hideAddress: true }
         : order.items
-        ? { orderId: order.id, sku: primaryItem.sku }
-        : { orderId: order.id }
+        ? { orderId: order.id, sku: primaryItem.sku, hideAddress: true }
+        : { orderId: order.id, hideAddress: true }
     );
   }
 

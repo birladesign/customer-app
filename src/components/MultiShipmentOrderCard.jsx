@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { splitProductSpec, getExpectedDelivery } from '../data/orders.js';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
-import { CopyIcon, CheckIcon, ChevronRightIcon, CalendarIcon } from './icons.jsx';
+import { CopyIcon, CheckIcon, ChevronRightIcon, CalendarIcon, MapPinIcon } from './icons.jsx';
 import CardMoreMenu from './CardMoreMenu.jsx';
 import './OrderCard.css';
 import './MultiShipmentOrderCard.css';
@@ -58,14 +58,6 @@ export default function MultiShipmentOrderCard({ order }) {
     navigate('editOrder', { orderId: order.id, sku: order.items[0].sku });
   }
 
-  function handleRescheduleDelivery() {
-    navigate('deliverySchedule', { orderId: order.id, reschedule: true });
-  }
-
-  function handleNeedHelp() {
-    switchTab('support', { openChat: true, orderId: order.id });
-  }
-
   return (
     <article className="order-card multi-shipment-order-card">
       <div className="order-card__body">
@@ -73,11 +65,10 @@ export default function MultiShipmentOrderCard({ order }) {
           <CopyId id={order.id} label="order number" />
           <span className="order-card__header-right">
             <span className="order-card__date">{order.date}</span>
-            <CardMoreMenu
-              onEditAddress={handleEditAddress}
-              onReschedule={handleRescheduleDelivery}
-              onNeedHelp={handleNeedHelp}
-            />
+            <button className="multi-shipment-order-card__edit-btn" onClick={handleEditAddress}>
+              <MapPinIcon width="13" height="13" />
+              Edit Address
+            </button>
           </span>
         </div>
         <p className="multi-shipment-order-card__count">
@@ -93,6 +84,13 @@ export default function MultiShipmentOrderCard({ order }) {
             <div key={group.id} className="multi-shipment-order-card__group">
               <div className="multi-shipment-order-card__group-header">
                 <CopyId id={group.id} label="shipment number" />
+                <span className="order-card__header-right">
+                  <CardMoreMenu
+                    onEditAddress={() => navigate('editOrder', { orderId: order.id, sku: group.items[0].sku })}
+                    onReschedule={() => navigate('deliverySchedule', { orderId: order.id, reschedule: true })}
+                    onNeedHelp={() => switchTab('support', { openChat: true, orderId: order.id })}
+                  />
+                </span>
               </div>
 
               <div className="order-card__status-row">

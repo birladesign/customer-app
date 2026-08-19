@@ -4,6 +4,26 @@
   color: var(--color-text-muted);
 }
 
+.multi-shipment-order-card__edit-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: none;
+  background: rgba(26, 43, 88, 0.06);
+  border-radius: var(--radius-full);
+  padding: 6px var(--space-3);
+  font-family: inherit;
+  font-size: var(--text-caption-size);
+  font-weight: 600;
+  color: var(--color-navy-900);
+  transition: transform 0.1s ease-out;
+}
+
+.multi-shipment-order-card__edit-btn:active {
+  transform: scale(0.96);
+}
+
 .multi-shipment-order-card__groups {
   display: flex;
   flex-direction: column;

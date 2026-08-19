@@ -47,6 +47,10 @@ export default function EditOrder({ params }) {
   const order = ORDERS.find((o) => o.id === params.orderId);
   const item = order?.items?.find((i) => i.sku === params.sku) ?? null;
   const target = item ?? order;
+  // Address editing lives at the order level only (My Orders' own Edit
+  // Address CTA/kebab) — opened from OrderDetails' "Edit Details" instead,
+  // this screen is qty/variant only.
+  const hideAddress = Boolean(params.hideAddress);
 
   // Every hook this component uses is declared here, before any conditional
   // return below — target may be undefined (order not found), so these fall
@@ -361,42 +365,44 @@ export default function EditOrder({ params }) {
               </>
             )}
 
-            <section className="edit-order__section">
-              <p className="edit-order__section-heading">Delivery Address</p>
-              <button
-                className={`edit-order__address-card${selectedAddress === 'current' ? ' edit-order__address-card--selected' : ''}`}
-                onClick={() => setSelectedAddress('current')}
-              >
-                <input
-                  className="edit-order__address-radio"
-                  type="radio"
-                  readOnly
-                  tabIndex={-1}
-                  checked={selectedAddress === 'current'}
-                />
-                <span className="edit-order__address-text">{order.address}</span>
-              </button>
-              {ADDRESSES.map((a) => (
+            {!hideAddress && (
+              <section className="edit-order__section">
+                <p className="edit-order__section-heading">Delivery Address</p>
                 <button
-                  key={a.id}
-                  className={`edit-order__address-card${selectedAddress === a.id ? ' edit-order__address-card--selected' : ''}`}
-                  onClick={() => setSelectedAddress(a.id)}
+                  className={`edit-order__address-card${selectedAddress === 'current' ? ' edit-order__address-card--selected' : ''}`}
+                  onClick={() => setSelectedAddress('current')}
                 >
                   <input
                     className="edit-order__address-radio"
                     type="radio"
                     readOnly
                     tabIndex={-1}
-                    checked={selectedAddress === a.id}
+                    checked={selectedAddress === 'current'}
                   />
-                  <span className="edit-order__address-badge">{a.label}</span>
-                  <span className="edit-order__address-text">{formatAddressLine(a)}</span>
+                  <span className="edit-order__address-text">{order.address}</span>
                 </button>
-              ))}
-              <button className="edit-order__add-address" onClick={() => navigate('addAddress', { forOrder: true })}>
-                + Add New Address
-              </button>
-            </section>
+                {ADDRESSES.map((a) => (
+                  <button
+                    key={a.id}
+                    className={`edit-order__address-card${selectedAddress === a.id ? ' edit-order__address-card--selected' : ''}`}
+                    onClick={() => setSelectedAddress(a.id)}
+                  >
+                    <input
+                      className="edit-order__address-radio"
+                      type="radio"
+                      readOnly
+                      tabIndex={-1}
+                      checked={selectedAddress === a.id}
+                    />
+                    <span className="edit-order__address-badge">{a.label}</span>
+                    <span className="edit-order__address-text">{formatAddressLine(a)}</span>
+                  </button>
+                ))}
+                <button className="edit-order__add-address" onClick={() => navigate('addAddress', { forOrder: true })}>
+                  + Add New Address
+                </button>
+              </section>
+            )}
 
             <section className="edit-order__summary">
               <div className="edit-order__summary-row">
