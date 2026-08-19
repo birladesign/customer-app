@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ORDERS, splitProductSpec, recomputeOrderTotals, getOrderStatus } from '../data/orders.js';
-import { getVariants } from '../data/variants.js';
+import { getVariants, selectionFromSpec, specForSelection, priceForSelection } from '../data/variants.js';
 import { getEditEligibility } from '../data/intents.js';
 import { ADDRESSES } from '../data/profile.js';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
@@ -16,22 +16,12 @@ function withSpec(name, spec) {
   return spec ? `${name} (${spec})` : name;
 }
 
-// VARIANTS labels (getVariants) are a bare size — "Queen", "King" — but a
-// product's own spec is "Size / Thickness / Dimensions" (e.g. "Queen / 8
-// inch / 60x78 in"). Comparing/writing the size chip against the *whole*
-// spec string would never match a variant label, and would silently drop
-// the thickness/dimensions when saving a new size. These keep the size
-// chip scoped to just the first segment, leaving the rest of the spec
-// untouched.
-function sizeFromSpec(spec) {
-  return spec ? spec.split(' / ')[0] : spec;
+function selectionsEqual(a, b) {
+  return JSON.stringify(a) === JSON.stringify(b);
 }
 
-function specWithSize(spec, newSize) {
-  if (!spec) return newSize;
-  const parts = spec.split(' / ');
-  parts[0] = newSize;
-  return parts.join(' / ');
+function chipClass(active) {
+  return `edit-order__chip${active ? ' edit-order__chip--selected' : ''}`;
 }
 
 function formatAddressLine(address) {
@@ -60,10 +50,11 @@ export default function EditOrder({ params }) {
   const { name: baseName, spec: currentSpec } = target ? splitProductSpec(target.product) : { name: '', spec: null };
   const variants = target ? getVariants(baseName) : null;
   const initialQty = target?.qty ?? 1;
+  const initialSelection = variants ? selectionFromSpec(variants, currentSpec) : {};
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [qty, setQty] = useState(initialQty);
-  const [selectedSize, setSelectedSize] = useState(sizeFromSpec(currentSpec));
+  const [selection, setSelection] = useState(initialSelection);
   const [selectedAddress, setSelectedAddress] = useState('current');
   // Same reasoning as InstallationSchedule's bookingConfirmed — saving
   // shouldn't just dump the customer back on Order Details. Captured here
@@ -112,11 +103,12 @@ export default function EditOrder({ params }) {
     );
   }
 
-  const newUnitPrice = variants ? variants.find((v) => v.label === selectedSize)?.price ?? unitPrice : unitPrice;
+  const newUnitPrice = variants ? priceForSelection(variants, selection, unitPrice) : unitPrice;
   const newLinePrice = newUnitPrice * qty;
   const delta = newLinePrice - oldLinePrice;
   const newOrderTotal = oldOrderTotal + delta;
-  const hasChanges = qty !== initialQty || selectedSize !== sizeFromSpec(currentSpec) || selectedAddress !== 'current';
+  const variantChanged = Boolean(variants) && !selectionsEqual(selection, initialSelection);
+  const hasChanges = qty !== initialQty || variantChanged || selectedAddress !== 'current';
 
   const sheetCopy =
     delta > 0
@@ -138,7 +130,7 @@ export default function EditOrder({ params }) {
         };
 
   function handleConfirm() {
-    const newProduct = variants ? withSpec(baseName, specWithSize(currentSpec, selectedSize)) : target.product;
+    const newProduct = variants ? withSpec(baseName, specForSelection(variants, selection)) : target.product;
     const addressChanged = selectedAddress !== 'current';
     const newAddress = addressChanged ? ADDRESSES.find((a) => a.id === selectedAddress) : null;
 
@@ -160,8 +152,8 @@ export default function EditOrder({ params }) {
     setSavedSummary({
       qtyChanged: qty !== initialQty,
       newQty: qty,
-      sizeChanged: Boolean(variants) && selectedSize !== sizeFromSpec(currentSpec),
-      newSize: selectedSize,
+      variantChanged,
+      newVariantLabel: variants ? specForSelection(variants, selection) : null,
       addressChanged: Boolean(newAddress),
       newAddressText: newAddress ? formatAddressLine(newAddress) : null,
     });
@@ -221,10 +213,10 @@ export default function EditOrder({ params }) {
                   <span>{savedSummary.newQty}</span>
                 </div>
               )}
-              {savedSummary.sizeChanged && (
+              {savedSummary.variantChanged && (
                 <div className="edit-order__summary-row">
-                  <span>Size</span>
-                  <span>{savedSummary.newSize}</span>
+                  <span>Variant</span>
+                  <span>{savedSummary.newVariantLabel}</span>
                 </div>
               )}
               <div className="edit-order__summary-row">
@@ -245,22 +237,104 @@ export default function EditOrder({ params }) {
 
 
 
-            {variants && (
-              <section className="edit-order__section">
-                <p className="edit-order__section-heading">Size</p>
-                <div className="edit-order__chip-row">
-                  {variants.map((v) => (
+            {variants?.type === 'mattress' && (
+              <>
+                <section className="edit-order__section">
+                  <p className="edit-order__section-heading">Size</p>
+                  <div className="edit-order__chip-row">
+                    {variants.sizes.map((v) => (
+                      <button
+                        key={v.label}
+                        className={chipClass(selection.size === v.label)}
+                        onClick={() => setSelection((s) => ({ ...s, size: v.label }))}
+                      >
+                        {v.label}
+                      </button>
+                    ))}
                     <button
-                      key={v.label}
-                      className={`edit-order__chip${selectedSize === v.label ? ' edit-order__chip--selected' : ''}`}
-                      onClick={() => setSelectedSize(v.label)}
+                      className={chipClass(selection.size === 'Custom')}
+                      onClick={() => setSelection((s) => ({ ...s, size: 'Custom' }))}
                     >
-                      {v.label}
-                      <span className="edit-order__chip-price">{formatRupees(v.price)}</span>
+                      Custom
+                    </button>
+                  </div>
+                  {selection.size === 'Custom' && (
+                    <input
+                      className="edit-order__custom-input"
+                      type="text"
+                      placeholder="Enter dimensions, e.g. 70x74 in"
+                      value={selection.customDimensions ?? ''}
+                      onChange={(e) => setSelection((s) => ({ ...s, customDimensions: e.target.value }))}
+                    />
+                  )}
+                </section>
+
+                <section className="edit-order__section">
+                  <p className="edit-order__section-heading">Height</p>
+                  <div className="edit-order__chip-row">
+                    {variants.heights.map((h) => (
+                      <button
+                        key={h.label}
+                        className={chipClass(selection.height === h.label)}
+                        onClick={() => setSelection((s) => ({ ...s, height: h.label }))}
+                      >
+                        {h.label}
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              </>
+            )}
+
+            {variants?.type === 'chair' && (
+              <section className="edit-order__section">
+                <p className="edit-order__section-heading">Color</p>
+                <div className="edit-order__chip-row">
+                  {variants.colors.map((c) => (
+                    <button
+                      key={c.label}
+                      className={chipClass(selection.color === c.label)}
+                      onClick={() => setSelection((s) => ({ ...s, color: c.label }))}
+                    >
+                      {c.label}
                     </button>
                   ))}
                 </div>
               </section>
+            )}
+
+            {variants?.type === 'sofa' && (
+              <>
+                <section className="edit-order__section">
+                  <p className="edit-order__section-heading">Seating Capacity</p>
+                  <div className="edit-order__chip-row">
+                    {variants.seating.map((v) => (
+                      <button
+                        key={v.label}
+                        className={chipClass(selection.seating === v.label)}
+                        onClick={() => setSelection((s) => ({ ...s, seating: v.label }))}
+                      >
+                        {v.label}
+                      </button>
+                    ))}
+                  </div>
+                </section>
+
+                <section className="edit-order__section">
+                  <p className="edit-order__section-heading">Color</p>
+                  <div className="edit-order__chip-row">
+                    {variants.colors.map((c) => (
+                      <button
+                        key={c.label}
+                        className={chipClass(selection.color === c.label)}
+                        onClick={() => setSelection((s) => ({ ...s, color: c.label }))}
+                      >
+                        {c.label}
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              </>
             )}
 
             <section className="edit-order__section">
@@ -269,7 +343,13 @@ export default function EditOrder({ params }) {
                 className={`edit-order__address-card${selectedAddress === 'current' ? ' edit-order__address-card--selected' : ''}`}
                 onClick={() => setSelectedAddress('current')}
               >
-                <span className="edit-order__address-badge">Current</span>
+                <input
+                  className="edit-order__address-radio"
+                  type="radio"
+                  readOnly
+                  tabIndex={-1}
+                  checked={selectedAddress === 'current'}
+                />
                 <span className="edit-order__address-text">{order.address}</span>
               </button>
               {ADDRESSES.map((a) => (
@@ -278,11 +358,18 @@ export default function EditOrder({ params }) {
                   className={`edit-order__address-card${selectedAddress === a.id ? ' edit-order__address-card--selected' : ''}`}
                   onClick={() => setSelectedAddress(a.id)}
                 >
+                  <input
+                    className="edit-order__address-radio"
+                    type="radio"
+                    readOnly
+                    tabIndex={-1}
+                    checked={selectedAddress === a.id}
+                  />
                   <span className="edit-order__address-badge">{a.label}</span>
                   <span className="edit-order__address-text">{formatAddressLine(a)}</span>
                 </button>
               ))}
-              <button className="edit-order__add-address" onClick={() => navigate('addAddress')}>
+              <button className="edit-order__add-address" onClick={() => navigate('addAddress', { forOrder: true })}>
                 + Add New Address
               </button>
             </section>

@@ -244,11 +244,27 @@
   flex-wrap: wrap;
 }
 
+.edit-order__custom-input {
+  margin-top: var(--space-2);
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-primary);
+  padding: var(--space-3);
+  font-family: inherit;
+  font-size: var(--text-body-size);
+  color: var(--color-text-primary);
+}
+
+.edit-order__custom-input:focus {
+  outline: none;
+  border-color: var(--color-navy-900);
+}
+
 .edit-order__chip {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 2px;
+  justify-content: center;
   border: 1px solid var(--color-border);
   background: var(--color-bg-primary);
   border-radius: var(--radius-md);
@@ -270,12 +286,6 @@
   color: var(--color-text-inverse);
 }
 
-.edit-order__chip-price {
-  font-size: var(--text-caption-size);
-  font-weight: 500;
-  opacity: 0.8;
-}
-
 .edit-order__address-card {
   width: 100%;
   display: flex;
@@ -285,6 +295,8 @@
   border-radius: var(--radius-md);
   background: var(--color-bg-primary);
   padding: var(--space-3);
+  padding-right: 64px;
+  position: relative;
   text-align: left;
   transition: transform 0.1s ease-out, border-color 0.15s var(--ease-standard);
 }
@@ -321,7 +333,19 @@
   transform: scale(0.99);
 }
 
+.edit-order__address-radio {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--color-navy-900);
+  pointer-events: none;
+}
+
 .edit-order__address-badge {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
   flex-shrink: 0;
   padding: 3px 8px;
   border-radius: var(--radius-xs);

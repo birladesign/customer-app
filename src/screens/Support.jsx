@@ -74,28 +74,21 @@ function DeliveredDot() {
   return <span className="support__order-help-check" aria-hidden="true" />;
 }
 
-// Pinned under the chat header for the whole conversation — previously the
-// order was only ever named once, in a bot message that scrolled away with
-// the rest of the transcript, so there was nothing to check back against
-// once you'd scrolled a few messages down.
+// Pinned in the chat topbar itself, right next to the back button, for the
+// whole conversation — previously the order was only ever named once, in a
+// bot message that scrolled away with the rest of the transcript, so there
+// was nothing to check back against once you'd scrolled a few messages down.
+// Just enough to identify which order this is: image, name, shipment id —
+// price and status belong to the order itself, not to a support chat about it.
 function ChatOrderSummary({ order }) {
-  const status = getOrderStatus(order);
-  const delivered = /Delivered/.test(status.label);
   const { name } = splitProductSpec(order.product);
-  const price = order.priceBreakup?.total ?? order.amount;
-
   return (
     <div className="support__chat-order-summary">
       <img className="support__chat-order-summary-image" src={order.image} alt="" />
       <div className="support__chat-order-summary-details">
-        <span className="support__chat-order-summary-status">
-          {delivered && <DeliveredDot />}
-          {status.label}
-        </span>
         <p className="support__chat-order-summary-name">{name}</p>
-        <p className="support__chat-order-summary-id">{order.id}</p>
+        <p className="support__chat-order-summary-id">{order.shipmentId ?? order.id}</p>
       </div>
-      {typeof price === 'number' && <span className="support__chat-order-summary-amount">{formatRupees(price)}</span>}
     </div>
   );
 }
@@ -187,9 +180,12 @@ export default function Support({ params = {} }) {
           <button className="support__icon-btn" onClick={closeChat} aria-label="Back">
             <ChevronLeftIcon />
           </button>
-          {chatOrderId && !chatOrder && <span className="support__chat-order-id">Order ID: {chatOrderId}</span>}
+          {chatOrder ? (
+            <ChatOrderSummary order={chatOrder} />
+          ) : (
+            chatOrderId && <span className="support__chat-order-id">Order ID: {chatOrderId}</span>
+          )}
         </header>
-        {chatOrder && <ChatOrderSummary order={chatOrder} />}
         <SupportChat
           escalate={chatConfig.escalate}
           presetOrder={chatConfig.presetOrder}

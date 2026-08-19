@@ -60,6 +60,9 @@ export default function MultiShipmentOrderCard({ order }) {
           <CopyId id={order.id} label="order number" />
           <span className="order-card__date">{order.date}</span>
         </div>
+        <p className="multi-shipment-order-card__count">
+          {shipmentGroups.length} Shipments
+        </p>
       </div>
 
       <div className="multi-shipment-order-card__groups">

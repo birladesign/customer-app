@@ -151,6 +151,7 @@ export default function OtpStep({ phone, onVerified, onBack, onSkip }) {
               inputMode="numeric"
               maxLength={1}
               className="otp-step__box"
+              placeholder="0"
               value={digit}
               disabled={status === 'verifying' || status === 'locked'}
               onChange={(e) => updateDigit(i, e.target.value)}

@@ -73,6 +73,27 @@ export function getDeliveredDate(entity) {
   return step ? step.timestamp.split(',')[0] : null;
 }
 
+// Reverses OrderDetails' handlePutOnHold — restores whatever the order
+// looked like right before it was paused, using the snapshot that flow
+// leaves behind, and drops the "On Hold" step it pushed onto the timeline.
+// Without a real backend this is the only way to actually undo Hold rather
+// than guessing a generic "resumed" status.
+export function resumeOrder(order) {
+  const snapshot = order._preHoldSnapshot;
+  if (!snapshot) return;
+  Object.assign(order, {
+    section: snapshot.section,
+    status: snapshot.status,
+    caption: snapshot.caption,
+    actions: snapshot.actions,
+  });
+  if (order.timeline) {
+    order.timeline.steps = order.timeline.steps.slice(0, snapshot.timelineLength);
+    order.timeline.currentIndex = snapshot.timelineCurrentIndex;
+  }
+  delete order._preHoldSnapshot;
+}
+
 // Shared by getOrderStatus (a multi-item order's line items) and
 // getShipmentStatus (a multi-product shipment's sibling orders) — both are
 // "N things with their own status, roll up into one pill" the same way. A

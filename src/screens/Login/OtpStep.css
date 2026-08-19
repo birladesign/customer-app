@@ -99,6 +99,11 @@
   background: var(--color-bg-primary);
 }
 
+.otp-step__box::placeholder {
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
 .otp-step__box:focus {
   outline: none;
   border-color: var(--color-navy-900);

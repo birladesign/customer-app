@@ -1,12 +1,21 @@
 import { useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { ORDERS, splitProductSpec, getOrderStatus, getShipmentInfo, getExpectedDelivery } from '../data/orders.js';
+import {
+  ORDERS,
+  splitProductSpec,
+  getOrderStatus,
+  getShipmentInfo,
+  getExpectedDelivery,
+  getDeliveredDate,
+  parseOrderDate,
+} from '../data/orders.js';
 import { getOrderIntents, getEditEligibility, getShipmentEditEligibility, getItemIntents, isPostDispatch } from '../data/intents.js';
 import { getOpenCaseForOrder } from '../data/support.js';
 import { CURRENT_USER } from '../data/profile.js';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
 import { SPRING_STANDARD, DURATION_REDUCED } from '../motion.js';
 import Timeline from '../components/Timeline.jsx';
+import Tracker from '../components/Tracker.jsx';
 import DetailedTracking from '../components/DetailedTracking.jsx';
 import PrimaryItem from '../components/PrimaryItem.jsx';
 import StarRating from '../components/StarRating.jsx';
@@ -18,7 +27,6 @@ import {
   CopyIcon,
   CheckIcon,
   ClockIcon,
-  FileTextIcon,
   DownloadIcon,
   ShieldIcon,
   ExternalLinkIcon,
@@ -28,6 +36,8 @@ import {
   UserIcon,
   EditIcon,
   TruckIcon,
+  PackageIcon,
+  PackageFilledIcon,
   HelpCircleIcon,
   CalendarIcon,
 } from '../components/icons.jsx';
@@ -57,6 +67,31 @@ const DELAY_REASON = 'Delivery taking too long';
 function formatRupees(amount) {
   return `₹${amount.toLocaleString('en-IN')}`;
 }
+
+// "21 Aug 2026" -> "Fri, 21 Aug" — a weekday reads faster than a bare date
+// when the whole point is "is this on track", so the delivery headline
+// leads with it instead of the plain DD Mon YYYY every other date on this
+// page uses.
+function formatArrivingBy(dateStr) {
+  const date = parseOrderDate(dateStr);
+  const weekday = date.toLocaleDateString('en-US', { weekday: 'short' });
+  const month = date.toLocaleDateString('en-US', { month: 'short' });
+  return `${weekday}, ${date.getDate()} ${month}`;
+}
+
+// Icons for the compact delivery tracker — keyed by the same milestone
+// labels used across every order's timeline (see UPCOMING_STEP_TEXT in
+// DetailedTracking.jsx for the full label vocabulary). Falls back to a
+// plain checkmark for labels outside the normal delivery flow (refund/
+// pickup steps), which is the same fallback Tracker already uses.
+const STEP_ICONS = {
+  Confirmed: CheckIcon,
+  Packing: PackageIcon,
+  Dispatched: TruckIcon,
+  Shipped: TruckIcon,
+  'Out for Delivery': TruckIcon,
+  Delivered: PackageFilledIcon,
+};
 
 export default function OrderDetails({ params }) {
   const { goBack, navigate, switchTab } = useNavigation();
@@ -126,6 +161,12 @@ export default function OrderDetails({ params }) {
     );
   }
 
+  // Whatever identifies the physical parcel this view is scoped to — a line
+  // item's own shipmentGroupId, or the whole order's shipmentId when it's one
+  // of several sibling orders that ship together. Null at the top level of a
+  // multi-shipment order (nothing scoped yet), where "Order ID" still means
+  // the one thing it says.
+  const shipmentIdValue = scopedItem?.shipmentGroupId ?? order.shipmentId ?? null;
   const { name: productName, spec } = splitProductSpec(scopedItem ? scopedItem.product : order.product);
   const status = scopedItem ? scopedItem.status : getOrderStatus(order);
   const pill = STATUS_PILL[status.dot] ?? STATUS_PILL.muted;
@@ -209,6 +250,17 @@ export default function OrderDetails({ params }) {
   // Mirrors the app's own existing "On Hold — Decision Needed" state
   // (see TSC92401) rather than inventing a new one.
   function handlePutOnHold() {
+    // Nothing else records what the order looked like before it was paused —
+    // Resume Order needs that snapshot back to actually reverse this instead
+    // of just guessing a generic "resumed" state.
+    order._preHoldSnapshot = {
+      section: order.section,
+      status: order.status,
+      caption: order.caption,
+      actions: order.actions,
+      timelineLength: order.timeline?.steps.length ?? 0,
+      timelineCurrentIndex: order.timeline?.currentIndex,
+    };
     Object.assign(order, {
       section: 'needsAttention',
       status: { dot: 'red', label: 'On Hold — Decision Needed' },
@@ -250,7 +302,7 @@ export default function OrderDetails({ params }) {
 
   async function handleCopy() {
     try {
-      await navigator.clipboard.writeText(order.id);
+      await navigator.clipboard.writeText(shipmentIdValue ?? order.id);
     } catch {
       // Clipboard API unavailable — the checkmark still confirms the tap.
     }
@@ -328,6 +380,34 @@ export default function OrderDetails({ params }) {
   const shipmentSiblings = order.shipmentId
     ? ORDERS.filter((o) => o.shipmentId === order.shipmentId && o.id !== order.id)
     : [];
+  // The other mechanism for "more than one parcel" — a single order whose
+  // own items are clustered into named shipment groups (shipmentGroupId),
+  // rather than several sibling top-level orders. Scoping into one item of
+  // a group needs the same "other items in this shipment" treatment as the
+  // shipmentId case above, just sourced from this order's own items.
+  const shipmentGroupSiblings = scopedItem?.shipmentGroupId
+    ? order.items.filter((i) => i.shipmentGroupId === scopedItem.shipmentGroupId && i.sku !== scopedItem.sku)
+    : [];
+  // One shared shape for "Other Items in This Shipment" regardless of which
+  // of the two mechanisms produced the siblings — the two never apply at
+  // once (order.items and order.shipmentId are mutually exclusive), so this
+  // is just picking whichever list is non-empty.
+  const otherShipmentUnits =
+    shipmentSiblings.length > 0
+      ? shipmentSiblings.map((sibling) => ({
+          key: sibling.id,
+          image: sibling.image,
+          product: sibling.product,
+          status: sibling.status,
+          onClick: () => navigate('orderDetails', { orderId: sibling.id }),
+        }))
+      : shipmentGroupSiblings.map((item) => ({
+          key: item.sku,
+          image: item.image,
+          product: item.product,
+          status: item.status,
+          onClick: () => navigate('orderDetails', { orderId: order.id, sku: item.sku }),
+        }));
   // Edit is order-level now, not per-item — for a multi-SKU order it targets
   // the primary item, the same "what this order is mainly about" item the
   // page already leads with. A shipment (order.items and order.shipmentId
@@ -338,10 +418,64 @@ export default function OrderDetails({ params }) {
     ? getShipmentEditEligibility([order, ...shipmentSiblings])
     : getEditEligibility(scopedItem ?? (order.items ? primaryItem : order));
 
+  function handleEditOrder() {
+    navigate(
+      order.shipmentId ? 'editShipmentOrder' : 'editOrder',
+      order.shipmentId
+        ? { shipmentId: order.shipmentId }
+        : scopedItem
+        ? { orderId: order.id, sku: scopedItem.sku }
+        : order.items
+        ? { orderId: order.id, sku: primaryItem.sku }
+        : { orderId: order.id }
+    );
+  }
+
   const itemPrice = scopedItem ? scopedItem.price : order.priceBreakup?.itemPrice ?? order.amount;
   const discount = scopedItem ? 0 : order.priceBreakup?.discount ?? 0;
+  // A shipment is billed as one parcel — viewing just one of its units
+  // shouldn't show only that unit's own price as if it were the whole
+  // invoice. Every sibling's own product/price rolls up into one shared
+  // bill instead, the same way the whole shipment shares one delivery.
+  // Covers both "more than one parcel" mechanisms: sibling top-level orders
+  // (shipmentId) and sibling line items within one order (shipmentGroupId).
+  const shipmentBillUnits = order.shipmentId
+    ? [order, ...shipmentSiblings]
+    : shipmentGroupSiblings.length > 0
+    ? [scopedItem, ...shipmentGroupSiblings]
+    : null;
+  const shipmentBillTotal = shipmentBillUnits?.reduce(
+    (sum, u) => sum + (u.priceBreakup?.total ?? u.price ?? u.amount),
+    0
+  );
   const technician = scopedItem?.technician ?? order.technician;
   const effectiveTimeline = scopedItem ? scopedItem.timeline : order.timeline;
+  // The old page showed every milestone's own timestamp/description inline —
+  // accurate, but a wall of text before anyone's asked for it. This distills
+  // the same timeline down to what actually answers "where's my order":
+  // when it's arriving (or that it already has), whether that's on track,
+  // and a compact icon strip for the shape of the journey. Full per-step
+  // detail is one tap away via Tracking Updates, so nothing is lost.
+  const isDelayedStatus = status.dot === 'red';
+  const isDeliveredStatus = status.dot === 'green' && /delivered/i.test(status.label);
+  const progressExpectedDelivery = getExpectedDelivery(scopedItem ?? order);
+  const progressDeliveredDate = isDeliveredStatus ? getDeliveredDate(scopedItem ?? order) : null;
+  const progressHeadline = isDeliveredStatus
+    ? `Delivered${progressDeliveredDate ? ` on ${progressDeliveredDate}` : ''}`
+    : progressExpectedDelivery
+    ? `Arriving by ${formatArrivingBy(progressExpectedDelivery)}`
+    : status.label;
+  const progressPill = isDelayedStatus
+    ? { label: 'Delayed', tone: 'red' }
+    : isDeliveredStatus
+    ? null
+    : { label: 'On Time', tone: 'green' };
+  const currentStep = effectiveTimeline?.steps[effectiveTimeline.currentIndex];
+  const progressSubtext = currentStep?.updates?.[0]?.text ?? currentStep?.label ?? null;
+  const compactTrackerSteps = effectiveTimeline?.steps.map((s, i) => ({
+    label: s.label,
+    date: i <= effectiveTimeline.currentIndex && s.timestamp ? s.timestamp.split(',')[0] : null,
+  }));
   // Surfaces an already-open case for this order (or, when viewing one line
   // item of a multi-item order, that item specifically) so raising a ticket
   // and coming back here doesn't look like nothing happened.
@@ -451,12 +585,13 @@ export default function OrderDetails({ params }) {
           </>
         ) : null}
 
-        {/* One card for everything about this order — product, id/status,
-            tracking, technician, warranty, rating, billing, and how to get
-            help — instead of a separate box per fact. Each direct child
-            gets an automatic hairline divider from the next (see the
-            `> * + *` rule in CSS), so which sections exist can vary freely
-            without any manual divider bookkeeping here. */}
+        {/* One card for the order itself — product, id/status, tracking,
+            technician, warranty, and rating — instead of a separate box per
+            fact. Billing lives in its own card further down (see below), so
+            "Other Items in This Shipment" can sit between the two. Each
+            direct child gets an automatic hairline divider from the next
+            (see the `> * + *` rule in CSS), so which sections exist can vary
+            freely without any manual divider bookkeeping here. */}
         <div className="order-details__summary-card">
           {(!order.items || scopedItem) && (
             <div className="order-details__product-row">
@@ -474,42 +609,74 @@ export default function OrderDetails({ params }) {
 
           <div className="order-details__id-row">
             <div>
-              <p className="order-details__id-label">Order ID</p>
+              <p className="order-details__id-label">{shipmentIdValue ? 'Shipment ID' : 'Order ID'}</p>
               <button className="order-details__id" onClick={handleCopy}>
                 {copied ? <CheckIcon width="13" height="13" strokeWidth="3" /> : <CopyIcon width="13" height="13" />}
-                <span>{order.id}</span>
+                <span>{shipmentIdValue ?? order.id}</span>
               </button>
-              {/* The one-line plain-language summary ("Arriving today by 6
-                  PM", "Delivered on 15 May 2026"...) every order already
-                  carries for its My Orders card — surfaced here too instead
-                  of making someone piece it together from the timeline
-                  steps below. Kept inside this column (not a sibling of the
-                  row) so it reads as part of the same status line, not a
-                  new divided section. */}
-              {(scopedItem ? scopedItem.caption : order.caption) && (
-                <p className="order-details__caption">{scopedItem ? scopedItem.caption : order.caption}</p>
-              )}
+              {/* Every order's caption carries a plain-language summary — but
+                  once the progress card below leads with its own "Arriving
+                  by"/"Delivered on" headline, a caption that's just the same
+                  delivery-timing statement in different words would repeat
+                  it a second time in the same glance. Non-delivery captions
+                  (an investigation note, a technician visit, a backorder)
+                  still carry information the progress card doesn't, so only
+                  the redundant ones are skipped, and only once there's a
+                  progress card to defer to. */}
+              {(() => {
+                const caption = scopedItem ? scopedItem.caption : order.caption;
+                const isDeliveryRestatement = effectiveTimeline && /^(Arriving|Estimated delivery|Delivered on)/i.test(caption ?? '');
+                return caption && !isDeliveryRestatement && <p className="order-details__caption">{caption}</p>;
+              })()}
             </div>
-            <span className="order-details__status-pill" style={{ background: pill.bg, color: pill.color }}>
-              {status.label}
-            </span>
           </div>
 
           {effectiveTimeline && (
-            <div className="order-details__timeline-block">
-              <Timeline steps={effectiveTimeline.steps} currentIndex={effectiveTimeline.currentIndex} />
+            // The pill+chevron used to be the only hint that this whole card
+            // was tappable through to the full log — easy to miss. An
+            // explicit "Tracking Updates" button below the progress bar is
+            // its own unambiguous affordance instead.
+            <div className="order-details__progress">
+              <div className="order-details__progress-header">
+                <p
+                  className="order-details__progress-headline"
+                  style={{ color: isDelayedStatus ? 'var(--color-action-red)' : 'var(--color-success)' }}
+                >
+                  {progressHeadline}
+                </p>
+                {progressPill && (
+                  <span className={`order-details__progress-pill order-details__progress-pill--${progressPill.tone}`}>
+                    {progressPill.label}
+                  </span>
+                )}
+              </div>
+              {progressSubtext && <p className="order-details__progress-subtext">{progressSubtext}</p>}
+
+              <Tracker steps={compactTrackerSteps} currentIndex={effectiveTimeline.currentIndex} stepIcons={STEP_ICONS} />
+
               <button
-                className="order-details__tracking-link"
+                className="order-details__progress-track-btn"
                 onClick={() =>
                   openTracking('Tracking Updates', effectiveTimeline, scopedItem ? scopedItem.sku : order.id)
                 }
               >
-                <span className="order-details__tracking-link-icon">
-                  <FileTextIcon width="14" height="14" />
-                </span>
-                <span className="order-details__tracking-link-label">Tracking Updates</span>
-                <ChevronRightIcon className="order-details__tracking-link-chevron" aria-hidden="true" />
+                <span>Tracking Updates</span>
+                <ChevronRightIcon width="14" height="14" aria-hidden="true" />
               </button>
+            </div>
+          )}
+
+          {!isClosedOrder && (
+            <div className="order-details__edit-cta-wrap">
+              <button
+                className="order-details__edit-cta"
+                disabled={!editIntent.enabled}
+                onClick={editIntent.enabled ? handleEditOrder : undefined}
+              >
+                <EditIcon width="15" height="15" />
+                <span>Edit Details</span>
+              </button>
+              {!editIntent.enabled && <p className="order-details__edit-cta-reason">{editIntent.reason}</p>}
             </div>
           )}
 
@@ -601,12 +768,69 @@ export default function OrderDetails({ params }) {
                 />
               </div>
             )}
+        </div>
 
-          {/* Bill Summary and the help toggle used to be their own separate
-              cards below this one — folded in here instead, so "everything
-              about this order" (status, billing, and how to get help with
-              it) reads as one card with dividers, not three stacked boxes
-              repeating the same border/shadow. */}
+        {openCase && (
+          <button
+            className="order-details__ticket-banner"
+            onClick={() => switchTab('support', { resumeCaseId: openCase.id })}
+          >
+            <span className="order-details__ticket-banner-icon">
+              <HeadsetIcon width="16" height="16" />
+            </span>
+            <span className="order-details__ticket-banner-text">
+              <span className="order-details__ticket-banner-title">Support Ticket {openCase.id}</span>
+              <span className="order-details__ticket-banner-sub">{openCase.slaLabel}</span>
+            </span>
+            <ChevronRightIcon className="order-details__ticket-banner-chevron" aria-hidden="true" />
+          </button>
+        )}
+
+        {otherShipmentUnits.length > 0 && (
+          <div className="order-details__other-items">
+            <p className="order-details__other-items-heading">
+              Other Items in This Shipment ({otherShipmentUnits.length})
+            </p>
+            {/* Every unit here ships and arrives together (see
+                getShipmentStatus in orders.js) — the same status/date this
+                page already shows once above, so repeating a name/status/
+                price per row would just restate it. The image alone is
+                enough to recognize which item each row is — except when a
+                unit has genuinely diverged from the rest (e.g. one flagged
+                damaged after an otherwise-shared delivery), which still
+                needs its own visible flag here so it isn't mistaken for
+                just another delivered item. */}
+            <div className="order-details__item-thumbs">
+              {otherShipmentUnits.map((unit) => {
+                const diverges = unit.status.label !== status.label;
+                return (
+                  <button
+                    key={unit.key}
+                    className="order-details__item-thumb"
+                    onClick={unit.onClick}
+                    aria-label={diverges ? `${unit.product} — ${unit.status.label}` : unit.product}
+                  >
+                    <img src={unit.image} alt={unit.product} />
+                    {diverges && (
+                      <span
+                        className="order-details__item-thumb-flag"
+                        style={{ background: (STATUS_PILL[unit.status.dot] ?? STATUS_PILL.muted).color }}
+                        aria-hidden="true"
+                      />
+                    )}
+                    <ChevronRightIcon className="order-details__item-thumb-chevron" aria-hidden="true" />
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Bill Summary used to live folded into the card above along with
+            product/status/timeline info. Pulled into its own card here so
+            "Other Items in This Shipment" can sit between the two — closer
+            to the order/status info it's about than to billing. */}
+        <div className="order-details__summary-card">
           <div className="order-details__disclosure-wrap">
             <button
               className="order-details__disclosure"
@@ -629,17 +853,28 @@ export default function OrderDetails({ params }) {
               >
                 <div className="order-details__disclosure-body">
                   <div className="order-details__payment-block">
-                    <div className="order-details__payment-row">
-                      <span>
-                        {scopedItem || !order.items
-                          ? `${productName}${spec ? ` (${spec})` : ''}`
-                          : `${order.items.length} Items`}
-                      </span>
-                      <span className="order-details__payment-item-total">
-                        {discount > 0 && <s className="order-details__payment-mrp">{formatRupees(itemPrice)}</s>}
-                        {formatRupees(itemPrice - discount)}
-                      </span>
-                    </div>
+                    {shipmentBillUnits ? (
+                      shipmentBillUnits.map((u) => (
+                        <div className="order-details__payment-row" key={u.id ?? u.sku}>
+                          <span>{u.product}</span>
+                          <span className="order-details__payment-item-total">
+                            {formatRupees(u.priceBreakup?.itemPrice ?? u.price ?? u.amount)}
+                          </span>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="order-details__payment-row">
+                        <span>
+                          {scopedItem || !order.items
+                            ? `${productName}${spec ? ` (${spec})` : ''}`
+                            : `${order.items.length} Items`}
+                        </span>
+                        <span className="order-details__payment-item-total">
+                          {discount > 0 && <s className="order-details__payment-mrp">{formatRupees(itemPrice)}</s>}
+                          {formatRupees(itemPrice - discount)}
+                        </span>
+                      </div>
+                    )}
                     <div className="order-details__payment-row">
                       <span>Delivery &amp; Handling</span>
                       <span className="order-details__payment-positive">
@@ -653,7 +888,11 @@ export default function OrderDetails({ params }) {
                     <div className="order-details__payment-divider" />
                     <div className="order-details__payment-row order-details__payment-row--total">
                       <span>Total Bill</span>
-                      <span>{formatRupees(scopedItem ? itemPrice : order.priceBreakup?.total ?? order.amount)}</span>
+                      <span>
+                        {formatRupees(
+                          shipmentBillUnits ? shipmentBillTotal : scopedItem ? itemPrice : order.priceBreakup?.total ?? order.amount
+                        )}
+                      </span>
                     </div>
                     <div className="order-details__payment-divider" />
                     <div className="order-details__payment-row">
@@ -703,31 +942,6 @@ export default function OrderDetails({ params }) {
                     </div>
                   )}
 
-                  {order.address && (
-                    <div className="order-details__shipping-block">
-                      <div className="order-details__shipping-row">
-                        <p className="order-details__shipping-label">Delivery Address</p>
-                        <p className="order-details__shipping-name">
-                          {CURRENT_USER.firstName} {CURRENT_USER.lastName}
-                        </p>
-                        <p className="order-details__shipping-value">{order.address}</p>
-                      </div>
-                      <div className="order-details__shipping-divider" />
-                      <div className="order-details__shipping-row">
-                        <p className="order-details__shipping-label">Billing Address</p>
-                        <p className="order-details__shipping-value">{order.address}</p>
-                      </div>
-                      <div className="order-details__shipping-divider" />
-                      <div className="order-details__shipping-row">
-                        <p className="order-details__shipping-label">Contact Details</p>
-                        <p className="order-details__contact-line">
-                          <PhoneIcon width="13" height="13" />
-                          +91 {CURRENT_USER.phone}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
                 </div>
               </motion.div>
               )}
@@ -735,59 +949,48 @@ export default function OrderDetails({ params }) {
           </div>
         </div>
 
-        {openCase && (
-          <button
-            className="order-details__ticket-banner"
-            onClick={() => switchTab('support', { resumeCaseId: openCase.id })}
-          >
-            <span className="order-details__ticket-banner-icon">
-              <HeadsetIcon width="16" height="16" />
-            </span>
-            <span className="order-details__ticket-banner-text">
-              <span className="order-details__ticket-banner-title">Support Ticket {openCase.id}</span>
-              <span className="order-details__ticket-banner-sub">{openCase.slaLabel}</span>
-            </span>
-            <ChevronRightIcon className="order-details__ticket-banner-chevron" aria-hidden="true" />
-          </button>
-        )}
-
-        {shipmentSiblings.length > 0 && (
-          <div className="order-details__other-items">
-            <p className="order-details__other-items-heading">
-              Other Items in This Shipment ({shipmentSiblings.length})
-            </p>
-            {/* Every sibling here ships and arrives together (see
-                getShipmentStatus in orders.js) — the same status/date this
-                page already shows once above, so repeating a name/status/
-                price per row would just restate it. The image alone is
-                enough to recognize which item each row is — except when a
-                unit has genuinely diverged from the rest (e.g. one flagged
-                damaged after an otherwise-shared delivery), which still
-                needs its own visible flag here so it isn't mistaken for
-                just another delivered item. */}
-            <div className="order-details__item-thumbs">
-              {shipmentSiblings.map((sibling) => {
-                const diverges = sibling.status.label !== order.status.label;
-                return (
-                  <button
-                    key={sibling.id}
-                    className="order-details__item-thumb"
-                    onClick={() => navigate('orderDetails', { orderId: sibling.id })}
-                    aria-label={diverges ? `${sibling.product} — ${sibling.status.label}` : sibling.product}
-                  >
-                    <img src={sibling.image} alt={sibling.product} />
-                    {diverges && (
-                      <span
-                        className="order-details__item-thumb-flag"
-                        style={{ background: (STATUS_PILL[sibling.status.dot] ?? STATUS_PILL.muted).color }}
-                        aria-hidden="true"
-                      />
-                    )}
-                    <ChevronRightIcon className="order-details__item-thumb-chevron" aria-hidden="true" />
-                  </button>
-                );
-              })}
+        {order.address && (
+          <div className="order-details__delivery-section">
+            <p className="order-details__delivery-heading">Delivery details</p>
+            <div className="order-details__delivery-card">
+              <div className="order-details__delivery-row">
+                <UserIcon className="order-details__delivery-icon" width="18" height="18" />
+                <div className="order-details__delivery-text">
+                  <p className="order-details__delivery-name">
+                    {CURRENT_USER.firstName} {CURRENT_USER.lastName}
+                  </p>
+                  <p className="order-details__delivery-address">{order.address}</p>
+                </div>
+              </div>
+              <div className="order-details__delivery-divider" />
+              <div className="order-details__delivery-phone">
+                <PhoneIcon width="14" height="14" />
+                <span>(+91) {CURRENT_USER.phone}</span>
+              </div>
             </div>
+
+            {/* Billing only earns its own card when it's actually different
+                from where the order ships — no order in this dataset carries
+                a separate billingAddress yet, so today this never renders,
+                but the split is here so a genuinely different billing
+                address (see Add New Address's own Billing Address section)
+                doesn't just silently vanish once one exists. */}
+            {order.billingAddress && order.billingAddress !== order.address && (
+              <>
+                <p className="order-details__delivery-heading">Billing details</p>
+                <div className="order-details__delivery-card">
+                  <div className="order-details__delivery-row">
+                    <UserIcon className="order-details__delivery-icon" width="18" height="18" />
+                    <div className="order-details__delivery-text">
+                      <p className="order-details__delivery-name">
+                        {CURRENT_USER.firstName} {CURRENT_USER.lastName}
+                      </p>
+                      <p className="order-details__delivery-address">{order.billingAddress}</p>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         )}
 
@@ -800,36 +1003,6 @@ export default function OrderDetails({ params }) {
       <BottomSheet open={helpSectionOpen} onClose={() => setHelpSectionOpen(false)}>
         <h2 className="confirm-sheet__title">Need help with this order?</h2>
         <div className="order-details__help-actions">
-          {!isClosedOrder && (
-            <>
-              <button
-                className="order-details__help-action"
-                disabled={!editIntent.enabled}
-                onClick={
-                  editIntent.enabled
-                    ? () => {
-                        setHelpSectionOpen(false);
-                        navigate(
-                          order.shipmentId ? 'editShipmentOrder' : 'editOrder',
-                          order.shipmentId
-                            ? { shipmentId: order.shipmentId }
-                            : scopedItem
-                            ? { orderId: order.id, sku: scopedItem.sku }
-                            : order.items
-                            ? { orderId: order.id, sku: primaryItem.sku }
-                            : { orderId: order.id }
-                        );
-                      }
-                    : undefined
-                }
-              >
-                <EditIcon width="15" height="15" />
-                <span>Edit Order</span>
-              </button>
-              {!editIntent.enabled && <p className="order-details__help-action-reason">{editIntent.reason}</p>}
-            </>
-          )}
-
           {(!order.items || scopedItem) && (
             <>
               <button

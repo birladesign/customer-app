@@ -3,6 +3,7 @@
 // in-memory array, not a rules engine or a real case-management backend.
 import { ORDERS, parseOrderDate, getOrderStatus } from './orders.js';
 import { getOrderIntents } from './intents.js';
+import imgSofaLuxeGrande from '../assets/sofa-luxe-grande.png';
 
 // Real contact details, pulled from thesleepcompany.in — not invented.
 export const CONTACT = {
@@ -192,7 +193,7 @@ export function createCase({ lane, order, item, description, hasPhoto, escalate,
 // onClick closures that can't exist for data that was never actually typed
 // through the chat — resuming one of these just replays history and drops
 // straight into the normal "followup" free-text mode.
-function seedCase({ lane, orderId, orderProduct, itemSku, itemProduct, escalate, createdAt, transcript }) {
+function seedCase({ lane, orderId, orderProduct, itemSku, itemProduct, escalate, createdAt, transcript, status: statusOverride, exchange }) {
   const laneMeta = CASE_LANES.find((l) => l.key === lane);
   const { classification, status, slaLabel } = classifyCase(lane, escalate);
   return {
@@ -206,11 +207,15 @@ function seedCase({ lane, orderId, orderProduct, itemSku, itemProduct, escalate,
     description: transcript[transcript.length - 1]?.text ?? '',
     hasPhoto: false,
     escalated: Boolean(escalate),
-    status,
+    status: statusOverride ?? status,
     classification,
     slaLabel,
     createdAt,
     messages: transcript.map((m, i) => ({ id: i + 1, ...m })),
+    // Only set for a Returns & Replacement case that resolved as an
+    // exchange rather than a plain refund — the price reconciliation
+    // between what was returned and what replaced it (see RequestDetail).
+    exchange: exchange ?? null,
   };
 }
 
@@ -243,6 +248,54 @@ USER_CASES.push(
       { from: 'bot', text: 'Tell us what happened — type your message below.' },
       { from: 'user', text: "Need to reschedule the installation slot — 12 Aug doesn't work anymore." },
     ],
+  }),
+
+  seedCase({
+    lane: 'returns',
+    orderId: 'TSC88320',
+    orderProduct: 'Luxe Grande Recliner Sofa (Royal Blue / 3 Seater)',
+    escalate: false,
+    createdAt: '2026-08-15T11:30:00.000Z',
+    status: 'resolved',
+    transcript: [
+      { from: 'bot', text: 'Hi! What can we help with?' },
+      { from: 'user', text: 'Returns & Replacement' },
+      { from: 'user', text: 'Luxe Grande Recliner Sofa (TSC88320)' },
+      { from: 'bot', text: 'Tell us what happened — type your message below.' },
+      { from: 'user', text: "We'd like the bigger 3+2 seater instead, in Beige." },
+      { from: 'bot', text: 'Your exchange has been processed — see the price breakdown below.' },
+    ],
+    // Mirrors what an agent sees on their side (returned item, replacement,
+    // adjustments, final calculation) — same numbers, translated into plain
+    // language and this app's own card/color conventions instead of the
+    // dense internal tool layout.
+    exchange: {
+      returnedItem: {
+        product: 'Luxe Grande Recliner Sofa',
+        spec: '3 Seater / Royal Blue',
+        image: imgSofaLuxeGrande,
+        qty: 1,
+        price: 89999,
+        discounts: [{ label: 'Cart Discount', amount: 5400 }],
+        refund: 84599,
+      },
+      newItem: {
+        product: 'Luxe Grande Recliner Sofa',
+        spec: '3+2 Seater / Beige',
+        image: imgSofaLuxeGrande,
+        qty: 1,
+        price: 119999,
+        carriedDiscounts: [{ label: 'Bank Discount', amount: 4200 }],
+        total: 115799,
+      },
+      adjustments: [
+        { label: 'Loyalty Discount', amount: -2000 },
+        { label: 'Shipping', amount: 0 },
+      ],
+      youPay: 29200,
+      paymentStatus: 'Paid',
+      transaction: { method: 'UPI', reference: 'pay_R8x2KL9pQmZnT4', paidOn: '18 Aug 2026, 6:04 PM' },
+    },
   })
 );
 

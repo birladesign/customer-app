@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ORDERS, splitProductSpec, getShipmentStatus } from '../data/orders.js';
-import { getVariants } from '../data/variants.js';
+import { getVariants, selectionFromSpec, specForSelection, priceForSelection } from '../data/variants.js';
 import { getShipmentEditEligibility } from '../data/intents.js';
 import { ADDRESSES } from '../data/profile.js';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
@@ -17,22 +17,115 @@ function withSpec(name, spec) {
   return spec ? `${name} (${spec})` : name;
 }
 
-// VARIANTS labels (getVariants) are a bare size — "Queen", "King" — but a
-// product's own spec is "Size / Thickness / Dimensions" (e.g. "Queen / 8
-// inch / 60x78 in"). Comparing/writing the size chip against the *whole*
-// spec string would never match a variant label, and would silently drop
-// the thickness/dimensions when saving a new size. These keep the size
-// chip scoped to just the first segment, leaving the rest of the spec
-// untouched.
-function sizeFromSpec(spec) {
-  return spec ? spec.split(' / ')[0] : spec;
+function selectionsEqual(a, b) {
+  return JSON.stringify(a) === JSON.stringify(b);
 }
 
-function specWithSize(spec, newSize) {
-  if (!spec) return newSize;
-  const parts = spec.split(' / ');
-  parts[0] = newSize;
-  return parts.join(' / ');
+function chipClass(active) {
+  return `edit-order__chip${active ? ' edit-order__chip--selected' : ''}`;
+}
+
+function VariantChips({ variants, selection, onChange }) {
+  if (!variants) return null;
+  if (variants.type === 'mattress') {
+    return (
+      <>
+        <section className="edit-order__section">
+          <p className="edit-order__section-heading">Size</p>
+          <div className="edit-order__chip-row">
+            {variants.sizes.map((v) => (
+              <button
+                key={v.label}
+                className={chipClass(selection.size === v.label)}
+                onClick={() => onChange({ ...selection, size: v.label })}
+              >
+                {v.label}
+              </button>
+            ))}
+            <button
+              className={chipClass(selection.size === 'Custom')}
+              onClick={() => onChange({ ...selection, size: 'Custom' })}
+            >
+              Custom
+            </button>
+          </div>
+          {selection.size === 'Custom' && (
+            <input
+              className="edit-order__custom-input"
+              type="text"
+              placeholder="Enter dimensions, e.g. 70x74 in"
+              value={selection.customDimensions ?? ''}
+              onChange={(e) => onChange({ ...selection, customDimensions: e.target.value })}
+            />
+          )}
+        </section>
+        <section className="edit-order__section">
+          <p className="edit-order__section-heading">Height</p>
+          <div className="edit-order__chip-row">
+            {variants.heights.map((h) => (
+              <button
+                key={h.label}
+                className={chipClass(selection.height === h.label)}
+                onClick={() => onChange({ ...selection, height: h.label })}
+              >
+                {h.label}
+              </button>
+            ))}
+          </div>
+        </section>
+      </>
+    );
+  }
+  if (variants.type === 'chair') {
+    return (
+      <section className="edit-order__section">
+        <p className="edit-order__section-heading">Color</p>
+        <div className="edit-order__chip-row">
+          {variants.colors.map((c) => (
+            <button
+              key={c.label}
+              className={chipClass(selection.color === c.label)}
+              onClick={() => onChange({ ...selection, color: c.label })}
+            >
+              {c.label}
+            </button>
+          ))}
+        </div>
+      </section>
+    );
+  }
+  return (
+    <>
+      <section className="edit-order__section">
+        <p className="edit-order__section-heading">Seating Capacity</p>
+        <div className="edit-order__chip-row">
+          {variants.seating.map((v) => (
+            <button
+              key={v.label}
+              className={chipClass(selection.seating === v.label)}
+              onClick={() => onChange({ ...selection, seating: v.label })}
+            >
+              {v.label}
+            </button>
+          ))}
+        </div>
+      </section>
+      <section className="edit-order__section">
+        <p className="edit-order__section-heading">Color</p>
+        <div className="edit-order__chip-row">
+          {variants.colors.map((c) => (
+            <button
+              key={c.label}
+              className={chipClass(selection.color === c.label)}
+              onClick={() => onChange({ ...selection, color: c.label })}
+            >
+              {c.label}
+            </button>
+          ))}
+        </div>
+      </section>
+    </>
+  );
 }
 
 function formatAddressLine(address) {
@@ -64,15 +157,20 @@ export default function EditShipmentOrder({ params }) {
     ? splitProductSpec(units[0].product)
     : { name: '', spec: null };
   const sharedVariants = sameProduct ? getVariants(baseName) : null;
+  const sharedInitialSelection = sharedVariants ? selectionFromSpec(sharedVariants, sharedCurrentSpec) : {};
 
   // Every hook this component uses is declared here, before any conditional
   // return below — units may be empty (shipment not found), so initializers
   // fall back to safe defaults rather than reading off unit[0] directly.
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [sharedQty, setSharedQty] = useState(units[0]?.qty ?? 1);
-  const [sharedSize, setSharedSize] = useState(sizeFromSpec(sharedCurrentSpec));
+  const [sharedSelection, setSharedSelection] = useState(sharedInitialSelection);
   const [lineEdits, setLineEdits] = useState(() =>
-    units.map((u) => ({ qty: u.qty ?? 1, selectedSize: sizeFromSpec(splitProductSpec(u.product).spec) }))
+    units.map((u) => {
+      const { spec } = splitProductSpec(u.product);
+      const variants = getVariants(splitProductSpec(u.product).name);
+      return { qty: u.qty ?? 1, selection: variants ? selectionFromSpec(variants, spec) : {} };
+    })
   );
   const [selectedAddress, setSelectedAddress] = useState('current');
   // Same reasoning as EditOrder's savedSummary — saving shouldn't just dump
@@ -119,32 +217,32 @@ export default function EditShipmentOrder({ params }) {
   // one parallel-to-units array so every downstream calculation only has
   // one shape to deal with regardless of sameProduct.
   const perUnitChanges = sameProduct
-    ? units.map(() => ({ qty: sharedQty, selectedSize: sharedSize }))
+    ? units.map(() => ({ qty: sharedQty, selection: sharedSelection }))
     : lineEdits;
 
   const computed = units.map((unit, i) => {
     const { name, spec: currentSpec } = splitProductSpec(unit.product);
-    const currentSize = sizeFromSpec(currentSpec);
     const variants = getVariants(name);
+    const initialSelection = variants ? selectionFromSpec(variants, currentSpec) : {};
     const initialQty = unit.qty ?? 1;
-    const { qty, selectedSize } = perUnitChanges[i];
+    const { qty, selection } = perUnitChanges[i];
     const oldLinePrice = unit.priceBreakup?.itemPrice ?? unit.amount;
     const unitPrice = oldLinePrice / initialQty;
-    const newUnitPrice = variants ? variants.find((v) => v.label === selectedSize)?.price ?? unitPrice : unitPrice;
+    const newUnitPrice = variants ? priceForSelection(variants, selection, unitPrice) : unitPrice;
     const newLinePrice = newUnitPrice * qty;
     const delta = newLinePrice - oldLinePrice;
     const oldTotal = unit.priceBreakup?.total ?? unit.amount;
     const newTotal = oldTotal + delta;
-    const newProduct = variants ? withSpec(name, specWithSize(currentSpec, selectedSize)) : unit.product;
+    const newProduct = variants ? withSpec(name, specForSelection(variants, selection)) : unit.product;
     return {
       unit,
       name,
       currentSpec,
-      currentSize,
+      initialSelection,
       variants,
       initialQty,
       qty,
-      selectedSize,
+      selection,
       newProduct,
       newLinePrice,
       delta,
@@ -156,7 +254,8 @@ export default function EditShipmentOrder({ params }) {
   const oldShipmentTotal = units.reduce((sum, u) => sum + (u.priceBreakup?.total ?? u.amount), 0);
   const newShipmentTotal = oldShipmentTotal + totalDelta;
   const hasChanges =
-    computed.some((c) => c.qty !== c.initialQty || c.selectedSize !== c.currentSize) || selectedAddress !== 'current';
+    computed.some((c) => c.qty !== c.initialQty || !selectionsEqual(c.selection, c.initialSelection)) ||
+    selectedAddress !== 'current';
 
   function updateLineQty(index, dir) {
     setLineEdits((prev) =>
@@ -164,8 +263,8 @@ export default function EditShipmentOrder({ params }) {
     );
   }
 
-  function updateLineSize(index, size) {
-    setLineEdits((prev) => prev.map((le, i) => (i === index ? { ...le, selectedSize: size } : le)));
+  function updateLineSelection(index, nextSelection) {
+    setLineEdits((prev) => prev.map((le, i) => (i === index ? { ...le, selection: nextSelection } : le)));
   }
 
   const sheetCopy =
@@ -204,14 +303,14 @@ export default function EditShipmentOrder({ params }) {
         product: c.newProduct,
         qtyChanged: c.qty !== c.initialQty,
         newQty: c.qty,
-        sizeChanged: Boolean(c.variants) && c.selectedSize !== c.currentSize,
-        newSize: c.selectedSize,
+        variantChanged: Boolean(c.variants) && !selectionsEqual(c.selection, c.initialSelection),
+        newVariantLabel: c.variants ? specForSelection(c.variants, c.selection) : null,
       };
     });
 
     setConfirmOpen(false);
     setSavedSummary({
-      perUnit: perUnitSummaries.filter((s) => s.qtyChanged || s.sizeChanged),
+      perUnit: perUnitSummaries.filter((s) => s.qtyChanged || s.variantChanged),
       addressChanged: Boolean(newAddress),
       newAddressText: newAddress ? formatAddressLine(newAddress) : null,
     });
@@ -270,8 +369,8 @@ export default function EditShipmentOrder({ params }) {
                   <span>{splitProductSpec(s.product).name}</span>
                   <span>
                     {s.qtyChanged && `Qty: ${s.newQty}`}
-                    {s.qtyChanged && s.sizeChanged && ' · '}
-                    {s.sizeChanged && s.newSize}
+                    {s.qtyChanged && s.variantChanged && ' · '}
+                    {s.variantChanged && s.newVariantLabel}
                   </span>
                 </div>
               ))}
@@ -299,23 +398,7 @@ export default function EditShipmentOrder({ params }) {
 
 
 
-                {sharedVariants && (
-                  <section className="edit-order__section">
-                    <p className="edit-order__section-heading">Size</p>
-                    <div className="edit-order__chip-row">
-                      {sharedVariants.map((v) => (
-                        <button
-                          key={v.label}
-                          className={`edit-order__chip${sharedSize === v.label ? ' edit-order__chip--selected' : ''}`}
-                          onClick={() => setSharedSize(v.label)}
-                        >
-                          {v.label}
-                          <span className="edit-order__chip-price">{formatRupees(v.price)}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </section>
-                )}
+                <VariantChips variants={sharedVariants} selection={sharedSelection} onChange={setSharedSelection} />
               </>
             ) : (
               computed.map((c, i) => (
@@ -328,27 +411,11 @@ export default function EditShipmentOrder({ params }) {
                     </div>
                   </div>
 
-
-
-                  {c.variants && (
-                    <section className="edit-order__section">
-                      <p className="edit-order__section-heading">Size</p>
-                      <div className="edit-order__chip-row">
-                        {c.variants.map((v) => (
-                          <button
-                            key={v.label}
-                            className={`edit-order__chip${
-                              lineEdits[i].selectedSize === v.label ? ' edit-order__chip--selected' : ''
-                            }`}
-                            onClick={() => updateLineSize(i, v.label)}
-                          >
-                            {v.label}
-                            <span className="edit-order__chip-price">{formatRupees(v.price)}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </section>
-                  )}
+                  <VariantChips
+                    variants={c.variants}
+                    selection={lineEdits[i].selection}
+                    onChange={(next) => updateLineSelection(i, next)}
+                  />
                 </div>
               ))
             )}
@@ -359,7 +426,13 @@ export default function EditShipmentOrder({ params }) {
                 className={`edit-order__address-card${selectedAddress === 'current' ? ' edit-order__address-card--selected' : ''}`}
                 onClick={() => setSelectedAddress('current')}
               >
-                <span className="edit-order__address-badge">Current</span>
+                <input
+                  className="edit-order__address-radio"
+                  type="radio"
+                  readOnly
+                  tabIndex={-1}
+                  checked={selectedAddress === 'current'}
+                />
                 <span className="edit-order__address-text">{units[0].address}</span>
               </button>
               {ADDRESSES.map((a) => (
@@ -368,11 +441,18 @@ export default function EditShipmentOrder({ params }) {
                   className={`edit-order__address-card${selectedAddress === a.id ? ' edit-order__address-card--selected' : ''}`}
                   onClick={() => setSelectedAddress(a.id)}
                 >
+                  <input
+                    className="edit-order__address-radio"
+                    type="radio"
+                    readOnly
+                    tabIndex={-1}
+                    checked={selectedAddress === a.id}
+                  />
                   <span className="edit-order__address-badge">{a.label}</span>
                   <span className="edit-order__address-text">{formatAddressLine(a)}</span>
                 </button>
               ))}
-              <button className="edit-order__add-address" onClick={() => navigate('addAddress')}>
+              <button className="edit-order__add-address" onClick={() => navigate('addAddress', { forOrder: true })}>
                 + Add New Address
               </button>
             </section>
