@@ -100,16 +100,19 @@ export function getVariants(productName) {
 // A variant selection's own natural first-load state, derived from the
 // product's current spec string — "Queen / 8 inch / 60x78 in" for a
 // mattress, "Black" for a chair, "Royal Blue / 3 Seater" for a sofa. Custom
-// mattress sizes carry their own free-text dimensions instead of a catalog
-// Size, so those come back as `size: 'Custom'` with `customDimensions` set.
+// mattress sizes store their own Length x Breadth instead of a catalog Size,
+// parsed back out of the dimensions segment (e.g. "70x74 in") so re-opening
+// Edit Order on a custom-size mattress starts with those fields pre-filled.
 export function selectionFromSpec(variants, spec) {
   const parts = spec ? spec.split(' / ') : [];
   if (!variants) return {};
   if (variants.type === 'mattress') {
-    const knownSize = variants.sizes.some((s) => s.label === parts[0]);
+    const isCustom = parts[0] !== '' && !variants.sizes.some((s) => s.label === parts[0]);
+    const dimsMatch = isCustom ? parts[2]?.match(/(\d+)\s*x\s*(\d+)/i) : null;
     return {
-      size: knownSize ? parts[0] : 'Custom',
-      customDimensions: knownSize ? '' : parts[0] ?? '',
+      size: isCustom ? 'Custom' : parts[0],
+      customLength: dimsMatch ? dimsMatch[1] : '',
+      customBreadth: dimsMatch ? dimsMatch[2] : '',
       height: parts[1]?.replace(' inch', ' in') ?? variants.heights[0]?.label,
     };
   }
@@ -124,13 +127,19 @@ export function selectionFromSpec(variants, spec) {
 
 // The inverse of selectionFromSpec — turns a selection back into the spec
 // string convention every product/order/line-item already uses elsewhere in
-// this app, so saving a variant change round-trips cleanly through
-// splitProductSpec.
+// this app ("Size / Height inch / WxH in"), so saving a variant change
+// round-trips cleanly through splitProductSpec.
 export function specForSelection(variants, selection) {
   if (variants.type === 'mattress') {
-    const size = selection.size === 'Custom' ? selection.customDimensions || 'Custom' : selection.size;
-    const dimensions = selection.size === 'Custom' ? 'Dimensions on request' : MATTRESS_DIMENSIONS[selection.size];
-    return `${size} / ${selection.height} / ${dimensions}`;
+    const height = selection.height?.replace(' in', ' inch') ?? '';
+    if (selection.size === 'Custom') {
+      const dimensions =
+        selection.customLength && selection.customBreadth
+          ? `${selection.customLength}x${selection.customBreadth} in`
+          : 'Dimensions on request';
+      return `Custom / ${height} / ${dimensions}`;
+    }
+    return `${selection.size} / ${height} / ${MATTRESS_DIMENSIONS[selection.size]}`;
   }
   if (variants.type === 'chair') {
     return selection.color;

@@ -409,6 +409,14 @@ export const ORDERS = [
     ],
     amount: 22999,
     address: DEMO_ADDRESS,
+    // Billed to a registered business rather than the delivery address —
+    // the one demo order that actually exercises the billing/GST fields
+    // Add Address captures during Edit Order, so Delivery Details has a
+    // real Billing details card to render instead of that section always
+    // being empty.
+    billingAddress: 'Tower B, Cyber Hub, DLF Phase 2, Gurugram, Haryana 122002',
+    gstin: '06AAECS1234F1Z5',
+    businessName: 'Birla Design Studio',
     payment: { method: 'UPI', status: 'Paid' },
     priceBreakup: { itemPrice: 22999, shipping: 0, discount: 0, tax: 0, total: 22999 },
     timeline: {

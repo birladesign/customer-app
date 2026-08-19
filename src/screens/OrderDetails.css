@@ -877,6 +877,12 @@
   color: var(--color-text-muted);
 }
 
+.order-details__delivery-gstin {
+  margin: 0;
+  font-size: var(--text-caption-size);
+  color: var(--color-text-muted);
+}
+
 
 .order-details__warranty-row {
   width: 100%;

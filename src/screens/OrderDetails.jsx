@@ -970,11 +970,8 @@ export default function OrderDetails({ params }) {
             </div>
 
             {/* Billing only earns its own card when it's actually different
-                from where the order ships — no order in this dataset carries
-                a separate billingAddress yet, so today this never renders,
-                but the split is here so a genuinely different billing
-                address (see Add New Address's own Billing Address section)
-                doesn't just silently vanish once one exists. */}
+                from where the order ships — set via Add New Address's own
+                Billing Address section during Edit Order. */}
             {order.billingAddress && order.billingAddress !== order.address && (
               <>
                 <p className="order-details__delivery-heading">Billing details</p>
@@ -983,11 +980,17 @@ export default function OrderDetails({ params }) {
                     <UserIcon className="order-details__delivery-icon" width="18" height="18" />
                     <div className="order-details__delivery-text">
                       <p className="order-details__delivery-name">
-                        {CURRENT_USER.firstName} {CURRENT_USER.lastName}
+                        {order.businessName || `${CURRENT_USER.firstName} ${CURRENT_USER.lastName}`}
                       </p>
                       <p className="order-details__delivery-address">{order.billingAddress}</p>
                     </div>
                   </div>
+                  {order.gstin && (
+                    <>
+                      <div className="order-details__delivery-divider" />
+                      <p className="order-details__delivery-gstin">GSTIN: {order.gstin}</p>
+                    </>
+                  )}
                 </div>
               </>
             )}

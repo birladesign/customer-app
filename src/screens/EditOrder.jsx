@@ -28,6 +28,10 @@ function formatAddressLine(address) {
   return `${address.lines.join(', ')}`;
 }
 
+function formatBillingLine(address) {
+  return address.billingLines ? address.billingLines.join(', ') : null;
+}
+
 const QTY_MIN = 1;
 const QTY_MAX = 5;
 
@@ -146,7 +150,12 @@ export default function EditOrder({ params }) {
       });
     }
 
-    if (newAddress) order.address = formatAddressLine(newAddress);
+    if (newAddress) {
+      order.address = formatAddressLine(newAddress);
+      order.billingAddress = formatBillingLine(newAddress);
+      order.gstin = newAddress.gstin ?? null;
+      order.businessName = newAddress.businessName ?? null;
+    }
 
     setConfirmOpen(false);
     setSavedSummary({
@@ -259,13 +268,28 @@ export default function EditOrder({ params }) {
                     </button>
                   </div>
                   {selection.size === 'Custom' && (
-                    <input
-                      className="edit-order__custom-input"
-                      type="text"
-                      placeholder="Enter dimensions, e.g. 70x74 in"
-                      value={selection.customDimensions ?? ''}
-                      onChange={(e) => setSelection((s) => ({ ...s, customDimensions: e.target.value }))}
-                    />
+                    <div className="edit-order__custom-dims-row">
+                      <input
+                        className="edit-order__custom-input"
+                        type="text"
+                        inputMode="numeric"
+                        placeholder="Length (in)"
+                        value={selection.customLength ?? ''}
+                        onChange={(e) =>
+                          setSelection((s) => ({ ...s, customLength: e.target.value.replace(/\D/g, '') }))
+                        }
+                      />
+                      <input
+                        className="edit-order__custom-input"
+                        type="text"
+                        inputMode="numeric"
+                        placeholder="Breadth (in)"
+                        value={selection.customBreadth ?? ''}
+                        onChange={(e) =>
+                          setSelection((s) => ({ ...s, customBreadth: e.target.value.replace(/\D/g, '') }))
+                        }
+                      />
+                    </div>
                   )}
                 </section>
 

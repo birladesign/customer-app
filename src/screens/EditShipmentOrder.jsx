@@ -50,13 +50,24 @@ function VariantChips({ variants, selection, onChange }) {
             </button>
           </div>
           {selection.size === 'Custom' && (
-            <input
-              className="edit-order__custom-input"
-              type="text"
-              placeholder="Enter dimensions, e.g. 70x74 in"
-              value={selection.customDimensions ?? ''}
-              onChange={(e) => onChange({ ...selection, customDimensions: e.target.value })}
-            />
+            <div className="edit-order__custom-dims-row">
+              <input
+                className="edit-order__custom-input"
+                type="text"
+                inputMode="numeric"
+                placeholder="Length (in)"
+                value={selection.customLength ?? ''}
+                onChange={(e) => onChange({ ...selection, customLength: e.target.value.replace(/\D/g, '') })}
+              />
+              <input
+                className="edit-order__custom-input"
+                type="text"
+                inputMode="numeric"
+                placeholder="Breadth (in)"
+                value={selection.customBreadth ?? ''}
+                onChange={(e) => onChange({ ...selection, customBreadth: e.target.value.replace(/\D/g, '') })}
+              />
+            </div>
           )}
         </section>
         <section className="edit-order__section">
@@ -130,6 +141,10 @@ function VariantChips({ variants, selection, onChange }) {
 
 function formatAddressLine(address) {
   return `${address.lines.join(', ')}`;
+}
+
+function formatBillingLine(address) {
+  return address.billingLines ? address.billingLines.join(', ') : null;
 }
 
 const QTY_MIN = 1;
@@ -297,7 +312,12 @@ export default function EditShipmentOrder({ params }) {
         amount: c.newTotal,
         priceBreakup: { ...c.unit.priceBreakup, itemPrice: c.newLinePrice, total: c.newTotal },
       });
-      if (newAddress) c.unit.address = formatAddressLine(newAddress);
+      if (newAddress) {
+        c.unit.address = formatAddressLine(newAddress);
+        c.unit.billingAddress = formatBillingLine(newAddress);
+        c.unit.gstin = newAddress.gstin ?? null;
+        c.unit.businessName = newAddress.businessName ?? null;
+      }
       return {
         orderId: c.unit.id,
         product: c.newProduct,
