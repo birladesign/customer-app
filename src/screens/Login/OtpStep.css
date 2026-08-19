@@ -1,22 +1,42 @@
 .otp-step {
   height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-navy-900);
+  position: relative;
   overflow-y: auto;
-  background: var(--color-bg-app);
+}
+
+.otp-step__hero {
+  flex-shrink: 0;
+  width: 100%;
+  height: 240px;
+  position: relative;
+  overflow: hidden;
+}
+
+.otp-step__hero-image {
+  width: 100%;
+  height: 100%;
+  background-image: url('../../assets/login-hero.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.otp-step__sheet {
+  flex: 1;
+  background: var(--color-bg-primary);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   display: flex;
   flex-direction: column;
 }
 
 .otp-step__topbar {
-  position: sticky;
-  top: 0;
-  z-index: 10;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: var(--space-3) var(--space-4);
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
 }
 
 .otp-step__icon-btn {
@@ -80,6 +100,25 @@
   margin: 0;
   font-size: var(--text-product-size);
   color: var(--color-text-muted);
+}
+
+.otp-step__edit-phone {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: var(--space-2);
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: rgba(26, 43, 88, 0.06);
+  border-radius: var(--radius-full);
+  color: var(--color-navy-900);
+  vertical-align: middle;
+  transition: transform 0.1s ease-out;
+}
+
+.otp-step__edit-phone:active {
+  transform: scale(0.9);
 }
 
 .otp-step__boxes {
