@@ -2,18 +2,9 @@ import { useState } from 'react';
 import { splitProductSpec, getOrderStatus, getExpectedDelivery, getDeliveredDate, resumeOrder } from '../data/orders.js';
 import { getOpenCaseForOrder } from '../data/support.js';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
-import {
-  CopyIcon,
-  CheckIcon,
-  ChevronRightIcon,
-  WalletIcon,
-  CheckCircleIcon,
-  CalendarIcon,
-  MoreIcon,
-  MapPinIcon,
-  HelpCircleIcon,
-} from './icons.jsx';
+import { CopyIcon, CheckIcon, ChevronRightIcon, WalletIcon, CheckCircleIcon, CalendarIcon } from './icons.jsx';
 import StarRating from './StarRating.jsx';
+import CardMoreMenu from './CardMoreMenu.jsx';
 import './OrderCard.css';
 
 const DOT_COLOR = {
@@ -97,33 +88,16 @@ export default function OrderCard({ order }) {
   // are local state, so this just needs to force one more render to pick up
   // the fresh values.
   const [, forceUpdate] = useState(0);
-  // Quick actions that don't fit as a permanent button row — kept behind a
-  // kebab menu instead of adding a third/fourth always-visible action button
-  // per card.
-  const [moreOpen, setMoreOpen] = useState(false);
-
-  function openMoreMenu(e) {
-    e.stopPropagation();
-    setMoreOpen((v) => !v);
-  }
-
-  function closeMoreMenu(e) {
-    e.stopPropagation();
-    setMoreOpen(false);
-  }
 
   function handleEditAddress() {
-    setMoreOpen(false);
     navigate('editOrder', order.items ? { orderId: order.id, sku: order.items[0].sku } : { orderId: order.id });
   }
 
   function handleRescheduleDelivery() {
-    setMoreOpen(false);
     navigate('deliverySchedule', { orderId: order.id, reschedule: true });
   }
 
   function handleMoreHelp() {
-    setMoreOpen(false);
     switchTab('support', { openChat: true, orderId: order.id });
   }
 
@@ -184,28 +158,11 @@ export default function OrderCard({ order }) {
           <CopyOrderId id={order.id} />
           <span className="order-card__header-right">
             <span className="order-card__date">{order.date}</span>
-            <button className="order-card__more-btn" onClick={openMoreMenu} aria-label="More actions">
-              <MoreIcon className="order-card__more-icon" width="16" height="16" />
-            </button>
-            {moreOpen && (
-              <>
-                <span className="order-card__more-scrim" onClick={closeMoreMenu} />
-                <div className="order-card__more-menu" onClick={(e) => e.stopPropagation()}>
-                  <button className="order-card__more-item" onClick={handleEditAddress}>
-                    <MapPinIcon width="15" height="15" />
-                    <span>Edit Address</span>
-                  </button>
-                  <button className="order-card__more-item" onClick={handleRescheduleDelivery}>
-                    <CalendarIcon width="15" height="15" />
-                    <span>Reschedule Delivery</span>
-                  </button>
-                  <button className="order-card__more-item" onClick={handleMoreHelp}>
-                    <HelpCircleIcon width="15" height="15" />
-                    <span>Need Help</span>
-                  </button>
-                </div>
-              </>
-            )}
+            <CardMoreMenu
+              onEditAddress={handleEditAddress}
+              onReschedule={handleRescheduleDelivery}
+              onNeedHelp={handleMoreHelp}
+            />
           </span>
         </div>
 

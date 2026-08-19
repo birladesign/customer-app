@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { splitProductSpec, getExpectedDelivery } from '../data/orders.js';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
 import { CopyIcon, CheckIcon, ChevronRightIcon, CalendarIcon } from './icons.jsx';
+import CardMoreMenu from './CardMoreMenu.jsx';
 import './OrderCard.css';
 import './MultiShipmentOrderCard.css';
 
@@ -43,7 +44,7 @@ function CopyId({ id, label }) {
 // (item.shipmentGroupId/-Label) shown right on the list instead of only
 // after opening the order, so a split shipment is obvious at a glance.
 export default function MultiShipmentOrderCard({ order }) {
-  const { navigate } = useNavigation();
+  const { navigate, switchTab } = useNavigation();
   const shipmentGroups = Object.values(
     order.items.reduce((acc, item) => {
       (acc[item.shipmentGroupId] ??= { id: item.shipmentGroupId, label: item.shipmentGroupLabel, items: [] }).items.push(
@@ -53,12 +54,31 @@ export default function MultiShipmentOrderCard({ order }) {
     }, {})
   );
 
+  function handleEditAddress() {
+    navigate('editOrder', { orderId: order.id, sku: order.items[0].sku });
+  }
+
+  function handleRescheduleDelivery() {
+    navigate('deliverySchedule', { orderId: order.id, reschedule: true });
+  }
+
+  function handleNeedHelp() {
+    switchTab('support', { openChat: true, orderId: order.id });
+  }
+
   return (
     <article className="order-card multi-shipment-order-card">
       <div className="order-card__body">
         <div className="order-card__header">
           <CopyId id={order.id} label="order number" />
-          <span className="order-card__date">{order.date}</span>
+          <span className="order-card__header-right">
+            <span className="order-card__date">{order.date}</span>
+            <CardMoreMenu
+              onEditAddress={handleEditAddress}
+              onReschedule={handleRescheduleDelivery}
+              onNeedHelp={handleNeedHelp}
+            />
+          </span>
         </div>
         <p className="multi-shipment-order-card__count">
           {shipmentGroups.length} Shipments
