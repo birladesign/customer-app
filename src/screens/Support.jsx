@@ -49,12 +49,17 @@ const LANE_ICON = {
 function initialChatConfig(params) {
   if (params.resumeCaseId) {
     const resumeCase = USER_CASES.find((c) => c.id === params.resumeCaseId) ?? null;
-    if (resumeCase) return { escalate: resumeCase.escalated, presetOrder: null, staleOrderId: null, resumeCase };
+    if (resumeCase) return { escalate: resumeCase.escalated, presetOrder: null, presetShipment: null, staleOrderId: null, resumeCase };
   }
   if (!params.openChat) return null;
   const presetOrder = params.orderId ? ORDERS.find((o) => o.id === params.orderId) : null;
+  // A shipment card's own "Need Help" hands over every sibling order in the
+  // shipment (order.shipmentId) rather than one — the chat then shows the
+  // whole shipment up front and lets the customer pick which product it's
+  // actually about, instead of assuming the first unit.
+  const presetShipment = params.shipmentId ? ORDERS.filter((o) => o.shipmentId === params.shipmentId) : null;
   const staleOrderId = params.orderId && !presetOrder ? params.orderId : null;
-  return { escalate: Boolean(params.escalate), presetOrder, staleOrderId, resumeCase: null };
+  return { escalate: Boolean(params.escalate), presetOrder, presetShipment, staleOrderId, resumeCase: null };
 }
 
 function formatConversationDate(iso) {
@@ -88,6 +93,23 @@ function ChatOrderSummary({ order }) {
       <div className="support__chat-order-summary-details">
         <p className="support__chat-order-summary-name">{name}</p>
         <p className="support__chat-order-summary-id">{order.shipmentId ?? order.id}</p>
+      </div>
+    </div>
+  );
+}
+
+// Same pinned-header treatment as ChatOrderSummary, for the window between
+// opening chat on a whole shipment and the customer actually picking which
+// product it's about — shows the shipment as a group rather than guessing
+// at one representative order.
+function ChatShipmentSummary({ orders }) {
+  const [first] = orders;
+  return (
+    <div className="support__chat-order-summary">
+      <img className="support__chat-order-summary-image" src={first.image} alt="" />
+      <div className="support__chat-order-summary-details">
+        <p className="support__chat-order-summary-name">{orders.length} Items</p>
+        <p className="support__chat-order-summary-id">{first.shipmentId}</p>
       </div>
     </div>
   );
@@ -182,6 +204,8 @@ export default function Support({ params = {} }) {
           </button>
           {chatOrder ? (
             <ChatOrderSummary order={chatOrder} />
+          ) : chatConfig.presetShipment?.length > 1 ? (
+            <ChatShipmentSummary orders={chatConfig.presetShipment} />
           ) : (
             chatOrderId && <span className="support__chat-order-id">Order ID: {chatOrderId}</span>
           )}
@@ -189,6 +213,7 @@ export default function Support({ params = {} }) {
         <SupportChat
           escalate={chatConfig.escalate}
           presetOrder={chatConfig.presetOrder}
+          presetShipment={chatConfig.presetShipment}
           staleOrderId={chatConfig.staleOrderId}
           resumeCase={chatConfig.resumeCase}
           intro={chatConfig.intro}

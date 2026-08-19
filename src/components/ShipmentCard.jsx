@@ -91,7 +91,7 @@ function SameProductShipmentCard({ orders, first }) {
   }
 
   function handleNeedHelp() {
-    switchTab('support', { openChat: true, orderId: first.id });
+    switchTab('support', { openChat: true, shipmentId: first.shipmentId });
   }
 
   return (
@@ -188,7 +188,7 @@ function MultiProductShipmentCard({ orders, first }) {
   }
 
   function handleNeedHelp() {
-    switchTab('support', { openChat: true, orderId: first.id });
+    switchTab('support', { openChat: true, shipmentId: first.shipmentId });
   }
 
   return (
