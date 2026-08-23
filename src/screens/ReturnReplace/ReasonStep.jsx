@@ -1,15 +1,16 @@
-import { RETURN_REASONS } from '../../data/remediation.js';
+import { getReturnReasons } from '../../data/remediation.js';
 import './ReasonStep.css';
 
-export default function ReasonStep({ selected, onSelect, onContinue }) {
+export default function ReasonStep({ order, selected, onSelect, onContinue }) {
+  const reasons = getReturnReasons(order);
   return (
     <div className="reason-step">
       <p className="reason-step__prompt">Choose the reason closest to what happened. This helps us route it correctly.</p>
       {/* One grouped list with a radio indicator per row, not a separate
-          card per option — these are five answers to one question, not
-          five independent choices competing for attention. */}
+          card per option — these are answers to one question, not
+          independent choices competing for attention. */}
       <div className="reason-step__list" role="radiogroup">
-        {RETURN_REASONS.map((reason) => (
+        {reasons.map((reason) => (
           <button
             key={reason}
             className={`reason-step__option${selected === reason ? ' reason-step__option--selected' : ''}`}

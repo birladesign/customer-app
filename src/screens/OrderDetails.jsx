@@ -9,7 +9,7 @@ import {
   getDeliveredDate,
   parseOrderDate,
 } from '../data/orders.js';
-import { getOrderIntents, getEditEligibility, getShipmentEditEligibility, getItemIntents, isPostDispatch } from '../data/intents.js';
+import { getOrderIntents, getEditEligibility, getShipmentEditEligibility, getItemIntents, isPostDispatch, hasReachedStep } from '../data/intents.js';
 import { getOpenCaseForOrder } from '../data/support.js';
 import { CURRENT_USER } from '../data/profile.js';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
@@ -105,7 +105,16 @@ export default function OrderDetails({ params }) {
   // and only reach the final irreversible confirm after declining that.
   // cancelStep drives the reason/alternative sheet; confirmingCancel is the
   // separate, final ConfirmSheet reached only after "No, Cancel My Order."
-  const [cancelStep, setCancelStep] = useState(null); // null | 'reason' | 'alternative' | 'delayed'
+  // Arriving from a card's Cancel CTA (params.openCancel) jumps straight into
+  // the reason picker instead of requiring a second tap through the help
+  // sheet — but only when cancelling is actually still allowed for this
+  // order, same eligibility getOrderIntents would compute.
+  const [cancelStep, setCancelStep] = useState(() => {
+    if (!params.openCancel) return null;
+    const target = ORDERS.find((o) => o.id === params.orderId);
+    if (!target || target.section === 'closed' || hasReachedStep(target, 'Delivered')) return null;
+    return 'reason';
+  }); // null | 'reason' | 'alternative' | 'delayed'
   const [cancelReason, setCancelReason] = useState(null);
   const [confirmingCancel, setConfirmingCancel] = useState(false);
   // The honest "not guaranteed" RTO-intercept warning (PRD CX-04) — its own

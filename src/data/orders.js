@@ -73,6 +73,13 @@ export function getDeliveredDate(entity) {
   return step ? step.timestamp.split(',')[0] : null;
 }
 
+// TAT (turnaround time) is authored per-order (order.tat) rather than
+// derived, same reasoning as `actions` — it's a promise the server contract
+// would hand down, not something the UI should compute from a status string.
+export function getOrderTat(order) {
+  return order.tat ?? null;
+}
+
 // Reverses OrderDetails' handlePutOnHold — restores whatever the order
 // looked like right before it was paused, using the snapshot that flow
 // leaves behind, and drops the "On Hold" step it pushed onto the timeline.
@@ -181,6 +188,7 @@ export const ORDERS = [
     date: '15 Jul 2026',
     image: imgBedElev8Adjustable,
     status: { dot: 'red', label: 'Damaged — Reported' },
+    tat: '24 hrs TAT',
     product: 'Elev8 Smart Adjustable Bed Frame (Queen / Grey)',
     caption: 'Reported on 14 Jul 2026 · Investigation in progress',
     actions: [{ label: 'Track Investigation', variant: 'secondary' }],
@@ -398,6 +406,7 @@ export const ORDERS = [
     date: '10 Aug 2026',
     image: imgBedElev8Adjustable,
     status: { dot: 'blue', label: 'Installation Scheduled' },
+    tat: '48 hrs TAT',
     product: 'Elev8 Smart Adjustable Bed Frame (Queen / Grey)',
     caption: 'Technician visit: 12 Aug 2026, 10 AM – 12 PM',
     installationStatus: 'confirmed',
