@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { splitProductSpec } from '../../data/orders.js';
+import { getEvidenceRequirement } from '../../data/remediation.js';
 import PhotoUploadTile from '../../components/PhotoUploadTile.jsx';
 import './EvidenceStep.css';
 
@@ -10,6 +11,10 @@ function formatRupees(amount) {
 export default function EvidenceStep({ order, reason, price, savings, photo, onPhotoChange, onChangeReason, onContinue }) {
   const [note, setNote] = useState('');
   const { name, spec } = splitProductSpec(order.product);
+  // §7.10: a photo is the basis of some verdicts and irrelevant to others.
+  // Only the ones it actually decides block the step.
+  const evidence = getEvidenceRequirement(order, reason);
+  const blocked = evidence.level === 'required' && !photo;
 
   return (
     <div className="evidence-step">
@@ -33,14 +38,15 @@ export default function EvidenceStep({ order, reason, price, savings, photo, onP
         </button>
       </div>
 
-      <p className="evidence-step__prompt">
-        A quick photo of <strong>{name}</strong> helps us confirm the issue faster.
-      </p>
-
-      <PhotoUploadTile onChange={onPhotoChange} />
+      {evidence.level !== 'none' && (
+        <>
+          <p className="evidence-step__prompt">{evidence.prompt}</p>
+          <PhotoUploadTile onChange={onPhotoChange} />
+        </>
+      )}
 
       <label className="evidence-step__note-label" htmlFor="evidence-note">
-        Anything else we should know? (optional)
+        {evidence.level === 'none' ? 'Tell us what happened' : 'Anything else we should know? (optional)'}
       </label>
       <textarea
         id="evidence-note"
@@ -51,10 +57,10 @@ export default function EvidenceStep({ order, reason, price, savings, photo, onP
         onChange={(e) => setNote(e.target.value)}
       />
 
-      <button className="evidence-step__continue" disabled={!photo} onClick={onContinue}>
+      <button className="evidence-step__continue" disabled={blocked} onClick={onContinue}>
         Continue
       </button>
-      {!photo && <p className="evidence-step__hint">A photo is required to proceed.</p>}
+      {blocked && <p className="evidence-step__hint">A photo is required for this kind of claim.</p>}
     </div>
   );
 }

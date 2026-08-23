@@ -15,6 +15,46 @@ export function isMattressProduct(productName) {
   return /mattress/i.test(productName);
 }
 
+// Soft goods that ship without a reverse pickup and never need photographic
+// evidence (§7.9 accessories invariants) — distinct from the furniture that
+// makes up the rest of the non-mattress catalogue.
+export function isAccessoryProduct(productName) {
+  return /pillow|protector|topper|cover|sheet/i.test(productName ?? '');
+}
+
+// The PRD's evidence matrix (§7.10) as a lookup rather than a hardcoded
+// "always required" on the screen. Photographs prove damage; they can't
+// prove discomfort, and asking for one anyway is how a flow strands
+// somebody who has nothing to point a camera at.
+const SAGGING_REASONS = new Set(['Sagging or bump', 'Mattress Damage', 'Packaging Damage']);
+
+export function getEvidenceRequirement(order, reason) {
+  const product = order?.product ?? '';
+
+  if (isAccessoryProduct(product)) {
+    return { level: 'none', prompt: null };
+  }
+
+  if (isMattressProduct(product)) {
+    // Warranty sagging claims are the one mattress case where an image is
+    // the whole basis of the verdict (M6).
+    if (reason === 'Sagging or bump') {
+      return { level: 'required', prompt: 'A photo showing the dip is what the warranty assessment is based on, so we do need one here.' };
+    }
+    if (SAGGING_REASONS.has(reason)) {
+      return { level: 'optional', prompt: 'A photo helps us confirm the damage faster, but you can carry on without one.' };
+    }
+    return { level: 'optional', prompt: 'If there’s something visible, a photo helps — but it’s not needed to continue.' };
+  }
+
+  // Non-mattress comfort complaints have nothing to photograph either.
+  if (reason === 'Discomfort / Not as expected') {
+    return { level: 'optional', prompt: 'Add a photo if it helps explain — otherwise just tell us below.' };
+  }
+
+  return { level: 'required', prompt: 'A photo of the problem is required for furniture claims — it’s what the assessment runs on.' };
+}
+
 const MATTRESS_REASONS = ['Mattress Damage', 'Packaging Damage', 'Defective / Not working', 'Wrong size or model', 'Missing parts', 'Discomfort / Not as expected'];
 const NON_MATTRESS_REASONS = ['Damaged', 'Defective / Not working', 'Wrong size or model', 'Missing parts'];
 
