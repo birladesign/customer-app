@@ -149,7 +149,7 @@ function ChatMessage({ msg }) {
 // hide the input while you're picking an option), a resumable/persisted
 // ticket (see resumeCase + updateCaseMessages), and a guard against off-topic
 // input derailing whatever the bot is currently waiting on an answer to.
-export default function SupportChat({ escalate, presetOrder, presetShipment, staleOrderId, resumeCase, intro, onClose, onOrderSelected }) {
+export default function SupportChat({ escalate, presetOrder, presetShipment, presetLaneKey, staleOrderId, resumeCase, intro, onClose, onOrderSelected }) {
   const { navigate } = useNavigation();
   // A shipment of exactly one order is just a preset order that arrived via
   // a different prop; only a genuine multi-order shipment needs its own
@@ -213,6 +213,14 @@ export default function SupportChat({ escalate, presetOrder, presetShipment, sta
     }
     if (multiShipmentOrders) {
       pushBot({ text: `This is about shipment ${multiShipmentOrders[0].shipmentId} (${multiShipmentOrders.length} items).` });
+    }
+    // Arriving from a topic tapped on the order itself: both the order and
+    // the lane are already known, so open on that lane's intents rather
+    // than asking two questions whose answers we're holding.
+    const presetLane = presetLaneKey ? JOURNEY_LANES.find((l) => l.key === presetLaneKey) : null;
+    if (presetLane && effectivePresetOrder) {
+      handleSelectLane(presetLane);
+      return;
     }
     pushBot({
       text: intro ?? (escalate ? "We'll connect you with a specialist. First, what's this about?" : 'Hi! What can we help with?'),

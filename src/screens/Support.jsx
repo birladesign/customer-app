@@ -59,7 +59,17 @@ function initialChatConfig(params) {
   // actually about, instead of assuming the first unit.
   const presetShipment = params.shipmentId ? ORDERS.filter((o) => o.shipmentId === params.shipmentId) : null;
   const staleOrderId = params.orderId && !presetOrder ? params.orderId : null;
-  return { escalate: Boolean(params.escalate), presetOrder, presetShipment, staleOrderId, resumeCase: null };
+  return {
+    escalate: Boolean(params.escalate),
+    presetOrder,
+    presetShipment,
+    staleOrderId,
+    resumeCase: null,
+    // Set when the customer picked a topic on the order itself — the chat
+    // then opens straight onto that lane's intents instead of re-asking
+    // something they've already answered.
+    presetLaneKey: params.laneKey ?? null,
+  };
 }
 
 function formatConversationDate(iso) {
@@ -214,6 +224,7 @@ export default function Support({ params = {} }) {
           escalate={chatConfig.escalate}
           presetOrder={chatConfig.presetOrder}
           presetShipment={chatConfig.presetShipment}
+          presetLaneKey={chatConfig.presetLaneKey}
           staleOrderId={chatConfig.staleOrderId}
           resumeCase={chatConfig.resumeCase}
           intro={chatConfig.intro}

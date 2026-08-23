@@ -637,6 +637,18 @@ export function getIntentsFor(laneKey, ctx) {
   return lane.intents.filter((intent) => !intent.when || intent.when(ctx));
 }
 
+// Lanes worth showing for one specific order — the ones that actually have
+// something to offer it. Order Details already knows which order it is, so
+// it can skip the "which order?" step and open straight onto a lane's
+// intents; a lane with nothing applicable is left out rather than opening
+// onto an empty list.
+export function getAvailableLanes(ctx) {
+  return JOURNEY_LANES.filter((lane) => {
+    if (lane.redirectsTo) return ctx.isDelivered;
+    return getIntentsFor(lane.key, ctx).length > 0;
+  });
+}
+
 export function getChildIntents(intent, ctx) {
   if (!intent.children) return [];
   return intent.children.filter((child) => !child.when || child.when(ctx));
