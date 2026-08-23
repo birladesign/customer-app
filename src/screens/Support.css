@@ -50,22 +50,20 @@
   color: var(--color-text-muted);
 }
 
-/* Pinned directly under the chat topbar, above SupportChat's own scrolling
-   transcript — stays on screen for the whole conversation instead of
-   scrolling away like a regular message bubble. */
+/* Sits inline in the chat topbar, right next to the back button — stays on
+   screen for the whole conversation instead of scrolling away like a
+   regular message bubble. */
 .support__chat-order-summary {
-  flex-shrink: 0;
+  flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
-  border-bottom: 1px solid var(--color-border);
-  background: var(--color-bg-primary);
+  gap: var(--space-2);
 }
 
 .support__chat-order-summary-image {
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   border-radius: var(--radius-md);
   object-fit: cover;
   background: var(--color-bg-app);
@@ -75,15 +73,6 @@
 .support__chat-order-summary-details {
   flex: 1;
   min-width: 0;
-}
-
-.support__chat-order-summary-status {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: var(--text-caption-size);
-  font-weight: 600;
-  color: var(--color-text-primary);
 }
 
 .support__chat-order-summary-name {
@@ -100,13 +89,6 @@
   margin: 0;
   font-size: var(--text-caption-size);
   color: var(--color-text-muted);
-}
-
-.support__chat-order-summary-amount {
-  flex-shrink: 0;
-  font-size: var(--text-product-size);
-  font-weight: 700;
-  color: var(--color-text-primary);
 }
 
 .support__icon-btn {

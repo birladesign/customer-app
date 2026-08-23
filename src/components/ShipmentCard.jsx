@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { splitProductSpec, getShipmentStatus, getExpectedDelivery, getDeliveredDate } from '../data/orders.js';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
 import { CopyIcon, CheckIcon, ChevronRightIcon, CalendarIcon } from './icons.jsx';
+import CardMoreMenu from './CardMoreMenu.jsx';
 import './OrderCard.css';
 import './ShipmentCard.css';
 
@@ -70,21 +71,28 @@ function ShipmentUnitRow({ image, alt, title, meta, status, onClick }) {
 // any other order card — which already lists every sibling unit under "Other
 // Items in This Shipment", so there's no separate expand step to duplicate it.
 function SameProductShipmentCard({ orders, first }) {
-  const { navigate } = useNavigation();
+  const { navigate, switchTab } = useNavigation();
   const { name: productName, spec } = splitProductSpec(first.product);
   // Reads as first.status for every current fixture (identical units share
   // one status by construction), but a flagged unit always wins the header
   // regardless of position — otherwise a non-first unit that diverges after
   // delivery (e.g. one gets flagged damaged) would be masked by unit #1's
-  // own (unflagged) status. Deliberately not getShipmentStatus's full
-  // rollup here — that would rename the common case to "All Items
-  // Delivered" instead of the plainer "Delivered" this header already shows.
   const status = orders.find((o) => o.status.dot === 'red')?.status ?? first.status;
-  // Whether every unit still shares one status — used below to decide if a
-  // unit's own status row would just repeat what the header already says.
-  const allUnitsSameStatus = orders.every((o) => o.status.label === orders[0].status.label);
   const edd = getExpectedDelivery(first);
   const deliveredDate = getDeliveredDate(first);
+  const totalQty = orders.reduce((sum, o) => sum + (o.qty || 1), 0);
+
+  function handleEditAddress() {
+    navigate('editShipmentOrder', { shipmentId: first.shipmentId });
+  }
+
+  function handleRescheduleDelivery() {
+    navigate('deliverySchedule', { orderId: first.id, reschedule: true });
+  }
+
+  function handleNeedHelp() {
+    switchTab('support', { openChat: true, shipmentId: first.shipmentId });
+  }
 
   return (
     <article
@@ -102,32 +110,42 @@ function SameProductShipmentCard({ orders, first }) {
       <div className="order-card__body">
         <div className="order-card__header">
           <CopyShipmentId id={first.shipmentId} />
-          <span className="order-card__date">{first.date}</span>
+          <span className="order-card__header-right">
+            <span className="order-card__date">{first.date}</span>
+            <CardMoreMenu
+              onEditAddress={handleEditAddress}
+              onReschedule={handleRescheduleDelivery}
+              onNeedHelp={handleNeedHelp}
+            />
+          </span>
+        </div>
+
+        <div className="order-card__status-row">
+          <span className="order-card__status-label" style={{ color: DOT_COLOR[status.dot] }}>
+            {status.label}
+          </span>
+          {edd && (
+            <p className="order-card__edd">
+              <CalendarIcon width="12" height="12" />
+              Est. Delivery: {edd}
+            </p>
+          )}
         </div>
 
         <div className="order-card__main">
           <img className="order-card__image" src={first.image} alt={first.product} />
           <div className="order-card__details">
-            <div className="order-card__status-row">
-              <span className="order-card__status-label" style={{ color: DOT_COLOR[status.dot] }}>
-                {status.label}
-              </span>
-            </div>
             <p className="order-card__product">{productName}</p>
-            {spec && (
+            {(totalQty > 0 || spec) && (
               <p className="order-card__variant">
-                <span>{spec}</span>
+                {totalQty > 0 && <span>Qty: {totalQty}</span>}
+                {totalQty > 0 && spec && <span className="order-card__variant-dot" aria-hidden="true" />}
+                {spec && <span>{spec}</span>}
               </p>
             )}
             {status.dot === 'green' && (
               <p className="order-card__caption">
                 All {orders.length} units delivered together on {deliveredDate ?? first.date}
-              </p>
-            )}
-            {edd && (
-              <p className="order-card__edd">
-                <CalendarIcon width="12" height="12" />
-                Est. Delivery: {edd}
               </p>
             )}
           </div>
@@ -145,7 +163,7 @@ function SameProductShipmentCard({ orders, first }) {
 // still opens that unit's own Order Details on tap, same as the same-SKU
 // case above.
 function MultiProductShipmentCard({ orders, first }) {
-  const { navigate } = useNavigation();
+  const { navigate, switchTab } = useNavigation();
   const shipmentStatus = getShipmentStatus(orders);
   // Every unit in one shipment travels and arrives together — one shared
   // delivery day for the whole card, not a different EDD per row.
@@ -161,25 +179,44 @@ function MultiProductShipmentCard({ orders, first }) {
   // unit flagged after delivery) still needs its own row to call it out.
   const allUnitsSameStatus = orders.every((o) => o.status.label === orders[0].status.label);
 
+  function handleEditAddress() {
+    navigate('editShipmentOrder', { shipmentId: first.shipmentId });
+  }
+
+  function handleRescheduleDelivery() {
+    navigate('deliverySchedule', { orderId: first.id, reschedule: true });
+  }
+
+  function handleNeedHelp() {
+    switchTab('support', { openChat: true, shipmentId: first.shipmentId });
+  }
+
   return (
     <article className="order-card shipment-card--multi">
       <div className="order-card__body">
         <div className="order-card__header">
           <CopyShipmentId id={first.shipmentId} />
-          <span className="order-card__date">{first.date}</span>
+          <span className="order-card__header-right">
+            <span className="order-card__date">{first.date}</span>
+            <CardMoreMenu
+              onEditAddress={handleEditAddress}
+              onReschedule={handleRescheduleDelivery}
+              onNeedHelp={handleNeedHelp}
+            />
+          </span>
         </div>
         <div className="order-card__status-row">
           <span className="order-card__status-label" style={{ color: DOT_COLOR[shipmentStatus.dot] }}>
             {shipmentStatus.label}
           </span>
+          {shipmentEdd && (
+            <p className="order-card__edd">
+              <CalendarIcon width="12" height="12" />
+              Est. Delivery: {shipmentEdd}
+            </p>
+          )}
         </div>
         {shipmentDeliveredDate && <p className="order-card__caption">Delivered on {shipmentDeliveredDate}</p>}
-        {shipmentEdd && (
-          <p className="order-card__edd">
-            <CalendarIcon width="12" height="12" />
-            Est. Delivery: {shipmentEdd}
-          </p>
-        )}
       </div>
 
       <div className="shipment-card__units shipment-card__units--products">

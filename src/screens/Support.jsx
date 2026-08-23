@@ -49,12 +49,17 @@ const LANE_ICON = {
 function initialChatConfig(params) {
   if (params.resumeCaseId) {
     const resumeCase = USER_CASES.find((c) => c.id === params.resumeCaseId) ?? null;
-    if (resumeCase) return { escalate: resumeCase.escalated, presetOrder: null, staleOrderId: null, resumeCase };
+    if (resumeCase) return { escalate: resumeCase.escalated, presetOrder: null, presetShipment: null, staleOrderId: null, resumeCase };
   }
   if (!params.openChat) return null;
   const presetOrder = params.orderId ? ORDERS.find((o) => o.id === params.orderId) : null;
+  // A shipment card's own "Need Help" hands over every sibling order in the
+  // shipment (order.shipmentId) rather than one — the chat then shows the
+  // whole shipment up front and lets the customer pick which product it's
+  // actually about, instead of assuming the first unit.
+  const presetShipment = params.shipmentId ? ORDERS.filter((o) => o.shipmentId === params.shipmentId) : null;
   const staleOrderId = params.orderId && !presetOrder ? params.orderId : null;
-  return { escalate: Boolean(params.escalate), presetOrder, staleOrderId, resumeCase: null };
+  return { escalate: Boolean(params.escalate), presetOrder, presetShipment, staleOrderId, resumeCase: null };
 }
 
 function formatConversationDate(iso) {
@@ -74,28 +79,38 @@ function DeliveredDot() {
   return <span className="support__order-help-check" aria-hidden="true" />;
 }
 
-// Pinned under the chat header for the whole conversation — previously the
-// order was only ever named once, in a bot message that scrolled away with
-// the rest of the transcript, so there was nothing to check back against
-// once you'd scrolled a few messages down.
+// Pinned in the chat topbar itself, right next to the back button, for the
+// whole conversation — previously the order was only ever named once, in a
+// bot message that scrolled away with the rest of the transcript, so there
+// was nothing to check back against once you'd scrolled a few messages down.
+// Just enough to identify which order this is: image, name, shipment id —
+// price and status belong to the order itself, not to a support chat about it.
 function ChatOrderSummary({ order }) {
-  const status = getOrderStatus(order);
-  const delivered = /Delivered/.test(status.label);
   const { name } = splitProductSpec(order.product);
-  const price = order.priceBreakup?.total ?? order.amount;
-
   return (
     <div className="support__chat-order-summary">
       <img className="support__chat-order-summary-image" src={order.image} alt="" />
       <div className="support__chat-order-summary-details">
-        <span className="support__chat-order-summary-status">
-          {delivered && <DeliveredDot />}
-          {status.label}
-        </span>
         <p className="support__chat-order-summary-name">{name}</p>
-        <p className="support__chat-order-summary-id">{order.id}</p>
+        <p className="support__chat-order-summary-id">{order.shipmentId ?? order.id}</p>
       </div>
-      {typeof price === 'number' && <span className="support__chat-order-summary-amount">{formatRupees(price)}</span>}
+    </div>
+  );
+}
+
+// Same pinned-header treatment as ChatOrderSummary, for the window between
+// opening chat on a whole shipment and the customer actually picking which
+// product it's about — shows the shipment as a group rather than guessing
+// at one representative order.
+function ChatShipmentSummary({ orders }) {
+  const [first] = orders;
+  return (
+    <div className="support__chat-order-summary">
+      <img className="support__chat-order-summary-image" src={first.image} alt="" />
+      <div className="support__chat-order-summary-details">
+        <p className="support__chat-order-summary-name">{orders.length} Items</p>
+        <p className="support__chat-order-summary-id">{first.shipmentId}</p>
+      </div>
     </div>
   );
 }
@@ -187,12 +202,18 @@ export default function Support({ params = {} }) {
           <button className="support__icon-btn" onClick={closeChat} aria-label="Back">
             <ChevronLeftIcon />
           </button>
-          {chatOrderId && !chatOrder && <span className="support__chat-order-id">Order ID: {chatOrderId}</span>}
+          {chatOrder ? (
+            <ChatOrderSummary order={chatOrder} />
+          ) : chatConfig.presetShipment?.length > 1 ? (
+            <ChatShipmentSummary orders={chatConfig.presetShipment} />
+          ) : (
+            chatOrderId && <span className="support__chat-order-id">Order ID: {chatOrderId}</span>
+          )}
         </header>
-        {chatOrder && <ChatOrderSummary order={chatOrder} />}
         <SupportChat
           escalate={chatConfig.escalate}
           presetOrder={chatConfig.presetOrder}
+          presetShipment={chatConfig.presetShipment}
           staleOrderId={chatConfig.staleOrderId}
           resumeCase={chatConfig.resumeCase}
           intro={chatConfig.intro}

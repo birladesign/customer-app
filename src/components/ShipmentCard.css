@@ -7,7 +7,6 @@
 }
 
 .shipment-card__units {
-  border-top: 1px solid var(--color-border);
 }
 
 .shipment-card__unit-chevron {
@@ -36,7 +35,7 @@
   gap: var(--space-3);
   border: none;
   background: none;
-  padding: var(--space-3) var(--space-4);
+  padding: var(--space-4) var(--space-4);
   font-family: inherit;
   text-align: left;
   transition: background 0.15s var(--ease-standard);
@@ -94,4 +93,12 @@
   .shipment-card__chevron--open {
     transition: none;
   }
+}
+
+.shipment-card--multi .order-card__body {
+  padding-bottom: 0;
+}
+
+.shipment-card--multi .order-card__status-row {
+  margin-bottom: 0;
 }

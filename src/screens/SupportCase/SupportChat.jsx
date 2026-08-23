@@ -135,8 +135,13 @@ function ChatMessage({ msg }) {
 // hide the input while you're picking an option), a resumable/persisted
 // ticket (see resumeCase + updateCaseMessages), and a guard against off-topic
 // input derailing whatever the bot is currently waiting on an answer to.
-export default function SupportChat({ escalate, presetOrder, staleOrderId, resumeCase, intro, onClose, onOrderSelected }) {
+export default function SupportChat({ escalate, presetOrder, presetShipment, staleOrderId, resumeCase, intro, onClose, onOrderSelected }) {
   const { navigate } = useNavigation();
+  // A shipment of exactly one order is just a preset order that arrived via
+  // a different prop; only a genuine multi-order shipment needs its own
+  // "which product?" step before the rest of the flow can proceed.
+  const effectivePresetOrder = presetOrder ?? (presetShipment?.length === 1 ? presetShipment[0] : null);
+  const multiShipmentOrders = !presetOrder && presetShipment?.length > 1 ? presetShipment : null;
   const idRef = useRef(0);
   const seededRef = useRef(false);
   const caseIdRef = useRef(resumeCase?.id ?? null);
@@ -188,6 +193,9 @@ export default function SupportChat({ escalate, presetOrder, staleOrderId, resum
     if (staleOrderId) {
       pushBot({ text: `We couldn't find order ${staleOrderId} — let's start fresh.` });
     }
+    if (multiShipmentOrders) {
+      pushBot({ text: `This is about shipment ${multiShipmentOrders[0].shipmentId} (${multiShipmentOrders.length} items).` });
+    }
     pushBot({
       text: intro ?? (escalate ? "We'll connect you with a specialist. First, what's this about?" : 'Hi! What can we help with?'),
       chips: CASE_LANES.map((l) => ({ key: l.key, label: l.label, onClick: () => handleSelectLane(l) })),
@@ -226,30 +234,56 @@ export default function SupportChat({ escalate, presetOrder, staleOrderId, resum
     setLane(selectedLane);
 
     if (selectedLane.redirectsTo) {
-      if (presetOrder && isReturnEligible(presetOrder)) {
-        if (needsItemStep(selectedLane, presetOrder)) {
-          askForItem(selectedLane, presetOrder);
+      if (effectivePresetOrder && isReturnEligible(effectivePresetOrder)) {
+        if (needsItemStep(selectedLane, effectivePresetOrder)) {
+          askForItem(selectedLane, effectivePresetOrder);
           return;
         }
-        navigate(selectedLane.redirectsTo, { orderId: presetOrder.id });
+        navigate(selectedLane.redirectsTo, { orderId: effectivePresetOrder.id });
         return;
+      }
+      if (multiShipmentOrders) {
+        const eligible = multiShipmentOrders.filter(isReturnEligible);
+        if (eligible.length > 0) {
+          askForShipmentOrder(selectedLane, eligible);
+          return;
+        }
       }
       askForOrder(selectedLane);
       return;
     }
 
-    if (presetOrder) {
-      setOrder(presetOrder);
-      pushBot({ text: `Got it — this is about ${presetOrder.product} (${presetOrder.id}).` });
-      if (needsItemStep(selectedLane, presetOrder)) {
-        askForItem(selectedLane, presetOrder);
+    if (multiShipmentOrders) {
+      askForShipmentOrder(selectedLane, multiShipmentOrders);
+      return;
+    }
+
+    if (effectivePresetOrder) {
+      setOrder(effectivePresetOrder);
+      pushBot({ text: `Got it — this is about ${effectivePresetOrder.product} (${effectivePresetOrder.id}).` });
+      if (needsItemStep(selectedLane, effectivePresetOrder)) {
+        askForItem(selectedLane, effectivePresetOrder);
         return;
       }
-      askToDescribe(selectedLane, presetOrder);
+      askToDescribe(selectedLane, effectivePresetOrder);
       return;
     }
 
     askForOrder(selectedLane);
+  }
+
+  // Scoped counterpart to askForOrder — the candidates are already known
+  // (every sibling in the shipment the customer tapped "Need Help" from),
+  // so this skips straight to "which product?" instead of surfacing the
+  // customer's entire order history for a lane they've already narrowed down.
+  function askForShipmentOrder(selectedLane, candidates) {
+    pushBot({
+      text: 'Which item in this shipment is this about?',
+      orders: candidates,
+      allowSkip: selectedLane.key === 'general',
+      onSelectOrder: (o) => handleSelectOrder(selectedLane, o),
+    });
+    setStage('order');
   }
 
   function askForOrder(selectedLane) {

@@ -60,23 +60,23 @@
   /* Type scale — tracking and leading are size-specific, per Apple's optical-sizing
      guidance: large text tightens (negative tracking, tight leading), small text
      opens up (slightly positive tracking) for legibility. Never one value for all sizes. */
-  --text-heading-size: 18px;
+  --text-heading-size: 20px;
   --text-heading-tracking: -0.01em;
   --text-heading-leading: 1.25;
 
-  --text-product-size: 14px;
+  --text-product-size: 15px;
   --text-product-tracking: -0.005em;
   --text-product-leading: 1.3;
 
-  --text-body-size: 12px;
+  --text-body-size: 13px;
   --text-body-tracking: 0em;
   --text-body-leading: 1.4;
 
-  --text-caption-size: 11px;
+  --text-caption-size: 12px;
   --text-caption-tracking: 0.005em;
   --text-caption-leading: 1.45;
 
-  --text-label-size: 10px;
+  --text-label-size: 11px;
   --text-label-tracking: 0.03em;
   --text-label-leading: 1.3;
 

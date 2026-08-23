@@ -63,6 +63,91 @@
   color: var(--color-text-muted);
 }
 
+.order-card__header-right {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+.order-card__more-btn {
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin: -4px -4px -4px 0;
+  border: none;
+  background: none;
+  border-radius: var(--radius-full);
+  color: var(--color-text-muted);
+  transition: transform 0.1s ease-out, background 0.15s var(--ease-standard);
+}
+
+.order-card__more-btn:active {
+  transform: scale(0.92);
+  background: rgba(26, 43, 88, 0.06);
+}
+
+/* Same three dots as MoreIcon everywhere else, just turned upright — this
+   is the only place the app needs the vertical orientation, so it's a
+   rotation on the existing icon rather than a second icon asset. */
+.order-card__more-icon {
+  transform: rotate(90deg);
+}
+
+/* Full-viewport, invisible — its only job is to catch the "tap elsewhere to
+   close" click without needing a visible scrim over the whole list. */
+.order-card__more-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 3;
+}
+
+.order-card__more-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 4;
+  width: 216px;
+  background: var(--color-bg-primary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card), 0 8px 24px rgba(26, 43, 88, 0.16);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-1) 0;
+}
+
+.order-card__more-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  border: none;
+  background: none;
+  padding: var(--space-3) var(--space-4);
+  font-family: inherit;
+  font-size: var(--text-body-size);
+  font-weight: 600;
+  color: var(--color-navy-900);
+  text-align: left;
+  transition: background 0.1s ease-out;
+}
+
+.order-card__more-item:active {
+  background: rgba(26, 43, 88, 0.06);
+}
+
+.order-card__more-item svg {
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+}
+
 .order-card__main {
   display: flex;
   gap: var(--space-3);
@@ -86,8 +171,17 @@
 .order-card__status-row {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
   gap: var(--space-2);
-  margin-bottom: var(--space-1);
+  margin-bottom: var(--space-2);
+}
+
+.order-card__status-group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
 }
 
 .order-card__status-label {
@@ -169,11 +263,8 @@
   flex-shrink: 0;
 }
 
-/* A bit more separation than the product→variant pair above — this is a
-   distinct fact (a delivery promise), not a continuation of the same line,
-   so it shouldn't read as glued to whatever caption sits right above it. */
 .order-card__edd {
-  margin: var(--space-2) 0 0;
+  margin: 0;
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -184,6 +275,7 @@
   letter-spacing: var(--text-caption-tracking);
   color: var(--color-navy-900);
   font-weight: 700;
+  flex-shrink: 0;
 }
 
 .order-card__edd svg {
@@ -246,6 +338,7 @@
 @media (prefers-reduced-motion: reduce) {
   .order-card__action:not(:disabled):active,
   .order-card__id:active,
+  .order-card__more-btn:active,
   .order-card:active {
     transform: none;
   }

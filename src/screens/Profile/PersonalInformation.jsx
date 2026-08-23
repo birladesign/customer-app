@@ -89,13 +89,7 @@ export default function PersonalInformation() {
             />
             <p className="personal-info__helper">Registered number can't be changed</p>
           </div>
-          <input
-            className="personal-info__pill"
-            type="email"
-            value={form.email}
-            onChange={(e) => update('email', e.target.value)}
-            placeholder="Email"
-          />
+
           <div className="personal-info__pill personal-info__pill--dob">
             <input
               type="date"

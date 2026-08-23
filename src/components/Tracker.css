@@ -27,7 +27,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--color-text-inverse);
   background: var(--color-disabled-bg);
@@ -61,7 +61,7 @@
 
 .tracker__date {
   margin-top: 1px;
-  font-size: 9px;
+  font-size: 10px;
   color: var(--color-text-muted);
 }
 
@@ -77,4 +77,23 @@
 .tracker__step--current .tracker__label {
   color: var(--color-text-primary);
   font-weight: 700;
+}
+
+/* Icon dots (stepIcons) need the icon's own color set per state — the plain
+   checkmark-only dot above relies on the dot's background/inverse-text
+   combo instead, so this only matters once a real per-step icon is in play. */
+.tracker__step--upcoming .tracker__dot svg {
+  color: var(--color-text-muted);
+}
+
+/* A real per-step icon (truck, package…) needs more room to read clearly
+   than a bare checkmark does — the plain-checkmark tracker elsewhere stays
+   at its original compact size. */
+.tracker--icons .tracker__dot {
+  width: 28px;
+  height: 28px;
+}
+
+.tracker--icons .tracker__step--current .tracker__dot {
+  box-shadow: 0 0 0 5px rgba(26, 43, 88, 0.15);
 }

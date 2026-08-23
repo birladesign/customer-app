@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AlertTriangleIcon } from '../../components/icons.jsx';
 import './PhoneStep.css';
 
@@ -7,9 +7,14 @@ import './PhoneStep.css';
 // number.") rather than a generic "invalid input" message.
 const VALID_PHONE = /^[6-9]\d{9}$/;
 
-export default function PhoneStep({ onContinue, onSkip }) {
+export default function PhoneStep({ mode = 'login', onContinue, onSkip, onSwitchMode }) {
   const [phone, setPhone] = useState('');
   const [error, setError] = useState(false);
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
 
   function handleChange(e) {
     const digits = e.target.value.replace(/\D/g, '').slice(0, 10);
@@ -27,12 +32,7 @@ export default function PhoneStep({ onContinue, onSkip }) {
 
   return (
     <div className="phone-step">
-      <button className="phone-step__skip" onClick={onSkip}>
-        Skip
-      </button>
-
       <div className="phone-step__hero" aria-hidden="true">
-        <p className="phone-step__hero-title">Real-time Order Tracking</p>
         <div className="phone-step__hero-image" />
       </div>
 
@@ -44,11 +44,12 @@ export default function PhoneStep({ onContinue, onSkip }) {
       )}
 
       <div className="phone-step__sheet">
-        <h1 className="phone-step__heading">Login or sign up</h1>
+        <h1 className="phone-step__heading">{mode === 'signup' ? 'Sign up' : 'Login'}</h1>
 
         <div className={`phone-step__pill${error ? ' phone-step__pill--error' : ''}`}>
           <span className="phone-step__prefix">+91</span>
           <input
+            ref={inputRef}
             type="tel"
             inputMode="numeric"
             autoComplete="tel-national"
@@ -66,6 +67,12 @@ export default function PhoneStep({ onContinue, onSkip }) {
           onClick={handleContinue}
         >
           Continue
+        </button>
+
+
+
+        <button className="phone-step__switch-mode" onClick={onSwitchMode}>
+          {mode === 'signup' ? 'Already have an account? Log in' : 'New here? Sign up instead'}
         </button>
 
         <p className="phone-step__terms">

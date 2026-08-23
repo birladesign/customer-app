@@ -80,6 +80,27 @@ export function getOrderTat(order) {
   return order.tat ?? null;
 }
 
+// Reverses OrderDetails' handlePutOnHold — restores whatever the order
+// looked like right before it was paused, using the snapshot that flow
+// leaves behind, and drops the "On Hold" step it pushed onto the timeline.
+// Without a real backend this is the only way to actually undo Hold rather
+// than guessing a generic "resumed" status.
+export function resumeOrder(order) {
+  const snapshot = order._preHoldSnapshot;
+  if (!snapshot) return;
+  Object.assign(order, {
+    section: snapshot.section,
+    status: snapshot.status,
+    caption: snapshot.caption,
+    actions: snapshot.actions,
+  });
+  if (order.timeline) {
+    order.timeline.steps = order.timeline.steps.slice(0, snapshot.timelineLength);
+    order.timeline.currentIndex = snapshot.timelineCurrentIndex;
+  }
+  delete order._preHoldSnapshot;
+}
+
 // Shared by getOrderStatus (a multi-item order's line items) and
 // getShipmentStatus (a multi-product shipment's sibling orders) — both are
 // "N things with their own status, roll up into one pill" the same way. A
@@ -140,7 +161,6 @@ const DEMO_ADDRESS = 'H.No. 24, Sector 44, Gurugram, Haryana 122003';
 // Items shipped in the same parcel (per their own timeline copy) share one
 // courier + AWB; a backordered/split item gets its own.
 const SHIPMENTS = {
-  TSC97821: { courier: 'Delhivery', awb: '1027384950162' },
   TSC89203: { courier: 'Ecom Express', awb: 'EE38291056473' },
   TSC91100: { courier: 'Delhivery', awb: '3455102938201' },
   TSC88320: { courier: 'Bluedart', awb: '77048291056' },
@@ -154,17 +174,6 @@ const SHIPMENTS = {
   TSC93001: { courier: 'Delhivery', awb: '1046372819501' },
   TSC93002: { courier: 'Delhivery', awb: '1046372819502' },
   TSC93003: { courier: 'Delhivery', awb: '1046372819503' },
-  'TSC94500-1': { courier: 'Delhivery', awb: '1029384756789' },
-  'TSC94500-2': { courier: 'Delhivery', awb: '1029384756789' },
-  'TSC94500-3': { courier: 'Xpressbees', awb: 'XB93027461850' },
-  'TSC97500-1': { courier: 'Bluedart', awb: '77019283746' },
-  'TSC97500-2': { courier: 'Bluedart', awb: '77019283746' },
-  'TSC97500-3': { courier: 'Delhivery', awb: '1093827465019' },
-  'TSC97500-4': { courier: 'Ecom Express', awb: 'EE10293847561' },
-  'TSC91850-1': { courier: 'Delhivery', awb: '1038475629104' },
-  'TSC91850-2': { courier: 'Delhivery', awb: '1038475629104' },
-  'TSC86420-1': { courier: 'Bluedart', awb: '77038291056' },
-  'TSC86420-2': { courier: 'Bluedart', awb: '77038291056' },
 };
 
 export function getShipmentInfo(key) {
@@ -220,56 +229,7 @@ export const ORDERS = [
     },
     intentOverrides: { warranty: 'Already mid-claim — see the evidence request above' },
   },
-  {
-    id: 'TSC97821',
-    section: 'needsAttention',
-    date: '03 Aug 2026',
-    image: imgMattressOrthoHybrid,
-    banner: { icon: 'alert', text: 'Damage Reported' },
-    status: { dot: 'red', label: 'Damaged — Reported' },
-    product: 'Smart Ortho Hybrid Pocketed Spring Mattress (Queen / 8 inch / 60x78 in)',
-    caption: 'Reported on 03 Aug 2026 · Investigation in progress',
-    tracker: { steps: ['Reported', 'Investigation Started', 'Issue Resolved'], currentIndex: 1 },
-    actions: [{ label: 'Track Investigation', variant: 'secondary' }],
-    amount: 21290,
-    address: DEMO_ADDRESS,
-    payment: { method: 'UPI', status: 'Paid' },
-    priceBreakup: { itemPrice: 23290, shipping: 0, discount: 2000, tax: 0, total: 21290 },
-    timeline: {
-      steps: [
-        {
-          label: 'Order Confirmed',
-          timestamp: '18 Jul 2026, 9:30 AM',
-          updates: [
-            { text: 'Order has been confirmed', timestamp: '18 Jul 2026, 9:30 AM' },
-            { text: 'We are processing your order', timestamp: '18 Jul 2026, 1:00 PM' },
-          ],
-        },
-        {
-          label: 'Delivered',
-          timestamp: '24 Jul 2026, 1:15 PM',
-          updates: [
-            { text: 'Item has been shipped from the warehouse', timestamp: '20 Jul 2026, 10:00 AM' },
-            { text: 'Out for delivery', timestamp: '24 Jul 2026, 9:00 AM' },
-            { text: 'Delivered — signed for at the doorstep', timestamp: '24 Jul 2026, 1:15 PM' },
-          ],
-        },
-        {
-          label: 'Damage Reported',
-          timestamp: '03 Aug 2026, 8:20 AM',
-          updates: [{ text: 'Damage reported by customer with photos', timestamp: '03 Aug 2026, 8:20 AM' }],
-        },
-        {
-          label: 'Investigation Started',
-          timestamp: '03 Aug 2026, 3:00 PM',
-          updates: [{ text: 'Case assigned to the quality investigation team', timestamp: '03 Aug 2026, 3:00 PM' }],
-        },
-        { label: 'Issue Resolved', timestamp: null },
-      ],
-      currentIndex: 3,
-    },
-    intentOverrides: { returnReplace: 'Available once the investigation concludes' },
-  },
+
   {
     id: 'TSC91100',
     section: 'inProgress',
@@ -445,15 +405,27 @@ export const ORDERS = [
     section: 'inProgress',
     date: '10 Aug 2026',
     image: imgBedElev8Adjustable,
-    status: { dot: 'blue', label: 'Installation Pending' },
+    status: { dot: 'blue', label: 'Installation Scheduled' },
     tat: '48 hrs TAT',
     product: 'Elev8 Smart Adjustable Bed Frame (Queen / Grey)',
-    caption: 'Delivered — confirm your installation slot',
-    installationStatus: 'pending',
+    caption: 'Technician visit: 12 Aug 2026, 10 AM – 12 PM',
+    installationStatus: 'confirmed',
     installationSlot: { date: '12 Aug 2026', window: '10 AM – 12 PM' },
-    actions: [{ label: 'Reschedule Installation', variant: 'secondary' }],
+    technician: { name: 'Rajesh Kumar', phone: '+919876543210', phoneDisplay: '+91 98765 43210' },
+    actions: [
+      { label: 'View Slot', variant: 'secondary' },
+      { label: 'Reschedule', variant: 'secondary' },
+    ],
     amount: 22999,
     address: DEMO_ADDRESS,
+    // Billed to a registered business rather than the delivery address —
+    // the one demo order that actually exercises the billing/GST fields
+    // Add Address captures during Edit Order, so Delivery Details has a
+    // real Billing details card to render instead of that section always
+    // being empty.
+    billingAddress: 'Tower B, Cyber Hub, DLF Phase 2, Gurugram, Haryana 122002',
+    gstin: '06AAECS1234F1Z5',
+    businessName: 'Birla Design Studio',
     payment: { method: 'UPI', status: 'Paid' },
     priceBreakup: { itemPrice: 22999, shipping: 0, discount: 0, tax: 0, total: 22999 },
     timeline: {
@@ -476,14 +448,12 @@ export const ORDERS = [
           ],
         },
         {
-          label: 'Installation Pending',
+          label: 'Installation Scheduled',
           timestamp: '10 Aug 2026, 2:20 PM',
-          description: 'We propose 12 Aug 2026, 10 AM – 12 PM — confirm or choose another slot',
+          description: '12 Aug 2026, 10 AM – 12 PM',
           updates: [
-            {
-              text: 'A default installation slot has been proposed within 48 hours of delivery',
-              timestamp: '10 Aug 2026, 2:20 PM',
-            },
+            { text: 'Technician Rajesh Kumar assigned', timestamp: '10 Aug 2026, 2:20 PM' },
+            { text: 'Visit slot confirmed: 12 Aug 2026, 10 AM – 12 PM', timestamp: '10 Aug 2026, 2:20 PM' },
           ],
         },
         { label: 'Installation Completed', timestamp: null, expectedDate: '12 Aug 2026' },
@@ -965,7 +935,7 @@ export const ORDERS = [
   // OrderDetails/ReturnReplace continue to work per line item, unchanged.
   {
     id: 'TSC93001',
-    shipmentId: 'SHP93001',
+    shipmentId: 'TSC93001',
     section: 'deliveredDone',
     date: '20 Nov 2025',
     image: imgBedElev8Adjustable,
@@ -1009,7 +979,7 @@ export const ORDERS = [
   },
   {
     id: 'TSC93002',
-    shipmentId: 'SHP93001',
+    shipmentId: 'TSC93001',
     section: 'deliveredDone',
     date: '20 Nov 2025',
     image: imgBedElev8Adjustable,
@@ -1053,7 +1023,7 @@ export const ORDERS = [
   },
   {
     id: 'TSC93003',
-    shipmentId: 'SHP93001',
+    shipmentId: 'TSC93001',
     section: 'deliveredDone',
     date: '20 Nov 2025',
     image: imgBedElev8Adjustable,
@@ -1095,138 +1065,6 @@ export const ORDERS = [
       currentIndex: 2,
     },
   },
-  // A genuine multi-SKU shipment — four different products travelling
-  // together in one parcel. A shipment always moves and arrives as one
-  // unit, so every order below shares the exact same timeline/status —
-  // only the product, qty, and price differ per line. Still full orders in
-  // their own right — OrderDetails/Warranty work per unit — but
-  // ShipmentCard renders these as individual product cards under one
-  // shipment header, always shown, rather than the same-SKU case's
-  // "N units" summary behind a tap-to-expand toggle.
-  {
-    id: 'TSC96601',
-    shipmentId: 'SHP96601',
-    section: 'inProgress',
-    date: '12 Aug 2026',
-    image: imgDeskAeroplus,
-    status: { dot: 'blue', label: 'Shipped' },
-    product: 'AeroPlus Adjustable Desk (Oak / 120x60 cm)',
-    qty: 1,
-    actions: [{ label: 'Track Order', variant: 'secondary' }],
-    amount: 20999,
-    address: DEMO_ADDRESS,
-    payment: { method: 'UPI', status: 'Paid' },
-    priceBreakup: { itemPrice: 20999, shipping: 0, discount: 0, tax: 0, total: 20999 },
-    timeline: {
-      steps: [
-        {
-          label: 'Order Confirmed',
-          timestamp: '12 Aug 2026, 10:00 AM',
-          updates: [{ text: 'Order has been confirmed', timestamp: '12 Aug 2026, 10:00 AM' }],
-        },
-        {
-          label: 'Shipped',
-          timestamp: '13 Aug 2026, 9:00 AM',
-          updates: [{ text: 'Item has been handed over to courier', timestamp: '13 Aug 2026, 9:00 AM' }],
-        },
-        { label: 'Delivered', timestamp: null, expectedDate: '17 Aug 2026' },
-      ],
-      currentIndex: 1,
-    },
-  },
-  {
-    id: 'TSC96602',
-    shipmentId: 'SHP96601',
-    section: 'inProgress',
-    date: '12 Aug 2026',
-    image: imgChairStyluxErgonomic,
-    status: { dot: 'blue', label: 'Shipped' },
-    product: 'Stylux Ergonomic Office Chair (Grey)',
-    qty: 1,
-    actions: [{ label: 'Track Order', variant: 'secondary' }],
-    amount: 16999,
-    address: DEMO_ADDRESS,
-    payment: { method: 'UPI', status: 'Paid' },
-    priceBreakup: { itemPrice: 16999, shipping: 0, discount: 0, tax: 0, total: 16999 },
-    timeline: {
-      steps: [
-        {
-          label: 'Order Confirmed',
-          timestamp: '12 Aug 2026, 10:00 AM',
-          updates: [{ text: 'Order has been confirmed', timestamp: '12 Aug 2026, 10:00 AM' }],
-        },
-        {
-          label: 'Shipped',
-          timestamp: '13 Aug 2026, 9:00 AM',
-          updates: [{ text: 'Item has been handed over to courier', timestamp: '13 Aug 2026, 9:00 AM' }],
-        },
-        { label: 'Delivered', timestamp: null, expectedDate: '17 Aug 2026' },
-      ],
-      currentIndex: 1,
-    },
-  },
-  {
-    id: 'TSC96603',
-    shipmentId: 'SHP96601',
-    section: 'inProgress',
-    date: '12 Aug 2026',
-    image: imgPillowCervical,
-    status: { dot: 'blue', label: 'Shipped' },
-    product: 'Smart Cervical Pillow (Standard / Memory Foam)',
-    qty: 2,
-    actions: [{ label: 'Track Order', variant: 'secondary' }],
-    amount: 4398,
-    address: DEMO_ADDRESS,
-    payment: { method: 'UPI', status: 'Paid' },
-    priceBreakup: { itemPrice: 4398, shipping: 0, discount: 0, tax: 0, total: 4398 },
-    timeline: {
-      steps: [
-        {
-          label: 'Order Confirmed',
-          timestamp: '12 Aug 2026, 10:00 AM',
-          updates: [{ text: 'Order has been confirmed', timestamp: '12 Aug 2026, 10:00 AM' }],
-        },
-        {
-          label: 'Shipped',
-          timestamp: '13 Aug 2026, 9:00 AM',
-          updates: [{ text: 'Item has been handed over to courier', timestamp: '13 Aug 2026, 9:00 AM' }],
-        },
-        { label: 'Delivered', timestamp: null, expectedDate: '17 Aug 2026' },
-      ],
-      currentIndex: 1,
-    },
-  },
-  {
-    id: 'TSC96604',
-    shipmentId: 'SHP96601',
-    section: 'inProgress',
-    date: '12 Aug 2026',
-    image: imgBedElev8Adjustable,
-    status: { dot: 'blue', label: 'Shipped' },
-    product: 'Elev8 Smart Adjustable Bed Frame (Queen / Grey)',
-    qty: 1,
-    actions: [{ label: 'Track Order', variant: 'secondary' }],
-    amount: 22999,
-    address: DEMO_ADDRESS,
-    payment: { method: 'UPI', status: 'Paid' },
-    priceBreakup: { itemPrice: 22999, shipping: 0, discount: 0, tax: 0, total: 22999 },
-    timeline: {
-      steps: [
-        {
-          label: 'Order Confirmed',
-          timestamp: '12 Aug 2026, 10:00 AM',
-          updates: [{ text: 'Order has been confirmed', timestamp: '12 Aug 2026, 10:00 AM' }],
-        },
-        {
-          label: 'Shipped',
-          timestamp: '13 Aug 2026, 9:00 AM',
-          updates: [{ text: 'Item has been handed over to courier', timestamp: '13 Aug 2026, 9:00 AM' }],
-        },
-        { label: 'Delivered', timestamp: null, expectedDate: '17 Aug 2026' },
-      ],
-      currentIndex: 1,
-    },
-  },
   // The large end of the combination range (5 items). All five travelled
   // and were delivered together on the same shared timeline below — the one
   // unit that's damaged only diverges *after* that shared delivery, via its
@@ -1235,7 +1073,7 @@ export const ORDERS = [
   // as a flagged line item would in a multi-SKU order.
   {
     id: 'TSC98801',
-    shipmentId: 'SHP98801',
+    shipmentId: 'TSC98801',
     section: 'needsAttention',
     date: '13 Aug 2026',
     image: imgMattressLuxeRoyale,
@@ -1270,7 +1108,7 @@ export const ORDERS = [
   },
   {
     id: 'TSC98802',
-    shipmentId: 'SHP98801',
+    shipmentId: 'TSC98801',
     section: 'needsAttention',
     date: '13 Aug 2026',
     image: imgChairOnyxOrthopedic,
@@ -1305,7 +1143,7 @@ export const ORDERS = [
   },
   {
     id: 'TSC98803',
-    shipmentId: 'SHP98801',
+    shipmentId: 'TSC98801',
     section: 'needsAttention',
     date: '13 Aug 2026',
     image: imgPillowHybrid,
@@ -1347,7 +1185,7 @@ export const ORDERS = [
   },
   {
     id: 'TSC98804',
-    shipmentId: 'SHP98801',
+    shipmentId: 'TSC98801',
     section: 'needsAttention',
     date: '13 Aug 2026',
     image: imgBedElev8Adjustable,
@@ -1382,7 +1220,7 @@ export const ORDERS = [
   },
   {
     id: 'TSC98805',
-    shipmentId: 'SHP98801',
+    shipmentId: 'TSC98801',
     section: 'needsAttention',
     date: '13 Aug 2026',
     image: imgPillowCervical,
@@ -1417,10 +1255,10 @@ export const ORDERS = [
   },
   // A same-SKU shipment still in progress (not yet delivered) — exercises
   // ShipmentCard's "arriving together" caption branch, since the one other
-  // same-SKU demo (SHP93001) is already fully delivered.
+  // same-SKU demo (TSC93001) is already fully delivered.
   {
-    id: 'TSC99401',
-    shipmentId: 'SHP99401',
+    id: 'TSC99501',
+    shipmentId: 'TSC99501',
     section: 'inProgress',
     date: '15 Aug 2026',
     image: imgMattressOrthoRoyale,
@@ -1450,8 +1288,8 @@ export const ORDERS = [
     },
   },
   {
-    id: 'TSC99402',
-    shipmentId: 'SHP99401',
+    id: 'TSC99502',
+    shipmentId: 'TSC99501',
     section: 'inProgress',
     date: '15 Aug 2026',
     image: imgMattressOrthoRoyale,
@@ -1488,7 +1326,7 @@ export const ORDERS = [
   // Delivery/Delivered, which every other shipment here already has.
   {
     id: 'TSC95301',
-    shipmentId: 'SHP95300',
+    shipmentId: 'TSC95300',
     section: 'inProgress',
     date: '17 Aug 2026',
     image: imgMattressOrthoPro,
@@ -1520,7 +1358,7 @@ export const ORDERS = [
   },
   {
     id: 'TSC95302',
-    shipmentId: 'SHP95300',
+    shipmentId: 'TSC95300',
     section: 'inProgress',
     date: '17 Aug 2026',
     image: imgChairOnyxOrthopedic,
@@ -1550,545 +1388,118 @@ export const ORDERS = [
       currentIndex: 1,
     },
   },
-  // A genuine multi-SKU cart — three different products bought together in
-  // one checkout (unlike the same-SKU-×3 shipment above). Each line item
-  // ships and tracks independently, so OrderDetails renders them as their
-  // own expandable rows instead of one product card, and the parent status
-  // above is computed from these items via getOrderStatus, not authored here.
+
+  // One order, fulfilled across two separate shipments — unlike the
+  // shipmentId case (several top-level orders sharing one parcel), this is
+  // the inverse: one checkout whose line items split into more than one
+  // parcel. Each item still carries its own status/timeline as usual;
+  // shipmentGroupId/shipmentGroupLabel just cluster them for display so
+  // Order Details can show "Shipment 1"/"Shipment 2" as their own cards
+  // instead of one flat item list. Items within a group share one
+  // status/timeline, same invariant as a real shipmentId group.
   {
-    id: 'TSC94500',
+    id: 'TSC99500',
     section: 'inProgress',
-    date: '05 Aug 2026',
+    date: '17 Aug 2026',
     product: 'Smart Ortho Hybrid Pocketed Spring Mattress + 2 more',
     image: imgMattressOrthoHybrid,
-    caption: '2 of 3 items delivered · 1 arriving separately',
+    caption: '2 shipments · 1 of 3 items shipped separately',
     actions: [{ label: 'Track Order', variant: 'secondary' }],
-    amount: 46488,
+    amount: 97979,
     address: DEMO_ADDRESS,
     payment: { method: 'UPI', status: 'Paid' },
-    priceBreakup: { itemPrice: 46488, shipping: 0, discount: 0, tax: 0, total: 46488 },
+    priceBreakup: { itemPrice: 97979, shipping: 0, discount: 0, tax: 0, total: 97979 },
     items: [
       {
-        sku: 'TSC94500-1',
+        sku: 'TSC99500-1',
         product: 'Smart Ortho Hybrid Pocketed Spring Mattress (Queen / 8 inch / 60x78 in)',
         image: imgMattressOrthoHybrid,
         qty: 1,
-        price: 21290,
-        status: { dot: 'green', label: 'Delivered' },
-        caption: 'Delivered on 08 Aug 2026',
-        rating: 0,
-        tracker: { steps: ['Confirmed', 'Shipped', 'Delivered'], currentIndex: 2 },
-        timeline: {
-          steps: [
-            { label: 'Confirmed', timestamp: '05 Aug 2026, 10:05 AM' },
-            {
-              label: 'Shipped',
-              timestamp: '06 Aug 2026, 9:15 AM',
-              updates: [
-                { text: 'We have handed over the item to courier', timestamp: '06 Aug 2026, 9:15 AM' },
-                { text: 'Item has reached the courier facility in Gurugram, Haryana', timestamp: '06 Aug 2026, 1:40 PM' },
-              ],
-            },
-            {
-              label: 'Delivered',
-              timestamp: '08 Aug 2026, 1:20 PM',
-              updates: [
-                { text: 'Out for delivery', timestamp: '08 Aug 2026, 9:00 AM' },
-                { text: 'Delivered — signed for at the doorstep', timestamp: '08 Aug 2026, 1:20 PM' },
-              ],
-            },
-          ],
-          currentIndex: 2,
-        },
-      },
-      {
-        sku: 'TSC94500-2',
-        product: 'Smart Hybrid Pillow (Set of 2 / Memory Foam)',
-        image: imgPillowHybrid,
-        qty: 1,
-        price: 2199,
-        status: { dot: 'green', label: 'Delivered' },
-        caption: 'Delivered on 08 Aug 2026',
-        rating: 0,
-        tracker: { steps: ['Confirmed', 'Shipped', 'Delivered'], currentIndex: 2 },
-        timeline: {
-          steps: [
-            { label: 'Confirmed', timestamp: '05 Aug 2026, 10:05 AM' },
-            {
-              label: 'Shipped',
-              timestamp: '06 Aug 2026, 9:15 AM',
-              updates: [
-                { text: 'Packed with the rest of your order and handed to courier', timestamp: '06 Aug 2026, 9:15 AM' },
-              ],
-            },
-            {
-              label: 'Delivered',
-              timestamp: '08 Aug 2026, 1:20 PM',
-              updates: [{ text: 'Delivered together with your mattress', timestamp: '08 Aug 2026, 1:20 PM' }],
-            },
-          ],
-          currentIndex: 2,
-        },
-      },
-      {
-        sku: 'TSC94500-3',
-        product: 'Elev8 Smart Adjustable Bed Frame (Queen / Grey)',
-        image: imgBedElev8Adjustable,
-        qty: 1,
-        price: 22999,
-        status: { dot: 'blue', label: 'Shipped' },
-        caption: 'Backordered — packed separately, ETA 12 Aug 2026',
-        tracker: { steps: ['Confirmed', 'Shipped', 'Out for Delivery', 'Delivered'], currentIndex: 1 },
-        timeline: {
-          steps: [
-            { label: 'Confirmed', timestamp: '05 Aug 2026, 10:05 AM' },
-            {
-              label: 'Shipped',
-              timestamp: '09 Aug 2026, 11:30 AM',
-              updates: [
-                { text: 'Item was on backorder — now packed and handed to courier', timestamp: '09 Aug 2026, 11:30 AM' },
-                { text: 'Item has reached the courier facility in Gurugram, Haryana', timestamp: '09 Aug 2026, 4:50 PM' },
-              ],
-            },
-            { label: 'Out for Delivery', timestamp: null },
-            { label: 'Delivered', timestamp: null, expectedDate: '12 Aug 2026' },
-          ],
-          currentIndex: 1,
-        },
-      },
-    ],
-    timeline: {
-      steps: [
-        {
-          label: 'Order Confirmed',
-          timestamp: '05 Aug 2026, 10:05 AM',
-          updates: [{ text: 'Order has been confirmed', timestamp: '05 Aug 2026, 10:05 AM' }],
-        },
-        {
-          label: 'Processing',
-          timestamp: '05 Aug 2026, 3:00 PM',
-          updates: [{ text: 'We are preparing your items for shipment', timestamp: '05 Aug 2026, 3:00 PM' }],
-        },
-        {
-          label: 'Shipped',
-          timestamp: '06 Aug 2026, 9:15 AM',
-          description: 'First shipment left the warehouse',
-          updates: [
-            { text: 'Mattress and pillow shipment left the warehouse', timestamp: '06 Aug 2026, 9:15 AM' },
-            { text: 'Bed frame is backordered — will ship separately', timestamp: '06 Aug 2026, 9:20 AM' },
-          ],
-        },
-        {
-          label: 'Delivered',
-          timestamp: '08 Aug 2026, 1:20 PM',
-          description: '2 of 3 items delivered — Bed Frame still in transit',
-          updates: [
-            { text: 'Mattress and pillow delivered — signed for at the doorstep', timestamp: '08 Aug 2026, 1:20 PM' },
-            { text: 'Bed frame shipped separately — ETA 12 Aug 2026', timestamp: '09 Aug 2026, 11:30 AM' },
-          ],
-        },
-        { label: 'All Items Delivered', timestamp: null, expectedDate: '12 Aug 2026' },
-      ],
-      currentIndex: 3,
-    },
-  },
-  // A larger cart (5 line items) than the 3-item bundle above, deliberately
-  // spread across every in-progress state at once (delivered, out for
-  // delivery, shipped, still packing) so LineItems/PrimaryItem get exercised
-  // at a size beyond the smallest interesting case.
-  {
-    id: 'TSC97500',
-    section: 'inProgress',
-    date: '02 Aug 2026',
-    product: 'AeroPlus Adjustable Desk + 4 more',
-    image: imgDeskAeroplus,
-    caption: '2 of 5 items delivered · 3 in progress',
-    actions: [{ label: 'Track Order', variant: 'secondary' }],
-    amount: 81186,
-    address: DEMO_ADDRESS,
-    payment: { method: 'UPI', status: 'Paid' },
-    priceBreakup: { itemPrice: 81186, shipping: 0, discount: 0, tax: 0, total: 81186 },
-    items: [
-      {
-        sku: 'TSC97500-1',
-        product: 'AeroPlus Adjustable Desk (Oak / 120x60 cm)',
-        image: imgDeskAeroplus,
-        qty: 1,
-        price: 20999,
-        status: { dot: 'green', label: 'Delivered' },
-        caption: 'Delivered on 06 Aug 2026',
-        rating: 0,
-        tracker: { steps: ['Confirmed', 'Shipped', 'Delivered'], currentIndex: 2 },
-        timeline: {
-          steps: [
-            {
-              label: 'Confirmed',
-              timestamp: '02 Aug 2026, 10:05 AM',
-              updates: [{ text: 'Order has been confirmed', timestamp: '02 Aug 2026, 10:05 AM' }],
-            },
-            {
-              label: 'Shipped',
-              timestamp: '03 Aug 2026, 9:00 AM',
-              updates: [{ text: 'Item has been handed over to courier', timestamp: '03 Aug 2026, 9:00 AM' }],
-            },
-            {
-              label: 'Delivered',
-              timestamp: '06 Aug 2026, 3:00 PM',
-              updates: [
-                { text: 'Out for delivery', timestamp: '06 Aug 2026, 9:30 AM' },
-                { text: 'Delivered — signed for at the doorstep', timestamp: '06 Aug 2026, 3:00 PM' },
-              ],
-            },
-          ],
-          currentIndex: 2,
-        },
-      },
-      {
-        sku: 'TSC97500-2',
-        product: 'Stylux Ergonomic Office Chair (Grey)',
-        image: imgChairStyluxErgonomic,
-        qty: 1,
-        price: 16999,
-        status: { dot: 'green', label: 'Delivered' },
-        caption: 'Delivered on 06 Aug 2026',
-        rating: 0,
-        tracker: { steps: ['Confirmed', 'Shipped', 'Delivered'], currentIndex: 2 },
-        timeline: {
-          steps: [
-            {
-              label: 'Confirmed',
-              timestamp: '02 Aug 2026, 10:05 AM',
-              updates: [{ text: 'Order has been confirmed', timestamp: '02 Aug 2026, 10:05 AM' }],
-            },
-            {
-              label: 'Shipped',
-              timestamp: '03 Aug 2026, 9:00 AM',
-              updates: [{ text: 'Packed with the rest of your order and handed to courier', timestamp: '03 Aug 2026, 9:00 AM' }],
-            },
-            {
-              label: 'Delivered',
-              timestamp: '06 Aug 2026, 3:00 PM',
-              updates: [{ text: 'Delivered together with your desk', timestamp: '06 Aug 2026, 3:00 PM' }],
-            },
-          ],
-          currentIndex: 2,
-        },
-      },
-      {
-        sku: 'TSC97500-3',
-        product: 'Smart Ortho Pro Mattress (Queen / 6 inch / 60x78 in)',
-        image: imgMattressOrthoPro,
-        qty: 1,
-        price: 17990,
+        price: 27990,
+        shipmentGroupId: 'TSC99500_01',
+        shipmentGroupLabel: 'Shipment 1',
         status: { dot: 'blue', label: 'Out for Delivery' },
-        caption: 'Arriving today',
-        tracker: { steps: ['Confirmed', 'Shipped', 'Out for Delivery', 'Delivered'], currentIndex: 2 },
-        timeline: {
-          steps: [
-            {
-              label: 'Confirmed',
-              timestamp: '02 Aug 2026, 10:05 AM',
-              updates: [{ text: 'Order has been confirmed', timestamp: '02 Aug 2026, 10:05 AM' }],
-            },
-            {
-              label: 'Shipped',
-              timestamp: '09 Aug 2026, 11:00 AM',
-              updates: [
-                { text: 'Item has been handed over to courier', timestamp: '09 Aug 2026, 11:00 AM' },
-                { text: 'Item has reached the courier facility in Gurugram, Haryana', timestamp: '09 Aug 2026, 4:20 PM' },
-              ],
-            },
-            {
-              label: 'Out for Delivery',
-              timestamp: '12 Aug 2026, 9:00 AM',
-              updates: [{ text: 'Out for delivery, arriving today', timestamp: '12 Aug 2026, 9:00 AM' }],
-            },
-            { label: 'Delivered', timestamp: null, expectedDate: '12 Aug 2026' },
-          ],
-          currentIndex: 2,
-        },
-      },
-      {
-        sku: 'TSC97500-4',
-        product: 'Smart Cervical Pillow (Standard / Memory Foam)',
-        image: imgPillowCervical,
-        qty: 1,
-        price: 2199,
-        status: { dot: 'blue', label: 'Shipped' },
-        caption: 'ETA 13 Aug 2026',
         tracker: { steps: ['Confirmed', 'Shipped', 'Delivered'], currentIndex: 1 },
         timeline: {
           steps: [
             {
               label: 'Confirmed',
-              timestamp: '02 Aug 2026, 10:05 AM',
-              updates: [{ text: 'Order has been confirmed', timestamp: '02 Aug 2026, 10:05 AM' }],
+              timestamp: '17 Aug 2026, 10:00 AM',
+              updates: [{ text: 'Order has been confirmed', timestamp: '17 Aug 2026, 10:00 AM' }],
             },
             {
               label: 'Shipped',
-              timestamp: '10 Aug 2026, 2:00 PM',
-              updates: [{ text: 'Item has been handed over to courier', timestamp: '10 Aug 2026, 2:00 PM' }],
-            },
-            { label: 'Delivered', timestamp: null, expectedDate: '13 Aug 2026' },
-          ],
-          currentIndex: 1,
-        },
-      },
-      {
-        sku: 'TSC97500-5',
-        product: 'Elev8 Smart Adjustable Bed Frame (Queen / Grey)',
-        image: imgBedElev8Adjustable,
-        qty: 1,
-        price: 22999,
-        status: { dot: 'blue', label: 'Confirmed · Packing' },
-        caption: 'Packed separately — ETA 14 Aug 2026',
-        tracker: { steps: ['Confirmed', 'Packing', 'Shipped', 'Delivered'], currentIndex: 1 },
-        timeline: {
-          steps: [
-            {
-              label: 'Confirmed',
-              timestamp: '02 Aug 2026, 10:05 AM',
-              updates: [{ text: 'Order has been confirmed', timestamp: '02 Aug 2026, 10:05 AM' }],
+              timestamp: '18 Aug 2026, 9:00 AM',
+              updates: [{ text: 'Item has been handed over to courier', timestamp: '18 Aug 2026, 9:00 AM' }],
             },
             {
-              label: 'Packing',
-              timestamp: '11 Aug 2026, 10:00 AM',
-              updates: [{ text: 'We have started packing this item', timestamp: '11 Aug 2026, 10:00 AM' }],
+              label: 'Out for Delivery',
+              timestamp: '21 Aug 2026, 9:00 AM',
+              updates: [{ text: 'Out for delivery, arriving today', timestamp: '21 Aug 2026, 9:00 AM' }],
             },
-            { label: 'Shipped', timestamp: null },
-            { label: 'Delivered', timestamp: null, expectedDate: '14 Aug 2026' },
-          ],
-          currentIndex: 1,
-        },
-      },
-    ],
-    timeline: {
-      steps: [
-        {
-          label: 'Order Confirmed',
-          timestamp: '02 Aug 2026, 10:05 AM',
-          updates: [{ text: 'Order has been confirmed', timestamp: '02 Aug 2026, 10:05 AM' }],
-        },
-        {
-          label: 'Processing',
-          timestamp: '02 Aug 2026, 3:00 PM',
-          updates: [{ text: 'We are preparing your items for shipment', timestamp: '02 Aug 2026, 3:00 PM' }],
-        },
-        {
-          label: 'Shipped',
-          timestamp: '03 Aug 2026, 9:00 AM',
-          description: 'Desk and chair shipped first',
-          updates: [{ text: 'Desk and chair shipment left the warehouse', timestamp: '03 Aug 2026, 9:00 AM' }],
-        },
-        {
-          label: 'Delivered',
-          timestamp: '06 Aug 2026, 3:00 PM',
-          description: '2 of 5 items delivered — mattress, pillow, and bed frame still in progress',
-          updates: [
-            { text: 'Desk and chair delivered — signed for at the doorstep', timestamp: '06 Aug 2026, 3:00 PM' },
-          ],
-        },
-        { label: 'All Items Delivered', timestamp: null, expectedDate: '14 Aug 2026' },
-      ],
-      currentIndex: 3,
-    },
-  },
-  // Multi-item orders so far were all mid-flight (inProgress) — this one
-  // needs attention instead: one item delivered cleanly, the other flagged
-  // by getOrderStatus's dot:'red' check above, so the parent pill surfaces
-  // that flagged item's own "Delivered" (red) rather than a misleadingly
-  // calm "1 of 2 delivered" or "All Items Delivered".
-  {
-    id: 'TSC91850',
-    section: 'needsAttention',
-    date: '04 Aug 2026',
-    image: imgSofaLuxeGrande,
-    product: 'Luxe Grande Recliner Sofa + 1 more',
-    caption: '1 of 2 items delivered fine — the other arrived damaged',
-    actions: [],
-    amount: 55998,
-    address: DEMO_ADDRESS,
-    payment: { method: 'Credit Card', status: 'Paid' },
-    priceBreakup: { itemPrice: 55998, shipping: 0, discount: 0, tax: 0, total: 55998 },
-    items: [
-      {
-        sku: 'TSC91850-1',
-        product: 'Luxe Grande Recliner Sofa (Royal Blue / 3 Seater)',
-        image: imgSofaLuxeGrande,
-        qty: 1,
-        price: 44999,
-        status: { dot: 'green', label: 'Delivered' },
-        caption: 'Delivered on 09 Aug 2026',
-        rating: 0,
-        tracker: { steps: ['Confirmed', 'Shipped', 'Delivered'], currentIndex: 2 },
-        timeline: {
-          steps: [
-            {
-              label: 'Confirmed',
-              timestamp: '04 Aug 2026, 11:15 AM',
-              updates: [{ text: 'Order has been confirmed', timestamp: '04 Aug 2026, 11:15 AM' }],
-            },
-            {
-              label: 'Shipped',
-              timestamp: '06 Aug 2026, 9:00 AM',
-              updates: [{ text: 'Item has been handed over to courier', timestamp: '06 Aug 2026, 9:00 AM' }],
-            },
-            {
-              label: 'Delivered',
-              timestamp: '09 Aug 2026, 2:30 PM',
-              updates: [
-                { text: 'Out for delivery', timestamp: '09 Aug 2026, 9:00 AM' },
-                { text: 'Delivered — signed for at the doorstep', timestamp: '09 Aug 2026, 2:30 PM' },
-              ],
-            },
+            { label: 'Delivered', timestamp: null, expectedDate: '21 Aug 2026' },
           ],
           currentIndex: 2,
         },
       },
       {
-        sku: 'TSC91850-2',
+        sku: 'TSC99500-2',
         product: 'Onyx Orthopedic Office Chair (Black)',
         image: imgChairOnyxOrthopedic,
         qty: 1,
-        price: 10999,
-        // Label stays exactly "Delivered" (dot:'red' still flags it) so this
-        // item is actually eligible for Return/Replace per getItemIntents —
-        // that flow's own EvidenceStep is where photo evidence belongs, not
-        // a standalone "Evidence Required" state that would lock it out.
-        status: { dot: 'red', label: 'Delivered' },
-        caption: 'Arrived damaged — start a return or replacement to resolve it',
-        tracker: { steps: ['Confirmed', 'Shipped', 'Delivered'], currentIndex: 2 },
+        price: 21999,
+        shipmentGroupId: 'TSC99500_01',
+        shipmentGroupLabel: 'Shipment 1',
+        status: { dot: 'blue', label: 'Out for Delivery' },
+        tracker: { steps: ['Confirmed', 'Shipped', 'Delivered'], currentIndex: 1 },
         timeline: {
           steps: [
             {
               label: 'Confirmed',
-              timestamp: '04 Aug 2026, 11:15 AM',
-              updates: [{ text: 'Order has been confirmed', timestamp: '04 Aug 2026, 11:15 AM' }],
+              timestamp: '17 Aug 2026, 10:00 AM',
+              updates: [{ text: 'Order has been confirmed', timestamp: '17 Aug 2026, 10:00 AM' }],
             },
             {
-              label: 'Delivered',
-              timestamp: '09 Aug 2026, 2:30 PM',
-              updates: [
-                { text: 'Item has been shipped', timestamp: '06 Aug 2026, 9:00 AM' },
-                { text: 'Delivered — signed for at the doorstep', timestamp: '09 Aug 2026, 2:30 PM' },
-              ],
+              label: 'Shipped',
+              timestamp: '18 Aug 2026, 9:00 AM',
+              updates: [{ text: 'Item has been handed over to courier', timestamp: '18 Aug 2026, 9:00 AM' }],
             },
             {
-              label: 'Damage Reported',
-              timestamp: '10 Aug 2026, 6:40 PM',
-              description: 'Awaiting evidence photos',
-              updates: [
-                { text: 'Damage reported by customer', timestamp: '10 Aug 2026, 6:40 PM' },
-                { text: 'Warranty claim opened — awaiting evidence photos', timestamp: '10 Aug 2026, 6:45 PM' },
-              ],
+              label: 'Out for Delivery',
+              timestamp: '21 Aug 2026, 9:00 AM',
+              updates: [{ text: 'Out for delivery, arriving today', timestamp: '21 Aug 2026, 9:00 AM' }],
             },
+            { label: 'Delivered', timestamp: null, expectedDate: '21 Aug 2026' },
           ],
           currentIndex: 2,
         },
       },
-    ],
-    timeline: {
-      steps: [
-        {
-          label: 'Order Confirmed',
-          timestamp: '04 Aug 2026, 11:15 AM',
-          updates: [{ text: 'Order has been confirmed', timestamp: '04 Aug 2026, 11:15 AM' }],
-        },
-        {
-          label: 'Delivered',
-          timestamp: '09 Aug 2026, 2:30 PM',
-          description: 'Both items delivered together',
-          updates: [{ text: 'Sofa and chair delivered — signed for at the doorstep', timestamp: '09 Aug 2026, 2:30 PM' }],
-        },
-        {
-          label: 'Damage Reported',
-          timestamp: '10 Aug 2026, 6:40 PM',
-          description: 'Chair damaged in transit — awaiting evidence photos',
-          updates: [{ text: 'Damage reported on the office chair', timestamp: '10 Aug 2026, 6:40 PM' }],
-        },
-      ],
-      currentIndex: 2,
-    },
-  },
-  // The smallest interesting multi-item case (2 items, not 3 or 5) and the
-  // first one to reach deliveredDone rather than sitting inProgress or
-  // needsAttention — both items delivered together, ratings still pending.
-  {
-    id: 'TSC86420',
-    section: 'deliveredDone',
-    date: '18 Jun 2026',
-    image: imgMattressOrthoRoyale,
-    product: 'Smart Ortho Royale Mattress + 1 more',
-    caption: 'Both items delivered on 22 Jun 2026',
-    actions: [{ label: 'Track Order', variant: 'secondary' }],
-    amount: 43189,
-    address: DEMO_ADDRESS,
-    payment: { method: 'UPI', status: 'Paid' },
-    priceBreakup: { itemPrice: 43189, shipping: 0, discount: 0, tax: 0, total: 43189 },
-    items: [
       {
-        sku: 'TSC86420-1',
+        sku: 'TSC99500-3',
         product: 'Smart Ortho Royale Mattress (King / 8 inch / 72x78 in)',
         image: imgMattressOrthoRoyale,
         qty: 1,
-        price: 40990,
-        status: { dot: 'green', label: 'Delivered' },
-        caption: 'Delivered on 22 Jun 2026',
-        rating: 0,
-        tracker: { steps: ['Confirmed', 'Shipped', 'Delivered'], currentIndex: 2 },
+        price: 47990,
+        shipmentGroupId: 'TSC99500_02',
+        shipmentGroupLabel: 'Shipment 2',
+        status: { dot: 'blue', label: 'Shipped' },
+        caption: 'Backordered — shipped separately once restocked',
+        tracker: { steps: ['Confirmed', 'Shipped', 'Delivered'], currentIndex: 1 },
         timeline: {
           steps: [
             {
               label: 'Confirmed',
-              timestamp: '18 Jun 2026, 10:00 AM',
-              updates: [{ text: 'Order has been confirmed', timestamp: '18 Jun 2026, 10:00 AM' }],
+              timestamp: '17 Aug 2026, 10:00 AM',
+              updates: [{ text: 'Order has been confirmed', timestamp: '17 Aug 2026, 10:00 AM' }],
             },
             {
               label: 'Shipped',
-              timestamp: '19 Jun 2026, 3:00 PM',
-              updates: [{ text: 'Item has been handed over to courier', timestamp: '19 Jun 2026, 3:00 PM' }],
+              timestamp: '19 Aug 2026, 9:00 AM',
+              updates: [{ text: 'Item has been handed over to courier', timestamp: '19 Aug 2026, 9:00 AM' }],
             },
-            {
-              label: 'Delivered',
-              timestamp: '22 Jun 2026, 1:00 PM',
-              updates: [
-                { text: 'Out for delivery', timestamp: '22 Jun 2026, 9:00 AM' },
-                { text: 'Delivered — signed for at the doorstep', timestamp: '22 Jun 2026, 1:00 PM' },
-              ],
-            },
+            { label: 'Delivered', timestamp: null, expectedDate: '19 Aug 2026' },
           ],
-          currentIndex: 2,
-        },
-      },
-      {
-        sku: 'TSC86420-2',
-        product: 'Smart Cervical Pillow (Standard / Memory Foam)',
-        image: imgPillowCervical,
-        qty: 1,
-        price: 2199,
-        status: { dot: 'green', label: 'Delivered' },
-        caption: 'Delivered on 22 Jun 2026',
-        rating: 0,
-        tracker: { steps: ['Confirmed', 'Shipped', 'Delivered'], currentIndex: 2 },
-        timeline: {
-          steps: [
-            {
-              label: 'Confirmed',
-              timestamp: '18 Jun 2026, 10:00 AM',
-              updates: [{ text: 'Order has been confirmed', timestamp: '18 Jun 2026, 10:00 AM' }],
-            },
-            {
-              label: 'Shipped',
-              timestamp: '19 Jun 2026, 3:00 PM',
-              updates: [{ text: 'Packed with the rest of your order and handed to courier', timestamp: '19 Jun 2026, 3:00 PM' }],
-            },
-            {
-              label: 'Delivered',
-              timestamp: '22 Jun 2026, 1:00 PM',
-              updates: [{ text: 'Delivered together with your mattress', timestamp: '22 Jun 2026, 1:00 PM' }],
-            },
-          ],
-          currentIndex: 2,
+          currentIndex: 1,
         },
       },
     ],
@@ -2096,21 +1507,11 @@ export const ORDERS = [
       steps: [
         {
           label: 'Order Confirmed',
-          timestamp: '18 Jun 2026, 10:00 AM',
-          updates: [{ text: 'Order has been confirmed', timestamp: '18 Jun 2026, 10:00 AM' }],
-        },
-        {
-          label: 'Shipped',
-          timestamp: '19 Jun 2026, 3:00 PM',
-          updates: [{ text: 'Both items handed over to courier together', timestamp: '19 Jun 2026, 3:00 PM' }],
-        },
-        {
-          label: 'Delivered',
-          timestamp: '22 Jun 2026, 1:00 PM',
-          updates: [{ text: 'Delivered — signed for at the doorstep', timestamp: '22 Jun 2026, 1:00 PM' }],
+          timestamp: '17 Aug 2026, 10:00 AM',
+          updates: [{ text: 'Order has been confirmed', timestamp: '17 Aug 2026, 10:00 AM' }],
         },
       ],
-      currentIndex: 2,
+      currentIndex: 0,
     },
   },
 ];

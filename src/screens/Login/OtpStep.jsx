@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { AlertTriangleIcon, ChevronLeftIcon } from '../../components/icons.jsx';
+import { AlertTriangleIcon, ChevronLeftIcon, EditIcon } from '../../components/icons.jsx';
 import './OtpStep.css';
 
 // No backend in this prototype — a fixed mock code stands in for a real SMS
@@ -118,66 +118,73 @@ export default function OtpStep({ phone, onVerified, onBack, onSkip }) {
 
   return (
     <div className="otp-step">
-      <header className="otp-step__topbar">
-        <button className="otp-step__icon-btn" onClick={onBack} aria-label="Back">
-          <ChevronLeftIcon />
-        </button>
-        <button className="otp-step__skip" onClick={onSkip}>
-          Skip
-        </button>
-      </header>
+      <div className="otp-step__hero" aria-hidden="true">
+        <div className="otp-step__hero-image" />
+      </div>
 
-      {isInvalid && (
-        <div className="otp-step__error-banner" role="alert">
-          <AlertTriangleIcon width="16" height="16" />
-          {status === 'locked'
-            ? `Too many incorrect attempts. Try again in ${lockoutRemaining}s.`
-            : 'The OTP entered is incorrect/invalid. Please try again.'}
-        </div>
-      )}
+      <div className="otp-step__sheet">
+        <header className="otp-step__topbar">
+          <button className="otp-step__icon-btn" onClick={onBack} aria-label="Back">
+            <ChevronLeftIcon />
+          </button>
+        </header>
 
-      <main className="otp-step__content">
-        <h1 className="otp-step__heading">OTP Verification</h1>
-        <p className="otp-step__subtext">
-          We have sent a verification code to {formatPhone(phone)}
-        </p>
+        {isInvalid && (
+          <div className="otp-step__error-banner" role="alert">
+            <AlertTriangleIcon width="16" height="16" />
+            {status === 'locked'
+              ? `Too many incorrect attempts. Try again in ${lockoutRemaining}s.`
+              : 'The OTP entered is incorrect/invalid. Please try again.'}
+          </div>
+        )}
 
-        <div className={`otp-step__boxes${isInvalid ? ' otp-step__boxes--error' : ''}`}>
-          {digits.map((digit, i) => (
-            <input
-              key={i}
-              ref={(el) => {
-                inputRefs.current[i] = el;
-              }}
-              type="text"
-              inputMode="numeric"
-              maxLength={1}
-              className="otp-step__box"
-              value={digit}
-              disabled={status === 'verifying' || status === 'locked'}
-              onChange={(e) => updateDigit(i, e.target.value)}
-              onKeyDown={(e) => handleKeyDown(i, e)}
-              onPaste={handlePaste}
-              aria-label={`OTP digit ${i + 1}`}
-            />
-          ))}
-        </div>
-
-        {status === 'verifying' && <p className="otp-step__verifying">Verifying...</p>}
-
-        <div className="otp-step__resend-row">
-          <span>Didn't get the OTP?</span>
-          {cooldown > 0 ? (
-            <span className="otp-step__resend-timer">Resend SMS in {cooldown}s</span>
-          ) : (
-            <button className="otp-step__resend-btn" onClick={handleResend}>
-              Resend SMS
+        <main className="otp-step__content">
+          <h1 className="otp-step__heading">OTP Verification</h1>
+          <p className="otp-step__subtext">
+            We have sent a verification code to {formatPhone(phone)}
+            <button className="otp-step__edit-phone" onClick={onBack} aria-label="Edit phone number">
+              <EditIcon width="14" height="14" />
             </button>
-          )}
-        </div>
+          </p>
 
-        <p className="otp-step__hint">Demo mode — use 123456</p>
-      </main>
+          <div className={`otp-step__boxes${isInvalid ? ' otp-step__boxes--error' : ''}`}>
+            {digits.map((digit, i) => (
+              <input
+                key={i}
+                ref={(el) => {
+                  inputRefs.current[i] = el;
+                }}
+                type="text"
+                inputMode="numeric"
+                maxLength={1}
+                className="otp-step__box"
+                placeholder="0"
+                value={digit}
+                disabled={status === 'verifying' || status === 'locked'}
+                onChange={(e) => updateDigit(i, e.target.value)}
+                onKeyDown={(e) => handleKeyDown(i, e)}
+                onPaste={handlePaste}
+                aria-label={`OTP digit ${i + 1}`}
+              />
+            ))}
+          </div>
+
+          {status === 'verifying' && <p className="otp-step__verifying">Verifying...</p>}
+
+          <div className="otp-step__resend-row">
+            <span>Didn't get the OTP?</span>
+            {cooldown > 0 ? (
+              <span className="otp-step__resend-timer">Resend SMS in {cooldown}s</span>
+            ) : (
+              <button className="otp-step__resend-btn" onClick={handleResend}>
+                Resend SMS
+              </button>
+            )}
+          </div>
+
+          <p className="otp-step__hint">Demo mode — use 123456</p>
+        </main>
+      </div>
     </div>
   );
 }

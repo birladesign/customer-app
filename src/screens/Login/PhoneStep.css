@@ -29,29 +29,19 @@
 
 .phone-step__hero {
   flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: var(--space-4);
-  padding: var(--space-6) var(--space-6) var(--space-4);
-  min-height: 220px;
-  color: var(--color-text-inverse);
-}
-
-.phone-step__hero-title {
-  margin: 0;
-  font-size: var(--text-heading-size);
-  font-weight: 700;
-  text-align: center;
+  width: 100%;
+  height: 240px;
+  position: relative;
+  overflow: hidden;
 }
 
 .phone-step__hero-image {
   width: 100%;
-  max-width: 280px;
-  height: 140px;
-  border-radius: var(--radius-lg);
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.04));
+  height: 100%;
+  background-image: url('../../assets/login-hero.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 .phone-step__error-banner {
@@ -142,6 +132,51 @@
   transform: scale(0.98);
 }
 
+.phone-step__divider {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--color-text-muted);
+  font-size: var(--text-caption-size);
+}
+
+.phone-step__divider::before,
+.phone-step__divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--color-border);
+}
+
+.phone-step__email {
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  padding: var(--space-3);
+  font-family: inherit;
+  font-size: var(--text-product-size);
+  font-weight: 600;
+  background: var(--color-bg-primary);
+  color: var(--color-navy-900);
+  transition: transform 0.1s ease-out;
+}
+
+.phone-step__email:active {
+  transform: scale(0.98);
+}
+
+.phone-step__switch-mode {
+  border: none;
+  background: none;
+  padding: 0;
+  font-family: inherit;
+  font-size: var(--text-body-size);
+  font-weight: 600;
+  color: var(--color-navy-900);
+  text-align: center;
+  text-decoration: underline;
+}
+
 .phone-step__terms {
   margin: 0;
   text-align: center;
@@ -152,7 +187,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .phone-step__skip:active,
-  .phone-step__continue:not(:disabled):active {
+  .phone-step__continue:not(:disabled):active,
+  .phone-step__email:active {
     transform: none;
   }
 }

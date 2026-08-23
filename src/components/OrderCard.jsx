@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { splitProductSpec, getOrderStatus, getExpectedDelivery, getDeliveredDate, getOrderTat } from '../data/orders.js';
+import { splitProductSpec, getOrderStatus, getExpectedDelivery, getDeliveredDate, getOrderTat, resumeOrder } from '../data/orders.js';
 import { getOpenCaseForOrder } from '../data/support.js';
-import { getOrderIntents, getEditEligibility } from '../data/intents.js';
+import { getOrderIntents } from '../data/intents.js';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
 import { CopyIcon, CheckIcon, ChevronRightIcon, WalletIcon, CheckCircleIcon, CalendarIcon } from './icons.jsx';
 import StarRating from './StarRating.jsx';
+import CardMoreMenu from './CardMoreMenu.jsx';
 import './OrderCard.css';
 
 const DOT_COLOR = {
@@ -82,16 +83,13 @@ export default function OrderCard({ order }) {
   const isDelivered = status.label === 'Delivered' || status.label === 'All Items Delivered';
   // Once delivered, the status pill already says everything — no CTA belongs
   // beside it, so every action drops away and "Delivered" stands alone.
-  // Pre-delivery, Edit Address/Cancel ride alongside whatever the order's
-  // own actions already are, whenever intents.js says they're still allowed
-  // (single-item orders only — a multi-item order's edit/cancel eligibility
-  // is a shipment-wide decision this card isn't scoped to make).
-  const editIntent = !isDelivered && !order.items ? getEditEligibility(order) : null;
+  // Pre-delivery, Cancel rides alongside whatever the order's own actions
+  // already are, whenever intents.js says it's still allowed (single-item
+  // orders only — a multi-item order's cancel eligibility is a
+  // shipment-wide decision this card isn't scoped to make). Edit Address is
+  // already reachable from the kebab menu, so it isn't duplicated here.
   const cancelIntent = !isDelivered && !order.items ? getOrderIntents(order).find((i) => i.key === 'cancel') : null;
   const preDeliveryActions = [];
-  if (editIntent?.enabled && !actions.some((a) => a.label === 'Edit Address')) {
-    preDeliveryActions.push({ label: 'Edit Address', variant: 'secondary' });
-  }
   if (cancelIntent?.enabled && !actions.some((a) => a.label === 'Cancel')) {
     preDeliveryActions.push({ label: 'Cancel', variant: 'secondary-danger' });
   }
@@ -102,13 +100,30 @@ export default function OrderCard({ order }) {
   // (same pattern as elsewhere) so Order Details reflects the same rating
   // if the customer taps through after rating from the list.
   const [rating, setRating] = useState(order.rating);
+  // Resuming mutates status/section/caption/actions directly on the shared
+  // order object (same no-backend pattern as rating above) — none of those
+  // are local state, so this just needs to force one more render to pick up
+  // the fresh values.
+  const [, forceUpdate] = useState(0);
+
+  function handleEditAddress() {
+    navigate('editOrder', order.items ? { orderId: order.id, sku: order.items[0].sku } : { orderId: order.id });
+  }
+
+  function handleRescheduleDelivery() {
+    navigate('deliverySchedule', { orderId: order.id, reschedule: true });
+  }
+
+  function handleMoreHelp() {
+    switchTab('support', { openChat: true, orderId: order.id });
+  }
 
   // Only actions with a real destination get a handler here — everything
   // else on this card stays present-but-inert until it has one too, same
   // discipline as the rest of this prototype.
   function getActionHandler(label) {
     if (label === 'Schedule Installation' || label === 'Reschedule Installation' || label === 'Reschedule') {
-      return () => navigate('installationSchedule', { orderId: order.id, reschedule: label !== 'Schedule Installation' });
+      return () => navigate('installationSchedule', { orderId: order.id, reschedule: label.startsWith('Reschedule') });
     }
     if (label === 'View Slot') {
       return () => navigate('installationSchedule', { orderId: order.id });
@@ -123,11 +138,14 @@ export default function OrderCard({ order }) {
         else switchTab('support', { openChat: true, orderId: order.id });
       };
     }
-    if (label === 'Edit Address') {
-      return () => navigate(order.shipmentId ? 'editShipmentOrder' : 'editOrder', order.shipmentId ? { shipmentId: order.shipmentId } : { orderId: order.id });
-    }
     if (label === 'Cancel') {
       return () => navigate('orderDetails', { orderId: order.id, openCancel: true });
+    }
+    if (label === 'Resume Order') {
+      return () => {
+        resumeOrder(order);
+        forceUpdate((v) => v + 1);
+      };
     }
     return undefined;
   }
@@ -158,19 +176,35 @@ export default function OrderCard({ order }) {
       <div className="order-card__body">
         <div className="order-card__header">
           <CopyOrderId id={order.id} />
-          <span className="order-card__date">{order.date}</span>
+          <span className="order-card__header-right">
+            <span className="order-card__date">{order.date}</span>
+            <CardMoreMenu
+              onEditAddress={handleEditAddress}
+              onReschedule={handleRescheduleDelivery}
+              onNeedHelp={handleMoreHelp}
+            />
+          </span>
+        </div>
+
+        <div className="order-card__status-row">
+          <span className="order-card__status-group">
+            <span className="order-card__status-label" style={{ color: DOT_COLOR[status.dot] }}>
+              {status.label}
+            </span>
+            {tat && <span className="order-card__tat-badge">{tat}</span>}
+            {badge && <span className="order-card__pill-badge">{badge}</span>}
+          </span>
+          {expectedDelivery && !caption?.includes(expectedDelivery) && (
+            <p className="order-card__edd">
+              <CalendarIcon width="12" height="12" />
+              Est. Delivery: {expectedDelivery}
+            </p>
+          )}
         </div>
 
         <div className="order-card__main">
           <img className="order-card__image" src={order.image} alt={product} />
           <div className="order-card__details">
-            <div className="order-card__status-row">
-              <span className="order-card__status-label" style={{ color: DOT_COLOR[status.dot] }}>
-                {status.label}
-              </span>
-              {tat && <span className="order-card__tat-badge">{tat}</span>}
-              {badge && <span className="order-card__pill-badge">{badge}</span>}
-            </div>
             <p className="order-card__product">{productName}</p>
             {(order.qty || spec) && (
               <p className="order-card__variant">
@@ -181,12 +215,6 @@ export default function OrderCard({ order }) {
             )}
             {caption && <p className="order-card__caption">{caption}</p>}
             {deliveredDate && <p className="order-card__caption">Delivered on {deliveredDate}</p>}
-            {expectedDelivery && !caption?.includes(expectedDelivery) && (
-              <p className="order-card__edd">
-                <CalendarIcon width="12" height="12" />
-                Est. Delivery: {expectedDelivery}
-              </p>
-            )}
             {savings && (
               <p className="order-card__savings">
                 <WalletIcon /> {savings}

@@ -1,26 +1,25 @@
 import { useState } from 'react';
 import './OnboardingStep.css';
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const VALID_PHONE = /^[6-9]\d{9}$/;
 
-export default function OnboardingStep({ phone, onComplete }) {
+export default function OnboardingStep({ phone: initialPhone, onComplete, onSwitchToLogin }) {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
-  const [touchedEmail, setTouchedEmail] = useState(false);
+  const [phone, setPhone] = useState(initialPhone ?? '');
+  const [touchedPhone, setTouchedPhone] = useState(false);
 
-  const emailValid = email.trim() === '' || EMAIL_RE.test(email.trim());
-  const canContinue = firstName.trim() !== '' && lastName.trim() !== '' && emailValid;
+  const phoneValid = VALID_PHONE.test(phone);
+  const canContinue = firstName.trim() !== '' && lastName.trim() !== '' && phoneValid;
 
   function handleContinue() {
     if (!canContinue) return;
     onComplete({
       firstName: firstName.trim(),
       lastName: lastName.trim(),
-      email: email.trim(),
       avatarInitial: firstName.trim().charAt(0).toUpperCase() || 'A',
       dob: '',
-    });
+    }, phone);
   }
 
   return (
@@ -44,17 +43,25 @@ export default function OnboardingStep({ phone, onComplete }) {
             value={lastName}
             onChange={(e) => setLastName(e.target.value)}
           />
-          <input className="onboarding-step__pill onboarding-step__pill--disabled" value={phone} disabled />
-          <input
-            className={`onboarding-step__pill${touchedEmail && !emailValid ? ' onboarding-step__pill--error' : ''}`}
-            type="email"
-            placeholder="Email (optional)"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            onBlur={() => setTouchedEmail(true)}
-          />
-          {touchedEmail && !emailValid && (
-            <p className="onboarding-step__error">Enter a valid email address.</p>
+          {initialPhone ? (
+            <input className="onboarding-step__pill onboarding-step__pill--disabled" value={initialPhone} disabled />
+          ) : (
+            <>
+              <input
+                type="tel"
+                className={`onboarding-step__pill${touchedPhone && !phoneValid ? ' onboarding-step__pill--error' : ''}`}
+                placeholder="Phone number"
+                value={phone}
+                onChange={(e) => {
+                  setPhone(e.target.value.replace(/\D/g, '').slice(0, 10));
+                  if (touchedPhone) setTouchedPhone(false);
+                }}
+                onBlur={() => setTouchedPhone(true)}
+              />
+              {touchedPhone && !phoneValid && (
+                <p className="onboarding-step__error">Please enter valid phone number.</p>
+              )}
+            </>
           )}
         </div>
       </main>

@@ -36,7 +36,10 @@ export function getOrderIntents(order) {
       !isDelivered && !isClosed
         ? { enabled: true }
         : { enabled: false, reason: isClosed ? 'Order already closed' : 'Order already delivered' },
-    warranty: isDelivered ? { enabled: true } : { enabled: false, reason: 'Available after delivery' },
+    // Warranty registration/coverage isn't gated on delivery — it's tied to
+    // the product itself, so it's always available regardless of where the
+    // order is in its timeline.
+    warranty: { enabled: true },
     needHelp: { enabled: true },
   };
 
@@ -64,7 +67,9 @@ export function getItemIntents(item) {
     returnReplace: isDelivered
       ? { enabled: true }
       : { enabled: false, reason: 'Available once this item is delivered' },
-    warranty: isDelivered ? { enabled: true } : { enabled: false, reason: 'Available after delivery' },
+    // See getOrderIntents above — warranty is always available, not gated
+    // on this item's own delivery state either.
+    warranty: { enabled: true },
   };
 }
 
