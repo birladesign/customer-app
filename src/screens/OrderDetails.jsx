@@ -9,8 +9,9 @@ import {
   getDeliveredDate,
   parseOrderDate,
 } from '../data/orders.js';
-import { getOrderIntents, getEditEligibility, getShipmentEditEligibility, getItemIntents, isPostDispatch } from '../data/intents.js';
+import { getOrderIntents, getEditEligibility, getShipmentEditEligibility, getItemIntents, isPostDispatch, hasReachedStep } from '../data/intents.js';
 import { getOpenCaseForOrder } from '../data/support.js';
+import { getAvailableLanes, getJourneyContext } from '../data/journeys.js';
 import { CURRENT_USER } from '../data/profile.js';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
 import { SPRING_STANDARD, DURATION_REDUCED } from '../motion.js';
@@ -105,7 +106,16 @@ export default function OrderDetails({ params }) {
   // and only reach the final irreversible confirm after declining that.
   // cancelStep drives the reason/alternative sheet; confirmingCancel is the
   // separate, final ConfirmSheet reached only after "No, Cancel My Order."
-  const [cancelStep, setCancelStep] = useState(null); // null | 'reason' | 'alternative' | 'delayed'
+  // Arriving from a card's Cancel CTA (params.openCancel) jumps straight into
+  // the reason picker instead of requiring a second tap through the help
+  // sheet — but only when cancelling is actually still allowed for this
+  // order, same eligibility getOrderIntents would compute.
+  const [cancelStep, setCancelStep] = useState(() => {
+    if (!params.openCancel) return null;
+    const target = ORDERS.find((o) => o.id === params.orderId);
+    if (!target || target.section === 'closed' || hasReachedStep(target, 'Delivered')) return null;
+    return 'reason';
+  }); // null | 'reason' | 'alternative' | 'delayed'
   const [cancelReason, setCancelReason] = useState(null);
   const [confirmingCancel, setConfirmingCancel] = useState(false);
   // The honest "not guaranteed" RTO-intercept warning (PRD CX-04) — its own
@@ -174,6 +184,9 @@ export default function OrderDetails({ params }) {
   // ships" case, which still explains itself, this one doesn't even offer
   // the option disabled-with-reason.
   const isClosedOrder = order.section === 'closed';
+  // Journey lanes worth offering for this order, scoped to the line item
+  // when the customer is looking at one.
+  const helpLanes = getAvailableLanes(getJourneyContext(order, scopedItem ?? null));
   const intents = getOrderIntents(order);
   const returnIntent = intents.find((i) => i.key === 'returnReplace');
   const warrantyIntent = intents.find((i) => i.key === 'warranty');
@@ -1009,42 +1022,41 @@ export default function OrderDetails({ params }) {
 
       <BottomSheet open={helpSectionOpen} onClose={() => setHelpSectionOpen(false)}>
         <h2 className="confirm-sheet__title">Need help with this order?</h2>
+        {/* The same journey tree Support opens on, scoped to this order.
+            Previously this sheet offered two fixed buttons while the real
+            intent list lived only in Support — the same problem got a
+            different quality of answer depending on which door you came
+            through. Now there's one engine behind both, and because the
+            order is already known, tapping a topic here lands directly on
+            its intents. Lanes with nothing applicable aren't shown. */}
         <div className="order-details__help-actions">
-          {(!order.items || scopedItem) && (
-            <>
-              <button
-                className="order-details__help-action"
-                disabled={!effectiveReturnIntent?.enabled}
-                onClick={
-                  effectiveReturnIntent?.enabled
-                    ? () => {
-                        setHelpSectionOpen(false);
-                        navigate(
-                          'returnReplace',
-                          scopedItem ? { orderId: order.id, sku: scopedItem.sku } : { orderId: order.id }
-                        );
-                      }
-                    : undefined
+          {helpLanes.map((lane) => (
+            <button
+              key={lane.key}
+              className="order-details__help-action"
+              onClick={() => {
+                setHelpSectionOpen(false);
+                if (lane.redirectsTo) {
+                  navigate(lane.redirectsTo, scopedItem ? { orderId: order.id, sku: scopedItem.sku } : { orderId: order.id });
+                  return;
                 }
-              >
-                <ExternalLinkIcon width="14" height="14" />
-                <span>Return or Replace</span>
-              </button>
-              {!effectiveReturnIntent?.enabled && (
-                <p className="order-details__help-action-reason">{effectiveReturnIntent?.reason}</p>
-              )}
-            </>
-          )}
+                switchTab('support', { openChat: true, orderId: order.id, laneKey: lane.key });
+              }}
+            >
+              <ExternalLinkIcon width="14" height="14" />
+              <span>{lane.label}</span>
+            </button>
+          ))}
 
           <button
             className="order-details__help-action"
             onClick={() => {
               setHelpSectionOpen(false);
-              switchTab('support', { openChat: true, orderId: order.id });
+              switchTab('support', { openChat: true, orderId: order.id, escalate: true });
             }}
           >
             <HeadsetIcon width="15" height="15" />
-            <span>Contact Support</span>
+            <span>Talk to someone</span>
           </button>
         </div>
 

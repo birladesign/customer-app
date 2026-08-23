@@ -8,13 +8,20 @@ import {
   updateCaseMessages,
   getOrderStatus,
 } from '../../data/support.js';
+import {
+  JOURNEY_LANES,
+  getJourneyContext,
+  getIntentsFor,
+  getChildIntents,
+  resolveIntent,
+} from '../../data/journeys.js';
 import { useObjectUrlPreview } from '../../hooks/useObjectUrlPreview.js';
 import { CopyIcon, CheckIcon, CameraIcon, CloseIcon, ArrowUpIcon } from '../../components/icons.jsx';
 import './SupportChat.css';
 
 const MIN_LENGTH = 10;
 const VISIBLE_ORDER_COUNT = 3;
-const GENERAL_LANE = CASE_LANES.find((l) => l.key === 'general');
+const GENERAL_LANE = JOURNEY_LANES.find((l) => l.key === 'general');
 
 function isReturnEligible(order) {
   return Boolean(order) && getOrdersForLane('returns').some((o) => o.id === order.id);
@@ -66,6 +73,13 @@ function ChatMessage({ msg }) {
         <div className={`support-chat__bubble support-chat__bubble--${isUser ? 'user' : 'bot'}${msg.tone === 'warning' ? ' support-chat__bubble--warning' : ''}`}>
           {msg.photoUrl && <img className="support-chat__bubble-photo" src={msg.photoUrl} alt="Attached evidence" />}
           <p className="support-chat__bubble-text">{msg.text}</p>
+        </div>
+      )}
+
+      {msg.answerCard && (
+        <div className="support-chat__answer">
+          <p className="support-chat__answer-title">{msg.answerCard.title}</p>
+          <p className="support-chat__answer-body">{msg.answerCard.body}</p>
         </div>
       )}
 
@@ -135,7 +149,7 @@ function ChatMessage({ msg }) {
 // hide the input while you're picking an option), a resumable/persisted
 // ticket (see resumeCase + updateCaseMessages), and a guard against off-topic
 // input derailing whatever the bot is currently waiting on an answer to.
-export default function SupportChat({ escalate, presetOrder, presetShipment, staleOrderId, resumeCase, intro, onClose, onOrderSelected }) {
+export default function SupportChat({ escalate, presetOrder, presetShipment, presetLaneKey, staleOrderId, resumeCase, intro, onClose, onOrderSelected }) {
   const { navigate } = useNavigation();
   // A shipment of exactly one order is just a preset order that arrived via
   // a different prop; only a genuine multi-order shipment needs its own
@@ -159,6 +173,10 @@ export default function SupportChat({ escalate, presetOrder, presetShipment, sta
   // chip like "Did not Receive" — so handleSubmit always has a single
   // source of truth regardless of which path produced it.
   const descriptionRef = useRef('');
+  // Set when a journey leaf resolves to a case — carries that leaf's own
+  // reference prefix, headline and SLA through to createCase, so a warranty
+  // claim files as WTY-… with its own promise rather than a generic CMP-….
+  const journeyRef = useRef(null);
 
   const [messages, setMessages] = useState(() => resumeCase?.messages ?? []);
   const [stage, setStage] = useState(resumeCase ? 'followup' : 'lane'); // lane | order | item | describe | confirm | followup
@@ -196,9 +214,17 @@ export default function SupportChat({ escalate, presetOrder, presetShipment, sta
     if (multiShipmentOrders) {
       pushBot({ text: `This is about shipment ${multiShipmentOrders[0].shipmentId} (${multiShipmentOrders.length} items).` });
     }
+    // Arriving from a topic tapped on the order itself: both the order and
+    // the lane are already known, so open on that lane's intents rather
+    // than asking two questions whose answers we're holding.
+    const presetLane = presetLaneKey ? JOURNEY_LANES.find((l) => l.key === presetLaneKey) : null;
+    if (presetLane && effectivePresetOrder) {
+      handleSelectLane(presetLane);
+      return;
+    }
     pushBot({
       text: intro ?? (escalate ? "We'll connect you with a specialist. First, what's this about?" : 'Hi! What can we help with?'),
-      chips: CASE_LANES.map((l) => ({ key: l.key, label: l.label, onClick: () => handleSelectLane(l) })),
+      chips: JOURNEY_LANES.map((l) => ({ key: l.key, label: l.label, onClick: () => handleSelectLane(l) })),
     });
     // Seed the conversation once — intentionally not re-run on prop changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -265,7 +291,7 @@ export default function SupportChat({ escalate, presetOrder, presetShipment, sta
         askForItem(selectedLane, effectivePresetOrder);
         return;
       }
-      askToDescribe(selectedLane, effectivePresetOrder);
+      askForIntent(selectedLane, effectivePresetOrder);
       return;
     }
 
@@ -334,7 +360,7 @@ export default function SupportChat({ escalate, presetOrder, presetShipment, sta
       return;
     }
 
-    askToDescribe(selectedLane, selectedOrder);
+    askForIntent(selectedLane, selectedOrder);
   }
 
   function askForItem(selectedLane, selectedOrder) {
@@ -358,10 +384,119 @@ export default function SupportChat({ escalate, presetOrder, presetShipment, sta
       return;
     }
 
-    askToDescribe(selectedLane, selectedOrder, selectedItem);
+    askForIntent(selectedLane, selectedOrder, selectedItem);
   }
 
-  function askToDescribe(selectedLane, selectedOrder, selectedItem = null) {
+  // The journey step: instead of one free-text box per lane, offer the
+  // intents that actually apply to this order's state (data/journeys.js).
+  // Falls through to plain description capture if a lane has no tree or
+  // nothing in it fits.
+  function askForIntent(selectedLane, selectedOrder, selectedItem = null) {
+    const ctx = getJourneyContext(selectedOrder, selectedItem);
+    const intents = getIntentsFor(selectedLane.key, ctx);
+    if (intents.length === 0) {
+      askToDescribe(selectedLane, selectedOrder, selectedItem);
+      return;
+    }
+    pushBot({
+      text: 'What’s happening?',
+      chips: [
+        ...intents.map((intent) => ({
+          key: intent.key,
+          label: intent.label,
+          onClick: () => handleSelectIntent(selectedLane, selectedOrder, selectedItem, intent, ctx),
+        })),
+        {
+          key: 'other',
+          label: 'Something else',
+          onClick: () => {
+            pushUser({ text: 'Something else' });
+            askToDescribe(selectedLane, selectedOrder, selectedItem);
+          },
+        },
+      ],
+    });
+    setStage('intent');
+  }
+
+  function handleSelectIntent(selectedLane, selectedOrder, selectedItem, intent, ctx) {
+    pushUser({ text: intent.label });
+
+    const children = getChildIntents(intent, ctx);
+    if (children.length > 0) {
+      pushBot({
+        text: 'Which is it?',
+        chips: children.map((child) => ({
+          key: child.key,
+          label: child.label,
+          onClick: () => handleSelectIntent(selectedLane, selectedOrder, selectedItem, child, ctx),
+        })),
+      });
+      setStage('intent');
+      return;
+    }
+
+    applyResolution(selectedLane, selectedOrder, selectedItem, resolveIntent(intent, ctx), ctx);
+  }
+
+  function applyResolution(selectedLane, selectedOrder, selectedItem, resolution, ctx) {
+    if (!resolution) {
+      askToDescribe(selectedLane, selectedOrder, selectedItem);
+      return;
+    }
+
+    if (resolution.kind === 'redirect') {
+      navigate(resolution.screen, {
+        orderId: selectedOrder?.id,
+        sku: selectedItem?.sku,
+        ...resolution.params,
+      });
+      return;
+    }
+
+    // Self-resolved (FCR): answer the question outright and let them leave
+    // without a ticket — but never trap them there if it didn't help.
+    if (resolution.kind === 'answer') {
+      pushBot({
+        answerCard: { title: resolution.title, body: resolution.body },
+        chips: [
+          ...(resolution.chips ?? []).map((chip) => ({
+            key: chip.key,
+            label: chip.label,
+            onClick: () =>
+              navigate(chip.redirect, { orderId: selectedOrder?.id, sku: selectedItem?.sku }),
+          })),
+          { key: 'done', label: 'That answers it', onClick: onClose },
+          ...(resolution.stillNeedHelp
+            ? [
+                {
+                  key: 'more',
+                  label: 'I still need help',
+                  onClick: () => {
+                    pushUser({ text: 'I still need help' });
+                    askToDescribe(selectedLane, selectedOrder, selectedItem);
+                  },
+                },
+              ]
+            : []),
+        ],
+      });
+      setStage('resolved');
+      return;
+    }
+
+    // Case leaf: carry the journey's own reference prefix, headline and SLA
+    // into the ticket rather than filing everything as a generic complaint.
+    journeyRef.current = {
+      prefix: resolution.prefix,
+      title: resolution.title,
+      sla: resolution.sla,
+      lane: resolution.lane ?? selectedLane.key,
+    };
+    askToDescribe(selectedLane, selectedOrder, selectedItem, resolution);
+  }
+
+  function askToDescribe(selectedLane, selectedOrder, selectedItem = null, resolution = null) {
     const existingCase = findOpenCaseForOrder(selectedOrder?.id, selectedLane.key, selectedItem?.sku ?? null);
     if (existingCase) {
       pushBot({
@@ -370,6 +505,25 @@ export default function SupportChat({ escalate, presetOrder, presetShipment, sta
         tone: 'warning',
       });
     }
+    // A journey leaf already knows what the customer picked, so it offers
+    // that back as a one-tap summary rather than making them retype it.
+    if (resolution?.prefill) {
+      pushBot({
+        text: resolution.needsPhoto
+          ? 'Add a photo and anything else worth knowing — or send the summary as-is.'
+          : 'Anything you’d like to add? Send the summary as-is, or type your own.',
+        chips: [
+          {
+            key: 'prefill',
+            label: 'Send this summary',
+            onClick: () => handleQuickDescribe(selectedLane, selectedOrder, selectedItem, resolution.prefill),
+          },
+        ],
+      });
+      setStage('describe');
+      return;
+    }
+
     if (selectedLane.key === 'logistics' && isDelivered(selectedOrder, selectedItem)) {
       pushBot({
         text: 'Tell us what happened — type your message below, or pick an option:',
@@ -497,14 +651,16 @@ export default function SupportChat({ escalate, presetOrder, presetShipment, sta
   // quick-reply) closes over the pre-update render, so its state reads
   // would still be null/stale when the chip is actually tapped later.
   function handleSubmit(overrides = {}) {
+    const journey = journeyRef.current;
     const record = createCase({
-      lane: (overrides.lane ?? lane).key,
+      lane: journey?.lane ?? (overrides.lane ?? lane).key,
       order: overrides.order !== undefined ? overrides.order : order,
       item: overrides.item !== undefined ? overrides.item : item,
       description: descriptionRef.current,
       hasPhoto: Boolean(photoFile),
       escalate,
       messages,
+      journey,
     });
     caseIdRef.current = record.id;
     pushBot({

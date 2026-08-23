@@ -162,13 +162,21 @@ export function findOpenCaseForOrder(orderId, laneKey, itemSku = null) {
 // can replay exactly what was said. `item` is the specific line item a
 // multi-item order's case is about (null for a single-item order, or when
 // the customer meant the whole order rather than one item in it).
-export function createCase({ lane, order, item, description, hasPhoto, escalate, messages }) {
+export function createCase({ lane, order, item, description, hasPhoto, escalate, messages, journey }) {
   const laneMeta = CASE_LANES.find((l) => l.key === lane);
-  const { classification, status, slaLabel } = classifyCase(lane, escalate);
+  const fallback = classifyCase(lane, escalate);
+  // A journey leaf carries its own reference prefix, headline and SLA (see
+  // data/journeys.js); without one this stays the old generic complaint.
+  const classification = journey ? 'nonFCR' : fallback.classification;
+  // Anything that reached a journey's case leaf is a real ticket someone has
+  // to work — the FCR shortcut belongs to the answer leaves, which never get
+  // this far.
+  const status = journey ? 'open' : fallback.status;
+  const slaLabel = journey?.sla ?? fallback.slaLabel;
   const record = {
-    id: generateCaseId('CMP'),
+    id: generateCaseId(journey?.prefix ?? 'CMP'),
     lane,
-    laneLabel: laneMeta?.label ?? 'Something Else',
+    laneLabel: journey?.title ?? laneMeta?.label ?? 'Something Else',
     orderId: order?.id ?? null,
     orderProduct: order?.product ?? null,
     itemSku: item?.sku ?? null,

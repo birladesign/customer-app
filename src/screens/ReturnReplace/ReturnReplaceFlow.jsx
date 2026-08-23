@@ -1,13 +1,15 @@
 import { useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { ORDERS } from '../../data/orders.js';
-import { getRemediationOptions, getPostBookingUpdate } from '../../data/remediation.js';
+import { getRemediationOptions, getPostBookingUpdate, isMattressProduct } from '../../data/remediation.js';
+import { getLadderOutcome } from '../../data/retention.js';
 import { useNavigation } from '../../navigation/NavigationContext.jsx';
 import { SPRING_STANDARD, DURATION_REDUCED } from '../../motion.js';
 import { ChevronLeftIcon } from '../../components/icons.jsx';
 import ReasonStep from './ReasonStep.jsx';
 import EvidenceStep from './EvidenceStep.jsx';
 import OptionsStep from './OptionsStep.jsx';
+import RetentionLadder from './RetentionLadder.jsx';
 import RefundMethodStep from './RefundMethodStep.jsx';
 import ExecutionStep from './ExecutionStep.jsx';
 import ApprovalPendingStep from './ApprovalPendingStep.jsx';
@@ -64,7 +66,16 @@ export default function ReturnReplaceFlow({ params }) {
   const needsApproval = Boolean(
     selectedLever && order && getRemediationOptions(order, reason).find((o) => o.id === selectedLever)?.needsApproval
   );
-  const headerTitle = currentKey === 'execution' && needsApproval ? 'Request Sent' : STEP_TITLES[currentKey];
+  // Discomfort on a mattress is the retention ladder's territory (§7.11):
+  // the right remedy depends on which kind of discomfort it is, which a flat
+  // list of levers has no way to ask.
+  const usesLadder = reason === 'Discomfort / Not as expected' && isMattressProduct(target?.product ?? '');
+  const headerTitle =
+    currentKey === 'execution' && needsApproval
+      ? 'Request Sent'
+      : currentKey === 'options' && usesLadder
+      ? "Let's sort it out"
+      : STEP_TITLES[currentKey];
 
   function goToStep(next) {
     directionRef.current = next > step ? 1 : -1;
@@ -81,7 +92,32 @@ export default function ReturnReplaceFlow({ params }) {
   // OrderDetails' handleCancelOrder/handlePutOnHold, so My Orders and Order
   // Details both reflect the booked journey the moment we navigate back.
   function handleJourneyComplete() {
-    const update = getPostBookingUpdate(selectedLever, needsApproval);
+    applyOrderUpdate(getPostBookingUpdate(selectedLever, needsApproval));
+  }
+
+  // Accepting a ladder rung is a resolution in its own right — guidance,
+  // a topper, or an inspection — so it writes the same kind of update a
+  // booked lever does and returns to the order.
+  function handleLadderRetain(rung) {
+    const outcome = getLadderOutcome(rung);
+    if (!outcome) return;
+    if (outcome.setsTopperProvided) order.topperProvided = true;
+    applyOrderUpdate(outcome);
+  }
+
+  // Declining down to the bottom of the ladder hands off to the existing
+  // lever machinery rather than reimplementing it: replace goes straight to
+  // its tracker, return picks up the refund-method step first.
+  function handleLadderEscalate(leverId) {
+    if (leverId === 'inspection') {
+      applyOrderUpdate(getLadderOutcome({ outcome: 'inspection' }));
+      return;
+    }
+    setSelectedLever(leverId);
+    goToStep(3);
+  }
+
+  function applyOrderUpdate(update) {
     const newStatus = { dot: 'blue', label: update.label };
 
     if (item) {
@@ -147,6 +183,7 @@ export default function ReturnReplaceFlow({ params }) {
           >
             {currentKey === 'reason' && (
               <ReasonStep
+                order={target}
                 selected={reason}
                 onSelect={setReason}
                 onContinue={() => goToStep(1)}
@@ -164,13 +201,21 @@ export default function ReturnReplaceFlow({ params }) {
                 onContinue={() => goToStep(2)}
               />
             )}
-            {currentKey === 'options' && (
+            {/* Mattress discomfort is the one reason where a list of levers
+                is the wrong shape: the right remedy depends on what kind of
+                discomfort it is, and a menu can't ask. It gets the ladder
+                (§7.11); every other reason keeps the options list. */}
+            {currentKey === 'options' && usesLadder && (
+              <RetentionLadder order={target} onRetain={handleLadderRetain} onEscalate={handleLadderEscalate} />
+            )}
+            {currentKey === 'options' && !usesLadder && (
               <OptionsStep
                 order={target}
                 reason={reason}
                 selectedLever={selectedLever}
                 onSelectLever={setSelectedLever}
                 onContinue={() => goToStep(3)}
+                onDone={goBack}
               />
             )}
             {currentKey === 'refundMethod' && (

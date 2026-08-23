@@ -2,6 +2,7 @@ import { useNavigation } from '../navigation/NavigationContext.jsx';
 import { ORDERS, parseOrderDate } from '../data/orders.js';
 import { CURRENT_USER, NOTIFICATIONS } from '../data/profile.js';
 import { PROMO_BANNERS } from '../data/home.js';
+import { getHomePrompts } from '../data/prompts.js';
 import PromoCarousel from '../components/PromoCarousel.jsx';
 import OrderCard from '../components/OrderCard.jsx';
 import Avatar from '../components/Avatar.jsx';
@@ -15,6 +16,7 @@ export default function Home() {
     .sort((a, b) => parseOrderDate(b.date) - parseOrderDate(a.date))
     .slice(0, 5);
   const hasUnreadNotifications = NOTIFICATIONS.some((n) => !n.read);
+  const prompts = getHomePrompts();
 
   return (
     <div className="home">
@@ -32,6 +34,29 @@ export default function Home() {
       </header>
 
       <main className="home__content">
+        {/* Above the promos deliberately: something going wrong with an
+            order the customer already paid for outranks anything we want
+            to sell them. */}
+        {prompts.length > 0 && (
+          <section className="home__prompts">
+            {prompts.map((prompt) => (
+              <button
+                key={prompt.key}
+                className={`home__prompt home__prompt--${prompt.severity}`}
+                onClick={() =>
+                  prompt.target.screen === 'support' || prompt.target.screen === 'orders'
+                    ? switchTab(prompt.target.screen, prompt.target.params)
+                    : navigate(prompt.target.screen, prompt.target.params)
+                }
+              >
+                <span className="home__prompt-title">{prompt.title}</span>
+                <span className="home__prompt-body">{prompt.body}</span>
+                <span className="home__prompt-cta">{prompt.ctaLabel}</span>
+              </button>
+            ))}
+          </section>
+        )}
+
         <PromoCarousel banners={PROMO_BANNERS} />
 
         {ongoingOrders.length > 0 && (
