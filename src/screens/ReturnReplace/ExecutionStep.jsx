@@ -7,6 +7,9 @@ const LEVER_CONFIRMATION = {
   sendPart: 'Replacement part on its way',
   replace: 'Replacement Requested',
   return: 'Return booked',
+  installerVisit: 'Installer visit scheduled',
+  videoConsult: 'Video consultation scheduled',
+  postureCorrection: 'Posture-correction guidance sent',
 };
 
 export default function ExecutionStep({ order, leverId, onDone }) {

@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { getRemediationOptions } from '../../data/remediation.js';
+import { getRemediationOptions, getDenialNotice } from '../../data/remediation.js';
 import ConfirmSheet from '../../components/ConfirmSheet.jsx';
 import './OptionsStep.css';
 
 // Retention-ladder ordered levers from the mocked C3 verdict — cheapest/least
 // drastic first, Return for Refund always last (PRD §7.2).
-export default function OptionsStep({ order, reason, selectedLever, onSelectLever, onContinue }) {
+export default function OptionsStep({ order, reason, selectedLever, onSelectLever, onContinue, onDone }) {
   const options = getRemediationOptions(order, reason);
   const selectedOption = options.find((o) => o.id === selectedLever);
   // A needsApproval lever isn't ours to grant on the spot — it goes to a
@@ -19,6 +19,24 @@ export default function OptionsStep({ order, reason, selectedLever, onSelectLeve
     } else {
       onContinue();
     }
+  }
+
+  // No levers left to offer at all (e.g. mattress discomfort past its
+  // 100-night trial window) — an inform-only honesty screen instead of a
+  // silently empty list (N7-style, PRD §7.8).
+  const denialNotice = options.length === 0 ? getDenialNotice(order, reason) : null;
+  if (denialNotice) {
+    return (
+      <div className="options-step">
+        <div className="options-step__denial">
+          <p className="options-step__denial-title">{denialNotice.title}</p>
+          <p className="options-step__denial-body">{denialNotice.body}</p>
+        </div>
+        <button className="options-step__continue" onClick={onDone}>
+          Back to Order Details
+        </button>
+      </div>
+    );
   }
 
   return (
