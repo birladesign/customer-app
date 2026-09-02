@@ -83,6 +83,22 @@
   color: var(--color-text-muted);
 }
 
+.mattress-variant-step__delta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-body-size);
+  color: var(--color-text-primary);
+}
+
+.mattress-variant-step__delta-amount {
+  font-weight: 700;
+  font-size: var(--text-product-size);
+}
+
 .mattress-variant-step__continue {
   border: none;
   border-radius: var(--radius-full);
@@ -92,10 +108,14 @@
   font-family: inherit;
   font-size: var(--text-product-size);
   font-weight: 600;
-  transition: transform 0.1s ease-out;
+  transition: transform 0.1s ease-out, opacity 0.15s var(--ease-standard);
 }
 
-.mattress-variant-step__continue:active {
+.mattress-variant-step__continue:disabled {
+  opacity: 0.4;
+}
+
+.mattress-variant-step__continue:not(:disabled):active {
   transform: scale(0.97);
 }
 

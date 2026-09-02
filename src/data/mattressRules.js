@@ -46,16 +46,6 @@ export const MATTRESS_REASONS = [
   { key: 'smell', label: 'Odor / Smell' },
 ];
 
-const SHIP_CHARGE_ROYALE = 6000;
-const SHIP_CHARGE_BY_HEIGHT = { '6 in': 3000, '8 in': 4000, '10 in': 4000 };
-
-export function shipChargeFor(productName, spec) {
-  if (/royale/i.test(productName)) return SHIP_CHARGE_ROYALE;
-  const heightMatch = /(\d+)\s*in/i.exec(spec ?? '');
-  const heightLabel = heightMatch ? `${heightMatch[1]} in` : '8 in';
-  return SHIP_CHARGE_BY_HEIGHT[heightLabel] ?? SHIP_CHARGE_BY_HEIGHT['8 in'];
-}
-
 // Linear 10%/yr depreciation, provisional per the PRD pending Finance
 // sign-off — floored at 20% residual so a very old claim isn't quoted ₹0.
 export function proRataRefund(originalPrice, deliveredDateStr) {
@@ -64,12 +54,15 @@ export function proRataRefund(originalPrice, deliveredDateStr) {
   return Math.round(originalPrice * residual);
 }
 
-// `input`: { reasonKey, daysSinceDelivery, faultAttribution ('tsc'|'customer'), productName, spec }
-// Returns a verdict: which levers are on the table, whether a ship charge
-// applies (and how much), what evidence is needed, and whether this reason
-// routes through a retention step first.
+// `input`: { reasonKey, daysSinceDelivery, faultAttribution ('tsc'|'customer') }
+// Returns a verdict: which levers are on the table, what evidence is
+// needed, and whether this reason routes through a retention step first.
+// There's never a shipping charge for a return or replace itself — the
+// only money that ever moves for a replacement is a genuine SKU-level price
+// difference (a bigger/smaller size or a different model), handled where
+// the new SKU is actually chosen (see MattressVariantStep), not here.
 export function getMattressVerdict(input) {
-  const { reasonKey, daysSinceDelivery: days, faultAttribution, productName, spec } = input;
+  const { reasonKey, daysSinceDelivery: days, faultAttribution } = input;
 
   switch (reasonKey) {
     case 'damaged':
@@ -77,9 +70,8 @@ export function getMattressVerdict(input) {
       return {
         rule: 'M1',
         leverOptions: ['replace', 'return'],
-        shipCharge: 0,
         images: 'optional',
-        note: "There's no shipping charge for this — a quick photo helps us confirm it faster.",
+        note: 'A quick photo helps us confirm the issue faster.',
       };
 
     case 'wrongSizeModel':
@@ -89,9 +81,8 @@ export function getMattressVerdict(input) {
         return {
           rule: 'M2',
           leverOptions: ['replace', 'return'],
-          shipCharge: 0,
           images: 'optional',
-          note: "Since this was our mistake, there's no shipping charge.",
+          note: 'Since this was our mistake, we’ll take it from here.',
         };
       }
       if (days <= 10) {
@@ -99,30 +90,25 @@ export function getMattressVerdict(input) {
         return {
           rule: 'M3',
           leverOptions: ['replace', 'return'],
-          shipCharge: shipChargeFor(productName, spec),
           images: 'optional',
-          waiverRequestable: true,
-          note: 'A shipping charge applies for a size/model correction ordered in error — you can request a waiver for review.',
+          note: 'If a replacement is a different size or model, only the price difference (if any) applies — never a shipping charge.',
         };
       }
-      // M4 — same charge as M3, but only after a retention prompt.
+      // M4 — same as M3, but only after a retention prompt (it's past the
+      // 10-day window).
       return {
         rule: 'M4',
         leverOptions: ['replace', 'return'],
-        shipCharge: shipChargeFor(productName, spec),
         images: 'optional',
-        waiverRequestable: true,
         retention: 'insist',
-        note: "It's past the 10-day window for a free correction — a shipping charge applies if you go ahead.",
+        note: "It's past the 10-day window for a size/model correction — going ahead is still free of any shipping charge; only a genuine price difference for a different size/model would apply.",
       };
 
     case 'discomfort':
-      // M5 — resolved entirely through the retention ladder (§7.11); no
-      // charge either way, however it ends.
+      // M5 — resolved entirely through the retention ladder (§7.11).
       return {
         rule: 'M5',
         leverOptions: ['replace', 'return'],
-        shipCharge: 0,
         images: 'optional',
         retention: 'ladder',
         note: null,
@@ -136,7 +122,6 @@ export function getMattressVerdict(input) {
         return {
           rule: 'M1',
           leverOptions: ['replace', 'return'],
-          shipCharge: 0,
           images: 'mandatory',
           note: 'Photos of the affected area are required to verify this.',
         };
@@ -146,7 +131,6 @@ export function getMattressVerdict(input) {
       return {
         rule: 'M6',
         leverOptions: ['proRataRefund'],
-        shipCharge: 0,
         images: 'mandatory',
         proRata: true,
         note: 'This is a warranty claim rather than a standard return — the refund is pro-rated for usage.',

@@ -82,6 +82,10 @@ export default function ReturnReplaceFlow({ params }) {
   // not a fixed day count, so this overrides the real elapsed days once hit.
   const [smellPersists, setSmellPersists] = useState(false);
   const [newSpec, setNewSpec] = useState(null);
+  // The only money that ever moves for a mattress replacement — a genuine
+  // SKU-level price difference for a different size/height, never a
+  // shipping charge (see MattressVariantStep).
+  const [variantPriceDelta, setVariantPriceDelta] = useState(0);
   const directionRef = useRef(1);
   // Return for Refund hands off to a human agent instead of resolving
   // automatically — "Request Return" is the one moment that's true, so a
@@ -179,18 +183,6 @@ export default function ReturnReplaceFlow({ params }) {
     goNext();
   }
 
-  function handleRequestWaiver() {
-    createCase({
-      lane: 'returns',
-      order,
-      item: item ?? null,
-      description: `Shipping charge waiver requested (${verdict?.rule ?? 'wrong size/model'})`,
-      hasPhoto: Boolean(photo),
-      escalate: true,
-      messages: [],
-    });
-  }
-
   // Topper accepted (M5's retention ladder) and a warranty claim (M6) both
   // resolve the issue without ever touching the standard replace/return
   // machinery below — each files its own case and returns straight to
@@ -226,8 +218,9 @@ export default function ReturnReplaceFlow({ params }) {
     setSmellPersists(true);
   }
 
-  function handleVariantContinue(spec) {
+  function handleVariantContinue({ spec, delta }) {
     setNewSpec(spec);
+    setVariantPriceDelta(delta);
     goNext();
   }
 
@@ -241,16 +234,29 @@ export default function ReturnReplaceFlow({ params }) {
     // A replacement that changed size/height (mattress-only — see
     // MattressVariantStep) ships as the new spec, not a like-for-like
     // reprint of what didn't work out.
+    const newPrice = itemPrice + variantPriceDelta;
     const specUpdate = newSpec
       ? { product: withSpec(splitProductSpec(item ? item.product : order.product).name, newSpec) }
       : {};
+    // A different size/height is a different SKU price — only actually
+    // apply it if it changed, so an unpriced/no-op replacement doesn't
+    // silently rewrite priceBreakup with the exact same numbers.
+    const priceUpdate =
+      newSpec && variantPriceDelta !== 0
+        ? item
+          ? { price: newPrice }
+          : { amount: newPrice, priceBreakup: { ...order.priceBreakup, itemPrice: newPrice, total: newPrice } }
+        : {};
 
     if (item) {
-      Object.assign(item, specUpdate, { status: newStatus, tracker: { steps: update.trackerSteps, currentIndex: 0 } });
+      Object.assign(item, specUpdate, priceUpdate, {
+        status: newStatus,
+        tracker: { steps: update.trackerSteps, currentIndex: 0 },
+      });
       item.timeline?.steps.push({ label: update.label, timestamp: null, description: update.description });
       if (item.timeline) item.timeline.currentIndex = item.timeline.steps.length - 1;
     } else {
-      Object.assign(order, specUpdate, {
+      Object.assign(order, specUpdate, priceUpdate, {
         section: 'inProgress',
         status: newStatus,
         actions: update.actions,
@@ -330,13 +336,14 @@ export default function ReturnReplaceFlow({ params }) {
                 verdict={verdict}
                 proRataAmount={proRataAmount}
                 onChooseLever={handleChooseLever}
-                onRequestWaiver={handleRequestWaiver}
                 onAcceptTopper={handleAcceptTopper}
                 onSubmitWarrantyClaim={handleSubmitWarrantyClaim}
                 onSmellPersists={handleSmellPersists}
               />
             )}
-            {currentKey === 'mattressVariant' && <MattressVariantStep order={target} onContinue={handleVariantContinue} />}
+            {currentKey === 'mattressVariant' && (
+              <MattressVariantStep order={target} price={itemPrice} onContinue={handleVariantContinue} />
+            )}
             {currentKey === 'evidence' && (
               <EvidenceStep
                 order={target}
@@ -371,7 +378,12 @@ export default function ReturnReplaceFlow({ params }) {
               />
             )}
             {currentKey === 'execution' && !needsApproval && (
-              <ExecutionStep order={target} leverId={selectedLever} onDone={handleJourneyComplete} />
+              <ExecutionStep
+                order={target}
+                leverId={selectedLever}
+                priceDelta={newSpec ? variantPriceDelta : 0}
+                onDone={handleJourneyComplete}
+              />
             )}
           </motion.div>
         </AnimatePresence>

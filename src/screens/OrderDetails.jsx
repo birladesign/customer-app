@@ -186,14 +186,19 @@ export default function OrderDetails({ params }) {
   const itemIntents = scopedItem ? getItemIntents(scopedItem) : null;
   const effectiveWarrantyIntent = scopedItem ? itemIntents.warranty : warrantyIntent;
   const effectiveReturnIntent = scopedItem ? itemIntents.returnReplace : returnIntent;
-  // Once delivered, Return/Replace is the thing most people came here for —
-  // it earns its own two cards directly on the page instead of waiting one
-  // more tap inside "Need Help". Cancel never applies post-delivery anyway,
-  // so the sheet (cancel + return/replace + contact) collapses to just a
-  // plain Contact Support link once these cards take over. Unscoped view of
-  // a multi-item order still routes through the sheet — return/replace there
-  // is a per-item decision, not one this page-level pair can represent.
-  const showReturnReplaceCards = Boolean(effectiveReturnIntent?.enabled && (!order.items || scopedItem));
+  // Once delivered, the old "Need Help" sheet has nothing live left to say —
+  // Cancel never applies post-delivery, and Return/Replace either graduates
+  // to its own two cards on the page, or (already in progress / otherwise
+  // disabled) has no useful action to offer either, just a reason nobody
+  // asked for. Either way the sheet itself is skipped in favor of a plain
+  // Contact Support link — showReturnReplaceCards controls only whether the
+  // two cards themselves render; hideNeedHelpSheet controls the sheet.
+  // Unscoped view of a multi-item order still routes through the sheet —
+  // return/replace there is a per-item decision, not one this page-level
+  // pair can represent.
+  const isDeliveredForHelp = status.dot === 'green' && /delivered/i.test(status.label) && (!order.items || scopedItem);
+  const showReturnReplaceCards = Boolean(effectiveReturnIntent?.enabled && isDeliveredForHelp);
+  const hideNeedHelpSheet = isDeliveredForHelp;
   // The invoice only exists once the order has actually shipped out — same
   // "available after delivery" window as Warranty, just also true for a
   // multi-item order once every line item (not just the order's headline
@@ -519,46 +524,38 @@ export default function OrderDetails({ params }) {
             bottom, behind billing and shipment details it has nothing to
             do with. */}
         {showReturnReplaceCards && (
-          <>
-            <div className="order-details__lever-cards">
-              <button
-                className="order-details__lever-card"
-                onClick={() =>
-                  navigate('returnReplace', {
-                    orderId: order.id,
-                    ...(scopedItem ? { sku: scopedItem.sku } : {}),
-                    lever: 'replace',
-                  })
-                }
-              >
-                <span className="order-details__lever-card-icon">
-                  <EditIcon width="18" height="18" />
-                </span>
-                <span>Replace</span>
-              </button>
-              <button
-                className="order-details__lever-card"
-                onClick={() =>
-                  navigate('returnReplace', {
-                    orderId: order.id,
-                    ...(scopedItem ? { sku: scopedItem.sku } : {}),
-                    lever: 'return',
-                  })
-                }
-              >
-                <span className="order-details__lever-card-icon">
-                  <PackageIcon width="18" height="18" />
-                </span>
-                <span>Return</span>
-              </button>
-            </div>
+          <div className="order-details__lever-cards">
             <button
-              className="order-details__contact-support-link"
-              onClick={() => switchTab('support', { openChat: true, orderId: order.id })}
+              className="order-details__lever-card"
+              onClick={() =>
+                navigate('returnReplace', {
+                  orderId: order.id,
+                  ...(scopedItem ? { sku: scopedItem.sku } : {}),
+                  lever: 'replace',
+                })
+              }
             >
-              Contact Support
+              <span className="order-details__lever-card-icon">
+                <EditIcon width="18" height="18" />
+              </span>
+              <span>Replace</span>
             </button>
-          </>
+            <button
+              className="order-details__lever-card"
+              onClick={() =>
+                navigate('returnReplace', {
+                  orderId: order.id,
+                  ...(scopedItem ? { sku: scopedItem.sku } : {}),
+                  lever: 'return',
+                })
+              }
+            >
+              <span className="order-details__lever-card-icon">
+                <PackageIcon width="18" height="18" />
+              </span>
+              <span>Return</span>
+            </button>
+          </div>
         )}
 
         {shipmentGroups && !scopedItem ? (
@@ -1064,7 +1061,14 @@ export default function OrderDetails({ params }) {
           </div>
         )}
 
-        {!showReturnReplaceCards && (
+        {hideNeedHelpSheet ? (
+          <button
+            className="order-details__contact-support-link"
+            onClick={() => switchTab('support', { openChat: true, orderId: order.id })}
+          >
+            Contact Support
+          </button>
+        ) : (
           <button className="order-details__help-toggle" onClick={() => setHelpSectionOpen(true)}>
             <span>Do you need help with the existing order?</span>
             <ChevronRightIcon className="order-details__help-chevron" />

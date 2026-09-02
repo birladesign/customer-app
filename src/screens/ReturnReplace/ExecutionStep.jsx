@@ -9,7 +9,15 @@ const LEVER_CONFIRMATION = {
   return: 'Return booked',
 };
 
-export default function ExecutionStep({ order, leverId, onDone }) {
+function formatRupees(amount) {
+  return `₹${amount.toLocaleString('en-IN')}`;
+}
+
+// priceDelta is optional and only ever non-zero for a mattress replacement
+// that landed on a different-priced size/model (see MattressVariantStep) —
+// every other caller simply doesn't pass it, and this stays silent as
+// before.
+export default function ExecutionStep({ order, leverId, priceDelta = 0, onDone }) {
   const execution = getExecutionSteps(leverId);
   const refundNote =
     leverId === 'return'
@@ -27,6 +35,13 @@ export default function ExecutionStep({ order, leverId, onDone }) {
           <p className="execution-step__confirm-body">{refundNote}</p>
         </div>
       </div>
+
+      {priceDelta !== 0 && (
+        <div className="execution-step__price-delta">
+          <span>{priceDelta > 0 ? 'Additional Payment' : 'Refund'}</span>
+          <span className="execution-step__price-delta-amount">{formatRupees(Math.abs(priceDelta))}</span>
+        </div>
+      )}
 
       <div className="execution-step__card">
         <p className="execution-step__card-heading">Execution Tracker</p>

@@ -38,6 +38,23 @@
   color: var(--color-text-muted);
 }
 
+.execution-step__price-delta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--color-bg-primary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-body-size);
+  color: var(--color-text-primary);
+}
+
+.execution-step__price-delta-amount {
+  font-weight: 700;
+  font-size: var(--text-product-size);
+}
+
 .execution-step__card {
   background: var(--color-bg-primary);
   border-radius: var(--radius-lg);

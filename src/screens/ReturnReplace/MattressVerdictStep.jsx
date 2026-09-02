@@ -79,13 +79,11 @@ export default function MattressVerdictStep({
   verdict,
   proRataAmount,
   onChooseLever,
-  onRequestWaiver,
   onAcceptTopper,
   onSubmitWarrantyClaim,
   onSmellPersists,
 }) {
   const [insistConfirmed, setInsistConfirmed] = useState(false);
-  const [waiverRequested, setWaiverRequested] = useState(false);
 
   if (verdict.retention === 'ladder') {
     return <RetentionLadder onAcceptTopper={onAcceptTopper} onChooseLever={onChooseLever} />;
@@ -131,10 +129,6 @@ export default function MattressVerdictStep({
         <div className="mattress-verdict__card mattress-verdict__card--warning">
           <p className="mattress-verdict__title">Are you sure?</p>
           <p className="mattress-verdict__body">{verdict.note}</p>
-          <div className="mattress-verdict__refund-row">
-            <span>Shipping Charge</span>
-            <span className="mattress-verdict__refund-amount">{formatRupees(verdict.shipCharge)}</span>
-          </div>
         </div>
         <button className="mattress-verdict__primary" onClick={() => setInsistConfirmed(true)}>
           Continue Anyway
@@ -143,37 +137,15 @@ export default function MattressVerdictStep({
     );
   }
 
-  // Straightforward verdict — M1/M2/M3/M4(confirmed)/M7/M9: show the charge
-  // (if any) and let the customer pick a lever from whichever is on offer.
+  // Straightforward verdict — M1/M2/M3/M4(confirmed)/M7/M9: no charge for
+  // the return/replace itself; let the customer pick a lever from whichever
+  // is on offer. A genuine price difference only ever shows up later, if
+  // Replace lands on a different-priced size/model (see MattressVariantStep).
   return (
     <div className="mattress-verdict">
       {verdict.note && (
         <div className="mattress-verdict__card">
           <p className="mattress-verdict__body">{verdict.note}</p>
-          {verdict.shipCharge > 0 && (
-            <>
-              <div className="mattress-verdict__refund-row">
-                <span>Shipping Charge</span>
-                <span className="mattress-verdict__refund-amount">{formatRupees(verdict.shipCharge)}</span>
-              </div>
-              {verdict.waiverRequestable && !waiverRequested && (
-                <button
-                  className="mattress-verdict__waiver-link"
-                  onClick={() => {
-                    setWaiverRequested(true);
-                    onRequestWaiver();
-                  }}
-                >
-                  Request a waiver for review
-                </button>
-              )}
-              {waiverRequested && (
-                <p className="mattress-verdict__fineprint">
-                  Waiver requested — we'll follow up on this before the charge is collected.
-                </p>
-              )}
-            </>
-          )}
         </div>
       )}
 

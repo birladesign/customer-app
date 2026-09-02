@@ -1125,17 +1125,16 @@
 .order-details__lever-card {
   flex: 1;
   display: flex;
-  flex-direction: column;
   align-items: center;
   gap: var(--space-2);
   border: 1px solid var(--color-border);
   background: var(--color-bg-primary);
-  border-radius: var(--radius-lg);
-  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
   box-shadow: var(--shadow-sm);
   font-family: inherit;
-  font-size: var(--text-product-size);
-  font-weight: 700;
+  font-size: var(--text-body-size);
+  font-weight: 600;
   color: var(--color-navy-900);
   transition: transform 0.1s ease-out;
 }
@@ -1145,8 +1144,9 @@
 }
 
 .order-details__lever-card-icon {
-  width: 40px;
-  height: 40px;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1155,14 +1155,13 @@
   color: var(--color-navy-900);
 }
 
-/* The sheet this used to open (Return/Replace + Contact Support + Cancel)
-   collapses to just this once the cards above take over and Cancel no
-   longer applies post-delivery — a quiet text link is all that's left to
-   say, not a full card/row.  */
+/* Cancel no longer applies post-delivery, so what the "Need Help" sheet
+   used to hold collapses to just this once the cards above take over — a
+   quiet text link at the bottom of the page, same spot the sheet's own
+   Contact Support used to be one tap away from. */
 .order-details__contact-support-link {
   display: block;
   width: 100%;
-  margin-top: var(--space-1);
   border: none;
   background: none;
   padding: var(--space-2);
