@@ -519,45 +519,6 @@ export default function OrderDetails({ params }) {
       </header>
 
       <main className="order-details__content">
-        {/* Once delivered, Return/Replace is the thing most people came
-            back for — it leads the page instead of waiting at the very
-            bottom, behind billing and shipment details it has nothing to
-            do with. */}
-        {showReturnReplaceCards && (
-          <div className="order-details__lever-cards">
-            <button
-              className="order-details__lever-card"
-              onClick={() =>
-                navigate('returnReplace', {
-                  orderId: order.id,
-                  ...(scopedItem ? { sku: scopedItem.sku } : {}),
-                  lever: 'replace',
-                })
-              }
-            >
-              <span className="order-details__lever-card-icon">
-                <EditIcon width="18" height="18" />
-              </span>
-              <span>Replace</span>
-            </button>
-            <button
-              className="order-details__lever-card"
-              onClick={() =>
-                navigate('returnReplace', {
-                  orderId: order.id,
-                  ...(scopedItem ? { sku: scopedItem.sku } : {}),
-                  lever: 'return',
-                })
-              }
-            >
-              <span className="order-details__lever-card-icon">
-                <PackageIcon width="18" height="18" />
-              </span>
-              <span>Return</span>
-            </button>
-          </div>
-        )}
-
         {shipmentGroups && !scopedItem ? (
           <div className="order-details__shipment-groups">
             {shipmentGroups.map((group) => {
@@ -662,6 +623,45 @@ export default function OrderDetails({ params }) {
                 <p className="order-details__product">{productName}</p>
                 {spec && <p className="order-details__spec">{spec}</p>}
               </div>
+            </div>
+          )}
+
+          {/* Once delivered, Return/Replace is the thing most people came
+              back for — it sits right under what it's about instead of
+              waiting at the very bottom, behind billing and shipment
+              details it has nothing to do with. */}
+          {showReturnReplaceCards && (
+            <div className="order-details__lever-cards">
+              <button
+                className="order-details__lever-card"
+                onClick={() =>
+                  navigate('returnReplace', {
+                    orderId: order.id,
+                    ...(scopedItem ? { sku: scopedItem.sku } : {}),
+                    lever: 'replace',
+                  })
+                }
+              >
+                <span className="order-details__lever-card-icon">
+                  <EditIcon width="18" height="18" />
+                </span>
+                <span>Replace</span>
+              </button>
+              <button
+                className="order-details__lever-card"
+                onClick={() =>
+                  navigate('returnReplace', {
+                    orderId: order.id,
+                    ...(scopedItem ? { sku: scopedItem.sku } : {}),
+                    lever: 'return',
+                  })
+                }
+              >
+                <span className="order-details__lever-card-icon">
+                  <PackageIcon width="18" height="18" />
+                </span>
+                <span>Return</span>
+              </button>
             </div>
           )}
 
