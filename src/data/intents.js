@@ -111,23 +111,14 @@ export function getShipmentEditEligibility(units) {
   return { enabled: true };
 }
 
-// Address editing (My Orders' own Edit Address CTA/kebab) tolerates a later
-// stage than qty/variant editing above — the courier is still working off
-// whatever address it was handed at pickup all the way through transit, and
-// only actually commits to it once the parcel is out for delivery, so the
-// address stays editable right up to that point instead of locking as early
-// as isPostDispatch (Shipped) does.
-const OUT_FOR_DELIVERY_LABELS = ['Out for Delivery', 'Delivered'];
-
-function isOutForDeliveryOrBeyond(entity) {
-  const idx = entity.timeline?.steps.findIndex((s) => OUT_FOR_DELIVERY_LABELS.includes(s.label)) ?? -1;
-  return idx !== -1 && idx <= entity.timeline.currentIndex;
-}
-
+// Address editing (My Orders' own Edit Address CTA/kebab) locks on the same
+// cutoff as qty/variant editing — once the courier already has the parcel
+// (isPostDispatch: Shipped/Dispatched onward), it's also already been
+// handed whatever address was on file at that point.
 export function getAddressEditEligibility(entity) {
   if (entity.section === 'closed') return { enabled: false, reason: 'Order already closed' };
-  if (isOutForDeliveryOrBeyond(entity)) {
-    return { enabled: false, reason: 'Address can no longer be edited once it’s out for delivery' };
+  if (isPostDispatch(entity)) {
+    return { enabled: false, reason: 'Address can no longer be edited once it’s dispatched' };
   }
   return { enabled: true };
 }
@@ -136,8 +127,8 @@ export function getAddressEditEligibility(entity) {
 // getShipmentEditEligibility's "any unit decides for the whole parcel" rule.
 export function getShipmentAddressEditEligibility(units) {
   if (units.some((u) => u.section === 'closed')) return { enabled: false, reason: 'Order already closed' };
-  if (units.some((u) => isOutForDeliveryOrBeyond(u))) {
-    return { enabled: false, reason: 'Address can no longer be edited once the shipment is out for delivery' };
+  if (units.some((u) => isPostDispatch(u))) {
+    return { enabled: false, reason: 'Address can no longer be edited once the shipment is dispatched' };
   }
   return { enabled: true };
 }

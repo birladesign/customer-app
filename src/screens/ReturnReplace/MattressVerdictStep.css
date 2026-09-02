@@ -1,0 +1,155 @@
+.mattress-verdict {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.mattress-verdict__card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+}
+
+.mattress-verdict__card--warning {
+  border-color: var(--color-warning);
+  background: var(--color-warning-tint);
+}
+
+.mattress-verdict__title {
+  margin: 0;
+  font-size: var(--text-product-size);
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.mattress-verdict__body {
+  margin: 0;
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-leading);
+  color: var(--color-text-secondary);
+}
+
+.mattress-verdict__chip-row {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.mattress-verdict__chip {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-body-size);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  background: var(--color-bg-app);
+}
+
+.mattress-verdict__refund-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-border);
+  font-size: var(--text-body-size);
+  color: var(--color-text-primary);
+}
+
+.mattress-verdict__refund-amount {
+  font-weight: 700;
+  font-size: var(--text-product-size);
+}
+
+.mattress-verdict__fineprint {
+  margin: 0;
+  font-size: var(--text-caption-size);
+  color: var(--color-text-muted);
+}
+
+.mattress-verdict__waiver-link {
+  align-self: flex-start;
+  border: none;
+  background: none;
+  padding: 0;
+  font-family: inherit;
+  font-size: var(--text-caption-size);
+  font-weight: 700;
+  color: var(--color-navy-900);
+  text-decoration: underline;
+}
+
+.mattress-verdict__primary {
+  border: none;
+  border-radius: var(--radius-full);
+  padding: var(--space-3);
+  background: var(--color-navy-900);
+  color: var(--color-text-inverse);
+  font-family: inherit;
+  font-size: var(--text-product-size);
+  font-weight: 600;
+  transition: transform 0.1s ease-out;
+}
+
+.mattress-verdict__primary:active {
+  transform: scale(0.97);
+}
+
+.mattress-verdict__secondary {
+  border: none;
+  background: none;
+  padding: var(--space-2);
+  font-family: inherit;
+  font-size: var(--text-body-size);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-align: center;
+  text-decoration: underline;
+}
+
+.mattress-verdict__lever-cards {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.mattress-verdict__lever-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-primary);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  box-shadow: var(--shadow-sm);
+  font-family: inherit;
+  font-size: var(--text-product-size);
+  font-weight: 700;
+  color: var(--color-navy-900);
+  transition: transform 0.1s ease-out;
+}
+
+.mattress-verdict__lever-card:active {
+  transform: scale(0.97);
+}
+
+.mattress-verdict__lever-card-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  background: rgba(26, 43, 88, 0.06);
+  color: var(--color-navy-900);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mattress-verdict__primary:active,
+  .mattress-verdict__lever-card:active {
+    transform: none;
+  }
+}

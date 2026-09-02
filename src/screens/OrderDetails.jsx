@@ -514,6 +514,53 @@ export default function OrderDetails({ params }) {
       </header>
 
       <main className="order-details__content">
+        {/* Once delivered, Return/Replace is the thing most people came
+            back for — it leads the page instead of waiting at the very
+            bottom, behind billing and shipment details it has nothing to
+            do with. */}
+        {showReturnReplaceCards && (
+          <>
+            <div className="order-details__lever-cards">
+              <button
+                className="order-details__lever-card"
+                onClick={() =>
+                  navigate('returnReplace', {
+                    orderId: order.id,
+                    ...(scopedItem ? { sku: scopedItem.sku } : {}),
+                    lever: 'replace',
+                  })
+                }
+              >
+                <span className="order-details__lever-card-icon">
+                  <EditIcon width="18" height="18" />
+                </span>
+                <span>Replace</span>
+              </button>
+              <button
+                className="order-details__lever-card"
+                onClick={() =>
+                  navigate('returnReplace', {
+                    orderId: order.id,
+                    ...(scopedItem ? { sku: scopedItem.sku } : {}),
+                    lever: 'return',
+                  })
+                }
+              >
+                <span className="order-details__lever-card-icon">
+                  <PackageIcon width="18" height="18" />
+                </span>
+                <span>Return</span>
+              </button>
+            </div>
+            <button
+              className="order-details__contact-support-link"
+              onClick={() => switchTab('support', { openChat: true, orderId: order.id })}
+            >
+              Contact Support
+            </button>
+          </>
+        )}
+
         {shipmentGroups && !scopedItem ? (
           <div className="order-details__shipment-groups">
             {shipmentGroups.map((group) => {
@@ -806,46 +853,6 @@ export default function OrderDetails({ params }) {
           </button>
         )}
 
-        {otherShipmentUnits.length > 0 && (
-          <div className="order-details__other-items">
-            <p className="order-details__other-items-heading">
-              Other Items in This Shipment ({otherShipmentUnits.length})
-            </p>
-            {/* Every unit here ships and arrives together (see
-                getShipmentStatus in orders.js) — the same status/date this
-                page already shows once above, so repeating a name/status/
-                price per row would just restate it. The image alone is
-                enough to recognize which item each row is — except when a
-                unit has genuinely diverged from the rest (e.g. one flagged
-                damaged after an otherwise-shared delivery), which still
-                needs its own visible flag here so it isn't mistaken for
-                just another delivered item. */}
-            <div className="order-details__item-thumbs">
-              {otherShipmentUnits.map((unit) => {
-                const diverges = unit.status.label !== status.label;
-                return (
-                  <button
-                    key={unit.key}
-                    className="order-details__item-thumb"
-                    onClick={unit.onClick}
-                    aria-label={diverges ? `${unit.product} — ${unit.status.label}` : unit.product}
-                  >
-                    <img src={unit.image} alt={unit.product} />
-                    {diverges && (
-                      <span
-                        className="order-details__item-thumb-flag"
-                        style={{ background: (STATUS_PILL[unit.status.dot] ?? STATUS_PILL.muted).color }}
-                        aria-hidden="true"
-                      />
-                    )}
-                    <ChevronRightIcon className="order-details__item-thumb-chevron" aria-hidden="true" />
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
         {/* Bill Summary used to live folded into the card above along with
             product/status/timeline info. Pulled into its own card here so
             "Other Items in This Shipment" can sit between the two — closer
@@ -969,6 +976,46 @@ export default function OrderDetails({ params }) {
           </div>
         </div>
 
+        {otherShipmentUnits.length > 0 && (
+          <div className="order-details__other-items">
+            <p className="order-details__other-items-heading">
+              Other Items in This Shipment ({otherShipmentUnits.length})
+            </p>
+            {/* Every unit here ships and arrives together (see
+                getShipmentStatus in orders.js) — the same status/date this
+                page already shows once above, so repeating a name/status/
+                price per row would just restate it. The image alone is
+                enough to recognize which item each row is — except when a
+                unit has genuinely diverged from the rest (e.g. one flagged
+                damaged after an otherwise-shared delivery), which still
+                needs its own visible flag here so it isn't mistaken for
+                just another delivered item. */}
+            <div className="order-details__item-thumbs">
+              {otherShipmentUnits.map((unit) => {
+                const diverges = unit.status.label !== status.label;
+                return (
+                  <button
+                    key={unit.key}
+                    className="order-details__item-thumb"
+                    onClick={unit.onClick}
+                    aria-label={diverges ? `${unit.product} — ${unit.status.label}` : unit.product}
+                  >
+                    <img src={unit.image} alt={unit.product} />
+                    {diverges && (
+                      <span
+                        className="order-details__item-thumb-flag"
+                        style={{ background: (STATUS_PILL[unit.status.dot] ?? STATUS_PILL.muted).color }}
+                        aria-hidden="true"
+                      />
+                    )}
+                    <ChevronRightIcon className="order-details__item-thumb-chevron" aria-hidden="true" />
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {order.address && (
           <div className="order-details__delivery-section">
             <p className="order-details__delivery-heading">Delivery details</p>
@@ -1017,48 +1064,7 @@ export default function OrderDetails({ params }) {
           </div>
         )}
 
-        {showReturnReplaceCards ? (
-          <>
-            <div className="order-details__lever-cards">
-              <button
-                className="order-details__lever-card"
-                onClick={() =>
-                  navigate('returnReplace', {
-                    orderId: order.id,
-                    ...(scopedItem ? { sku: scopedItem.sku } : {}),
-                    lever: 'replace',
-                  })
-                }
-              >
-                <span className="order-details__lever-card-icon">
-                  <EditIcon width="18" height="18" />
-                </span>
-                <span>Replace</span>
-              </button>
-              <button
-                className="order-details__lever-card"
-                onClick={() =>
-                  navigate('returnReplace', {
-                    orderId: order.id,
-                    ...(scopedItem ? { sku: scopedItem.sku } : {}),
-                    lever: 'return',
-                  })
-                }
-              >
-                <span className="order-details__lever-card-icon">
-                  <PackageIcon width="18" height="18" />
-                </span>
-                <span>Return</span>
-              </button>
-            </div>
-            <button
-              className="order-details__contact-support-link"
-              onClick={() => switchTab('support', { openChat: true, orderId: order.id })}
-            >
-              Contact Support
-            </button>
-          </>
-        ) : (
+        {!showReturnReplaceCards && (
           <button className="order-details__help-toggle" onClick={() => setHelpSectionOpen(true)}>
             <span>Do you need help with the existing order?</span>
             <ChevronRightIcon className="order-details__help-chevron" />

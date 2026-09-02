@@ -1,12 +1,16 @@
 import { useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { ORDERS } from '../../data/orders.js';
+import { ORDERS, splitProductSpec, getDeliveredDate } from '../../data/orders.js';
 import { getRemediationOptions, getPostBookingUpdate } from '../../data/remediation.js';
+import { isMattressProduct, daysSinceDelivery, getMattressVerdict, proRataRefund } from '../../data/mattressRules.js';
 import { createCase } from '../../data/support.js';
 import { useNavigation } from '../../navigation/NavigationContext.jsx';
 import { SPRING_STANDARD, DURATION_REDUCED } from '../../motion.js';
 import { ChevronLeftIcon } from '../../components/icons.jsx';
 import EvidenceStep from './EvidenceStep.jsx';
+import MattressReasonStep from './MattressReasonStep.jsx';
+import MattressVerdictStep from './MattressVerdictStep.jsx';
+import MattressVariantStep from './MattressVariantStep.jsx';
 import OptionsStep from './OptionsStep.jsx';
 import RefundMethodStep from './RefundMethodStep.jsx';
 import ExecutionStep from './ExecutionStep.jsx';
@@ -20,7 +24,14 @@ const STEP_TITLES = {
   options: 'Choose an option',
   refundMethod: 'Confirm Refund',
   execution: 'Tracking it',
+  mattressReason: "What's the issue?",
+  mattressVerdict: 'Next Steps',
+  mattressVariant: 'Choose New Size',
 };
+
+function withSpec(name, spec) {
+  return spec ? `${name} (${spec})` : name;
+}
 
 // Refund method + pickup confirmation only makes sense for "Return for
 // Refund" — replace/sendPart never move money, so those levers skip
@@ -55,12 +66,22 @@ export default function ReturnReplaceFlow({ params }) {
   // already been answered. Entry points that don't know the lever up front
   // (e.g. Support chat's Returns lane) still get the full picker.
   const presetLever = params.lever === 'return' || params.lever === 'replace' ? params.lever : null;
+  // Mattresses get the PRD's real rule table (§7.7, M1-M9) instead of the
+  // generic reason→lever mock — a different category (chair, sofa, ...)
+  // still uses the simpler flow below.
+  const isMattress = Boolean(target && isMattressProduct(target.product));
 
   const [step, setStep] = useState(0);
   const [reason, setReason] = useState(null);
   const [photo, setPhoto] = useState(null);
   const [selectedLever, setSelectedLever] = useState(presetLever);
   const [ticketId, setTicketId] = useState(null);
+  const [faultAttribution, setFaultAttribution] = useState(null);
+  // M8 (smell, ≤2 days) is advice-only — "it still smells" after following
+  // that advice is what actually promotes it to M9's replace/return path,
+  // not a fixed day count, so this overrides the real elapsed days once hit.
+  const [smellPersists, setSmellPersists] = useState(false);
+  const [newSpec, setNewSpec] = useState(null);
   const directionRef = useRef(1);
   // Return for Refund hands off to a human agent instead of resolving
   // automatically — "Request Return" is the one moment that's true, so a
@@ -77,16 +98,43 @@ export default function ReturnReplaceFlow({ params }) {
   const skipOptions = Boolean(
     presetLever && (!reason || getRemediationOptions(order, reason).some((o) => o.id === presetLever))
   );
+  const deliveredDateStr = isMattress ? getDeliveredDate(target) : null;
+  const effectiveDays = smellPersists ? 3 : daysSinceDelivery(deliveredDateStr);
+  const mattressProductInfo = isMattress ? splitProductSpec(target.product) : null;
+  const verdict =
+    isMattress && reason
+      ? getMattressVerdict({
+          reasonKey: reason,
+          daysSinceDelivery: effectiveDays,
+          faultAttribution,
+          productName: mattressProductInfo.name,
+          spec: mattressProductInfo.spec,
+        })
+      : null;
+  const proRataAmount = verdict?.proRata ? proRataRefund(itemPrice, deliveredDateStr) : 0;
+
+  const MATTRESS_STEPS_RETURN = ['mattressReason', 'mattressVerdict', 'refundMethod', 'execution'];
+  const MATTRESS_STEPS_REPLACE = ['mattressReason', 'mattressVerdict', 'mattressVariant', 'execution'];
   const baseStepKeys = selectedLever === 'return' ? STEPS_WITH_REFUND : STEPS_WITHOUT_REFUND;
-  const stepKeys = skipOptions ? baseStepKeys.filter((k) => k !== 'options') : baseStepKeys;
+  const stepKeys = isMattress
+    ? selectedLever === 'return'
+      ? MATTRESS_STEPS_RETURN
+      : MATTRESS_STEPS_REPLACE
+    : skipOptions
+    ? baseStepKeys.filter((k) => k !== 'options')
+    : baseStepKeys;
   const stepCount = stepKeys.length;
   const currentKey = stepKeys[step] ?? stepKeys[stepKeys.length - 1];
   // A needsApproval lever (currently only Return for Refund) ends the flow
   // at a plain "sent for review" screen instead of the automated tracker —
   // there's no system-driven progression to show once a human takes over.
-  const needsApproval = Boolean(
-    selectedLever && order && getRemediationOptions(order, reason).find((o) => o.id === selectedLever)?.needsApproval
-  );
+  // Mattress rules carry their own "no manager approval" invariant (§7.7),
+  // so a mattress return always resolves through the automated tracker.
+  const needsApproval = isMattress
+    ? false
+    : Boolean(
+        selectedLever && order && getRemediationOptions(order, reason).find((o) => o.id === selectedLever)?.needsApproval
+      );
   const headerTitle = currentKey === 'execution' && needsApproval ? 'Request Sent' : STEP_TITLES[currentKey];
 
   function goToStep(next) {
@@ -107,7 +155,10 @@ export default function ReturnReplaceFlow({ params }) {
   }
 
   function handleSubmitReturnRequest() {
-    if (!ticketCreatedRef.current) {
+    // Mattress returns never need approval (§7.7 invariant), so there's no
+    // ticket to raise here — RefundMethodStep just hands off straight to
+    // the automated tracker below.
+    if (needsApproval && !ticketCreatedRef.current) {
       ticketCreatedRef.current = true;
       const record = createCase({
         lane: 'returns',
@@ -123,6 +174,63 @@ export default function ReturnReplaceFlow({ params }) {
     goNext();
   }
 
+  function handleChooseLever(lever) {
+    setSelectedLever(lever);
+    goNext();
+  }
+
+  function handleRequestWaiver() {
+    createCase({
+      lane: 'returns',
+      order,
+      item: item ?? null,
+      description: `Shipping charge waiver requested (${verdict?.rule ?? 'wrong size/model'})`,
+      hasPhoto: Boolean(photo),
+      escalate: true,
+      messages: [],
+    });
+  }
+
+  // Topper accepted (M5's retention ladder) and a warranty claim (M6) both
+  // resolve the issue without ever touching the standard replace/return
+  // machinery below — each files its own case and returns straight to
+  // Order Details, the same "receipt already shown, nothing left to track
+  // here" shape as ApprovalPendingStep.
+  function handleAcceptTopper() {
+    createCase({
+      lane: 'returns',
+      order,
+      item: item ?? null,
+      description: 'Comfort topper requested (retention offer accepted)',
+      hasPhoto: Boolean(photo),
+      escalate: false,
+      messages: [],
+    });
+    goBack();
+  }
+
+  function handleSubmitWarrantyClaim() {
+    createCase({
+      lane: 'returns',
+      order,
+      item: item ?? null,
+      description: `Warranty claim (sagging/dip) — pro-rata refund ₹${proRataAmount.toLocaleString('en-IN')}`,
+      hasPhoto: Boolean(photo),
+      escalate: true,
+      messages: [],
+    });
+    goBack();
+  }
+
+  function handleSmellPersists() {
+    setSmellPersists(true);
+  }
+
+  function handleVariantContinue(spec) {
+    setNewSpec(spec);
+    goNext();
+  }
+
   // No backend in this prototype — mutate the shared order (or, for a
   // multi-SKU order, the one line item) in place, same pattern as
   // OrderDetails' handleCancelOrder/handlePutOnHold, so My Orders and Order
@@ -130,13 +238,19 @@ export default function ReturnReplaceFlow({ params }) {
   function handleJourneyComplete() {
     const update = getPostBookingUpdate(selectedLever, needsApproval);
     const newStatus = { dot: 'blue', label: update.label };
+    // A replacement that changed size/height (mattress-only — see
+    // MattressVariantStep) ships as the new spec, not a like-for-like
+    // reprint of what didn't work out.
+    const specUpdate = newSpec
+      ? { product: withSpec(splitProductSpec(item ? item.product : order.product).name, newSpec) }
+      : {};
 
     if (item) {
-      Object.assign(item, { status: newStatus, tracker: { steps: update.trackerSteps, currentIndex: 0 } });
+      Object.assign(item, specUpdate, { status: newStatus, tracker: { steps: update.trackerSteps, currentIndex: 0 } });
       item.timeline?.steps.push({ label: update.label, timestamp: null, description: update.description });
       if (item.timeline) item.timeline.currentIndex = item.timeline.steps.length - 1;
     } else {
-      Object.assign(order, {
+      Object.assign(order, specUpdate, {
         section: 'inProgress',
         status: newStatus,
         actions: update.actions,
@@ -197,6 +311,32 @@ export default function ReturnReplaceFlow({ params }) {
             exit={reduceMotion ? { opacity: 0 } : { x: direction > 0 ? '-30%' : '100%', opacity: direction > 0 ? 0.6 : 1 }}
             transition={reduceMotion ? DURATION_REDUCED : SPRING_STANDARD}
           >
+            {currentKey === 'mattressReason' && (
+              <MattressReasonStep
+                order={target}
+                price={itemPrice}
+                savings={itemSavings}
+                reason={reason}
+                onSelectReason={setReason}
+                faultAttribution={faultAttribution}
+                onSelectFault={setFaultAttribution}
+                photo={photo}
+                onPhotoChange={setPhoto}
+                onContinue={goNext}
+              />
+            )}
+            {currentKey === 'mattressVerdict' && verdict && (
+              <MattressVerdictStep
+                verdict={verdict}
+                proRataAmount={proRataAmount}
+                onChooseLever={handleChooseLever}
+                onRequestWaiver={handleRequestWaiver}
+                onAcceptTopper={handleAcceptTopper}
+                onSubmitWarrantyClaim={handleSubmitWarrantyClaim}
+                onSmellPersists={handleSmellPersists}
+              />
+            )}
+            {currentKey === 'mattressVariant' && <MattressVariantStep order={target} onContinue={handleVariantContinue} />}
             {currentKey === 'evidence' && (
               <EvidenceStep
                 order={target}
