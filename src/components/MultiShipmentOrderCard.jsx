@@ -13,6 +13,15 @@ const DOT_COLOR = {
   muted: 'var(--color-text-muted)',
 };
 
+// Status now reads as a colored label/chip, not just tinted text — see
+// OrderCard.jsx's matching DOT_TINT.
+const DOT_TINT = {
+  red: 'var(--color-action-red-tint)',
+  blue: 'var(--color-info-blue-tint)',
+  green: 'var(--color-success-tint)',
+  muted: 'var(--color-disabled-bg)',
+};
+
 function CopyId({ id, label }) {
   const [copied, setCopied] = useState(false);
 
@@ -54,7 +63,8 @@ export default function MultiShipmentOrderCard({ order }) {
     }, {})
   );
 
-  function handleEditAddress() {
+  function handleEditAddress(e) {
+    e.stopPropagation();
     navigate('editOrder', { orderId: order.id, sku: order.items[0].sku });
   }
 
@@ -63,13 +73,15 @@ export default function MultiShipmentOrderCard({ order }) {
       <div className="order-card__body">
         <div className="order-card__header">
           <CopyId id={order.id} label="order number" />
-          <span className="order-card__header-right">
+          <div className="order-card__header-row2">
             <span className="order-card__date">{order.date}</span>
-            <button className="multi-shipment-order-card__edit-btn" onClick={handleEditAddress}>
-              <MapPinIcon width="13" height="13" />
-              Edit Address
-            </button>
-          </span>
+            <span className="order-card__header-right">
+              <button className="order-card__edit-address-btn" onClick={handleEditAddress}>
+                <MapPinIcon width="13" height="13" />
+                Edit Address
+              </button>
+            </span>
+          </div>
         </div>
         <p className="multi-shipment-order-card__count">
           {shipmentGroups.length} Shipments
@@ -85,8 +97,10 @@ export default function MultiShipmentOrderCard({ order }) {
               <div className="multi-shipment-order-card__group-header">
                 <CopyId id={group.id} label="shipment number" />
                 <span className="order-card__header-right">
+                  {/* Address editing lives at the order level (the button above,
+                      spanning every shipment) — this per-shipment menu only
+                      covers actions scoped to this one parcel. */}
                   <CardMoreMenu
-                    onEditAddress={() => navigate('editOrder', { orderId: order.id, sku: group.items[0].sku })}
                     onReschedule={() => navigate('deliverySchedule', { orderId: order.id, reschedule: true })}
                     onNeedHelp={() => switchTab('support', { openChat: true, orderId: order.id })}
                   />
@@ -96,7 +110,7 @@ export default function MultiShipmentOrderCard({ order }) {
               <div className="order-card__status-row">
                 <span
                   className="order-card__status-label"
-                  style={{ color: DOT_COLOR[groupStatus.dot] }}
+                  style={{ color: DOT_COLOR[groupStatus.dot], background: DOT_TINT[groupStatus.dot] }}
                 >
                   {groupStatus.label}
                 </span>

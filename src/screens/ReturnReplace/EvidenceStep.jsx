@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { splitProductSpec } from '../../data/orders.js';
 import PhotoUploadTile from '../../components/PhotoUploadTile.jsx';
+import { REASON_ICONS } from './reasonIcons.jsx';
 import './EvidenceStep.css';
 
 function formatRupees(amount) {
@@ -10,6 +11,7 @@ function formatRupees(amount) {
 export default function EvidenceStep({ order, reason, price, savings, photo, onPhotoChange, onChangeReason, onContinue }) {
   const [note, setNote] = useState('');
   const { name, spec } = splitProductSpec(order.product);
+  const ReasonIcon = REASON_ICONS[reason];
 
   return (
     <div className="evidence-step">
@@ -26,8 +28,15 @@ export default function EvidenceStep({ order, reason, price, savings, photo, onP
       </div>
 
       <div className="evidence-step__recap">
-        <span className="evidence-step__recap-label">Why do you want to return?</span>
-        <span className="evidence-step__recap-value">{reason}</span>
+        {ReasonIcon && (
+          <span className="evidence-step__recap-icon" aria-hidden="true">
+            <ReasonIcon width="14" height="14" strokeWidth="2" />
+          </span>
+        )}
+        <span className="evidence-step__recap-text">
+          <span className="evidence-step__recap-label">Why do you want to return?</span>
+          <span className="evidence-step__recap-value">{reason}</span>
+        </span>
         <button className="evidence-step__recap-change" onClick={onChangeReason}>
           Change
         </button>

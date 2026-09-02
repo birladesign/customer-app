@@ -131,7 +131,12 @@ export default function ReturnReplaceFlow({ params }) {
 
       <div className="return-replace__progress">
         {Array.from({ length: stepCount }, (_, i) => (
-          <span key={i} className={`return-replace__dot${i <= step ? ' return-replace__dot--done' : ''}`} />
+          <span
+            key={i}
+            className={`return-replace__dot${i < step ? ' return-replace__dot--done' : ''}${
+              i === step ? ' return-replace__dot--current' : ''
+            }`}
+          />
         ))}
       </div>
 

@@ -146,6 +146,31 @@
   transform: scale(0.98);
 }
 
+/* Once a newer prompt has taken over, older chips/rows stay in the
+   transcript as history but read as done, not still waiting on a tap:
+   muted text, flattened border, no active-press feedback. */
+.support-chat__order-skip:disabled,
+.support-chat__order-row:disabled {
+  color: var(--color-text-muted);
+  border-color: var(--color-border);
+  background: transparent;
+}
+
+.support-chat__order-skip:disabled:active,
+.support-chat__order-row:disabled:active {
+  transform: none;
+}
+
+.support-chat__interactive--inert .support-chat__order-thumb {
+  opacity: 0.6;
+}
+
+.support-chat__order-skip:disabled,
+.support-chat__order-row:disabled,
+.support-chat__chip:disabled {
+  cursor: default;
+}
+
 .support-chat__order-thumb {
   flex-shrink: 0;
   width: 40px;
@@ -196,6 +221,83 @@
 
 .support-chat__chip:active {
   transform: scale(0.96);
+}
+
+.support-chat__chip:disabled {
+  border-color: var(--color-border);
+  color: var(--color-text-muted);
+}
+
+.support-chat__chip:disabled:active {
+  transform: none;
+}
+
+/* A real multiple-choice question (the lane picker) — same row treatment as
+   the order/item pickers below so the whole transcript reads as one
+   consistent list style instead of pills wrapping unevenly across widths. */
+.support-chat__chip-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: 100%;
+}
+
+.support-chat__chip-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  text-align: left;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-primary);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  font-family: inherit;
+  font-size: var(--text-body-size);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  transition: transform 0.1s ease-out;
+}
+
+.support-chat__chip-row:active {
+  transform: scale(0.98);
+}
+
+.support-chat__chip-row-icon {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  background: rgba(26, 43, 88, 0.06);
+  color: var(--color-navy-900);
+}
+
+.support-chat__chip-row-label {
+  flex: 1;
+  min-width: 0;
+}
+
+.support-chat__chip-row-chevron {
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+}
+
+.support-chat__chip-row:disabled {
+  color: var(--color-text-muted);
+  border-color: var(--color-border);
+  background: transparent;
+  cursor: default;
+}
+
+.support-chat__chip-row:disabled .support-chat__chip-row-icon {
+  background: transparent;
+  color: var(--color-text-muted);
+}
+
+.support-chat__chip-row:disabled:active {
+  transform: none;
 }
 
 .support-chat__composer {
@@ -314,6 +416,7 @@
   .support-chat__order-skip:active,
   .support-chat__order-row:active,
   .support-chat__chip:active,
+  .support-chat__chip-row:active,
   .support-chat__camera:active,
   .support-chat__send:not(:disabled):active {
     transform: none;

@@ -19,13 +19,16 @@
 }
 
 .options-step__card {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
   text-align: left;
   border: 2px solid transparent;
   background: var(--color-bg-primary);
   border-radius: var(--radius-lg);
   padding: var(--space-4);
   box-shadow: var(--shadow-card);
-  transition: transform 0.1s ease-out, border-color 0.15s var(--ease-standard);
+  transition: transform 0.1s ease-out, border-color 0.15s var(--ease-standard), background 0.15s var(--ease-standard);
 }
 
 .options-step__card:active {
@@ -34,12 +37,73 @@
 
 .options-step__card--selected {
   border-color: var(--color-navy-900);
+  background: rgba(26, 43, 88, 0.02);
+}
+
+.options-step__card-icon {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-accent-cyan-wash);
+  color: var(--color-navy-900);
+  transition: background 0.15s var(--ease-standard);
+}
+
+.options-step__card--selected .options-step__card-icon {
+  background: var(--color-navy-900);
+  color: var(--color-text-inverse);
+}
+
+.options-step__card-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.options-step__card-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
 }
 
 .options-step__card-label {
   font-size: var(--text-product-size);
   font-weight: 600;
   color: var(--color-text-primary);
+}
+
+.options-step__radio {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  border-radius: var(--radius-full);
+  border: 2px solid var(--color-border);
+  position: relative;
+  transition: border-color 0.15s var(--ease-standard);
+}
+
+.options-step__card--selected .options-step__radio {
+  border-color: var(--color-navy-900);
+}
+
+.options-step__card--selected .options-step__radio::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border-radius: var(--radius-full);
+  background: var(--color-navy-900);
+  transform: scale(0);
+  animation: options-step-radio-pop 0.2s var(--ease-standard) forwards;
+}
+
+@keyframes options-step-radio-pop {
+  to {
+    transform: scale(1);
+  }
 }
 
 .options-step__card-description {
@@ -91,5 +155,10 @@
   .options-step__card:active,
   .options-step__continue:not(:disabled):active {
     transform: none;
+  }
+
+  .options-step__card--selected .options-step__radio::after {
+    animation: none;
+    transform: scale(1);
   }
 }

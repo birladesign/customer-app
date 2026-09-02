@@ -54,14 +54,19 @@
 
 .return-replace__dot {
   flex: 1;
-  height: 3px;
+  height: 4px;
   border-radius: var(--radius-full);
   background: var(--color-disabled-bg);
-  transition: background 0.2s var(--ease-standard);
+  transition: background 0.25s var(--ease-standard);
 }
 
 .return-replace__dot--done {
   background: var(--color-navy-900);
+}
+
+.return-replace__dot--current {
+  background: var(--color-navy-900);
+  box-shadow: 0 0 0 3px var(--color-accent-cyan-wash);
 }
 
 .return-replace__stage {

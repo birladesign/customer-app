@@ -65,10 +65,30 @@
 .evidence-step__recap {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-3);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   padding: var(--space-3);
+}
+
+.evidence-step__recap-icon {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-accent-cyan-wash);
+  color: var(--color-navy-900);
+}
+
+.evidence-step__recap-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .evidence-step__recap-label {
@@ -77,8 +97,6 @@
 }
 
 .evidence-step__recap-value {
-  flex: 1;
-  min-width: 0;
   font-size: var(--text-body-size);
   font-weight: 600;
   color: var(--color-text-primary);

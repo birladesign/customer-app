@@ -44,6 +44,28 @@
   background: rgba(26, 43, 88, 0.04);
 }
 
+.reason-step__option--selected {
+  background: rgba(26, 43, 88, 0.03);
+}
+
+.reason-step__icon {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-accent-cyan-wash);
+  color: var(--color-navy-900);
+  transition: background 0.15s var(--ease-standard);
+}
+
+.reason-step__option--selected .reason-step__icon {
+  background: var(--color-navy-900);
+  color: var(--color-text-inverse);
+}
+
 .reason-step__option-label {
   flex: 1;
 }
@@ -68,6 +90,14 @@
   inset: 3px;
   border-radius: var(--radius-full);
   background: var(--color-navy-900);
+  transform: scale(0);
+  animation: reason-step-radio-pop 0.2s var(--ease-standard) forwards;
+}
+
+@keyframes reason-step-radio-pop {
+  to {
+    transform: scale(1);
+  }
 }
 
 .reason-step__continue {
@@ -93,5 +123,10 @@
 @media (prefers-reduced-motion: reduce) {
   .reason-step__continue:not(:disabled):active {
     transform: none;
+  }
+
+  .reason-step__option--selected .reason-step__radio::after {
+    animation: none;
+    transform: scale(1);
   }
 }

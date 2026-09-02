@@ -9,12 +9,35 @@ import {
   getOrderStatus,
 } from '../../data/support.js';
 import { useObjectUrlPreview } from '../../hooks/useObjectUrlPreview.js';
-import { CopyIcon, CheckIcon, CameraIcon, CloseIcon, ArrowUpIcon } from '../../components/icons.jsx';
+import {
+  CopyIcon,
+  CheckIcon,
+  CameraIcon,
+  CloseIcon,
+  ArrowUpIcon,
+  ChevronRightIcon,
+  TruckIcon,
+  WrenchIcon,
+  PackageIcon,
+  WalletIcon,
+  HelpCircleIcon,
+} from '../../components/icons.jsx';
 import './SupportChat.css';
 
 const MIN_LENGTH = 10;
 const VISIBLE_ORDER_COUNT = 3;
 const GENERAL_LANE = CASE_LANES.find((l) => l.key === 'general');
+
+// Same per-lane icon set as Support.jsx's Active Conversations list — gives
+// the lane picker its own visual identity per option instead of a flat row
+// of same-looking, ragged-wrapping text pills.
+const LANE_ICON = {
+  logistics: TruckIcon,
+  tech: WrenchIcon,
+  returns: PackageIcon,
+  refunds: WalletIcon,
+  general: HelpCircleIcon,
+};
 
 function isReturnEligible(order) {
   return Boolean(order) && getOrdersForLane('returns').some((o) => o.id === order.id);
@@ -58,8 +81,14 @@ function CaseResultCard({ caseResult }) {
   );
 }
 
-function ChatMessage({ msg }) {
+// `active` is false once a newer prompt has taken over as the thing the bot
+// is actually waiting on — those older chips/order rows still show (so the
+// transcript reads as history), but render disabled and muted instead of
+// staying fully tappable-looking, which previously left every past prompt
+// looking exactly as live as the current one.
+function ChatMessage({ msg, active }) {
   const isUser = msg.from === 'user';
+  const inertClass = active ? '' : ' support-chat__interactive--inert';
   return (
     <div className={`support-chat__row support-chat__row--${isUser ? 'user' : 'bot'}`}>
       {msg.text && (
@@ -72,14 +101,14 @@ function ChatMessage({ msg }) {
       {msg.caseResult && <CaseResultCard caseResult={msg.caseResult} />}
 
       {msg.orders && (
-        <div className="support-chat__orders">
+        <div className={`support-chat__orders${inertClass}`}>
           {msg.allowSkip && (
-            <button className="support-chat__order-skip" onClick={() => msg.onSelectOrder(null)}>
+            <button className="support-chat__order-skip" disabled={!active} onClick={() => msg.onSelectOrder(null)}>
               Not related to an order
             </button>
           )}
           {msg.orders.map((o) => (
-            <button key={o.id} className="support-chat__order-row" onClick={() => msg.onSelectOrder(o)}>
+            <button key={o.id} className="support-chat__order-row" disabled={!active} onClick={() => msg.onSelectOrder(o)}>
               <img className="support-chat__order-thumb" src={o.image} alt="" />
               <span className="support-chat__order-text">
                 <span className="support-chat__order-product">{o.product}</span>
@@ -90,7 +119,7 @@ function ChatMessage({ msg }) {
             </button>
           ))}
           {msg.onViewAll && (
-            <button className="support-chat__order-skip" onClick={msg.onViewAll}>
+            <button className="support-chat__order-skip" disabled={!active} onClick={msg.onViewAll}>
               View All Orders ({msg.moreCount} more)
             </button>
           )}
@@ -98,14 +127,14 @@ function ChatMessage({ msg }) {
       )}
 
       {msg.items && (
-        <div className="support-chat__orders">
+        <div className={`support-chat__orders${inertClass}`}>
           {msg.allowSkipItem && (
-            <button className="support-chat__order-skip" onClick={() => msg.onSelectItem(null)}>
+            <button className="support-chat__order-skip" disabled={!active} onClick={() => msg.onSelectItem(null)}>
               The whole order
             </button>
           )}
           {msg.items.map((it) => (
-            <button key={it.sku} className="support-chat__order-row" onClick={() => msg.onSelectItem(it)}>
+            <button key={it.sku} className="support-chat__order-row" disabled={!active} onClick={() => msg.onSelectItem(it)}>
               <img className="support-chat__order-thumb" src={it.image} alt="" />
               <span className="support-chat__order-text">
                 <span className="support-chat__order-product">{it.product}</span>
@@ -116,14 +145,34 @@ function ChatMessage({ msg }) {
         </div>
       )}
 
-      {msg.chips && (
-        <div className="support-chat__chips">
+      {/* A couple of quick-reply options (Submit/Keep Editing, I'm All Set)
+          stay compact inline pills; a real multiple-choice question (the
+          lane picker) reads better as a tidy vertical list than as pills
+          wrapping raggedly across the width. */}
+      {msg.chips && msg.chips.length > 2 ? (
+        <div className={`support-chat__chip-list${inertClass}`}>
           {msg.chips.map((chip) => (
-            <button key={chip.key} className="support-chat__chip" onClick={chip.onClick}>
-              {chip.label}
+            <button key={chip.key} className="support-chat__chip-row" disabled={!active} onClick={chip.onClick}>
+              {chip.icon && (
+                <span className="support-chat__chip-row-icon" aria-hidden="true">
+                  <chip.icon width="16" height="16" />
+                </span>
+              )}
+              <span className="support-chat__chip-row-label">{chip.label}</span>
+              <ChevronRightIcon className="support-chat__chip-row-chevron" aria-hidden="true" />
             </button>
           ))}
         </div>
+      ) : (
+        msg.chips && (
+          <div className={`support-chat__chips${inertClass}`}>
+            {msg.chips.map((chip) => (
+              <button key={chip.key} className="support-chat__chip" disabled={!active} onClick={chip.onClick}>
+                {chip.label}
+              </button>
+            ))}
+          </div>
+        )
       )}
     </div>
   );
@@ -161,6 +210,12 @@ export default function SupportChat({ escalate, presetOrder, presetShipment, sta
   const descriptionRef = useRef('');
 
   const [messages, setMessages] = useState(() => resumeCase?.messages ?? []);
+  // The one message whose chips/orders/items are still live — every earlier
+  // interactive message (a lane picker the customer already tapped through,
+  // a superseded "Ready to submit?") renders inert instead of staying fully
+  // tappable-looking once something newer has taken over as the actual
+  // pending prompt.
+  const [activePromptId, setActivePromptId] = useState(null);
   const [stage, setStage] = useState(resumeCase ? 'followup' : 'lane'); // lane | order | item | describe | confirm | followup
   const [lane, setLane] = useState(null);
   const [order, setOrder] = useState(null);
@@ -176,11 +231,19 @@ export default function SupportChat({ escalate, presetOrder, presetShipment, sta
   }
 
   function pushBot(partial) {
-    if (partial.chips || partial.orders || partial.items) pendingPromptRef.current = partial;
-    setMessages((m) => [...m, { id: nextId(), from: 'bot', ...partial }]);
+    const id = nextId();
+    if (partial.chips || partial.orders || partial.items) {
+      pendingPromptRef.current = partial;
+      setActivePromptId(id);
+    }
+    setMessages((m) => [...m, { id, from: 'bot', ...partial }]);
   }
 
   function pushUser(partial) {
+    // Whatever prompt this answers is done the instant the customer replies
+    // — goes inert now rather than waiting for some later bot message (which
+    // may just be plain text, e.g. "Tell us what happened") to supersede it.
+    setActivePromptId(null);
     setMessages((m) => [...m, { id: nextId(), from: 'user', ...partial }]);
   }
 
@@ -198,7 +261,7 @@ export default function SupportChat({ escalate, presetOrder, presetShipment, sta
     }
     pushBot({
       text: intro ?? (escalate ? "We'll connect you with a specialist. First, what's this about?" : 'Hi! What can we help with?'),
-      chips: CASE_LANES.map((l) => ({ key: l.key, label: l.label, onClick: () => handleSelectLane(l) })),
+      chips: CASE_LANES.map((l) => ({ key: l.key, label: l.label, icon: LANE_ICON[l.key], onClick: () => handleSelectLane(l) })),
     });
     // Seed the conversation once — intentionally not re-run on prop changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -522,7 +585,7 @@ export default function SupportChat({ escalate, presetOrder, presetShipment, sta
     <div className="support-chat">
       <div className="support-chat__transcript">
         {messages.map((msg) => (
-          <ChatMessage key={msg.id} msg={msg} />
+          <ChatMessage key={msg.id} msg={msg} active={msg.id === activePromptId} />
         ))}
         <div ref={transcriptEndRef} />
       </div>

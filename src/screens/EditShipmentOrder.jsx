@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ORDERS, splitProductSpec, getShipmentStatus } from '../data/orders.js';
 import { getVariants, selectionFromSpec, specForSelection, priceForSelection } from '../data/variants.js';
-import { getShipmentEditEligibility } from '../data/intents.js';
+import { getShipmentEditEligibility, getShipmentAddressEditEligibility } from '../data/intents.js';
 import { ADDRESSES } from '../data/profile.js';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
 import ConfirmSheet from '../components/ConfirmSheet.jsx';
@@ -211,7 +211,10 @@ export default function EditShipmentOrder({ params }) {
     );
   }
 
-  const eligibility = getShipmentEditEligibility(units);
+  // Address-only entry (My Orders' Edit Address CTA) tolerates a later
+  // stage than the qty/variant entry (OrderDetails' Edit Order) — see
+  // getShipmentAddressEditEligibility.
+  const eligibility = hideAddress ? getShipmentEditEligibility(units) : getShipmentAddressEditEligibility(units);
 
   if (!eligibility.enabled) {
     return (

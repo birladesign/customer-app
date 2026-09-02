@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { splitProductSpec, getOrderStatus, getExpectedDelivery, getDeliveredDate, resumeOrder } from '../data/orders.js';
 import { getOpenCaseForOrder } from '../data/support.js';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
-import { CopyIcon, CheckIcon, ChevronRightIcon, WalletIcon, CheckCircleIcon, CalendarIcon } from './icons.jsx';
+import { CopyIcon, CheckIcon, ChevronRightIcon, WalletIcon, CheckCircleIcon, CalendarIcon, MapPinIcon } from './icons.jsx';
 import StarRating from './StarRating.jsx';
 import CardMoreMenu from './CardMoreMenu.jsx';
 import './OrderCard.css';
@@ -12,6 +12,16 @@ const DOT_COLOR = {
   blue: 'var(--color-info-blue)',
   green: 'var(--color-success)',
   muted: 'var(--color-text-muted)',
+};
+
+// Status now reads as a colored label/chip, not just tinted text — each
+// dot color gets a matching background tint instead of the label sitting
+// bare on the card.
+const DOT_TINT = {
+  red: 'var(--color-action-red-tint)',
+  blue: 'var(--color-info-blue-tint)',
+  green: 'var(--color-success-tint)',
+  muted: 'var(--color-disabled-bg)',
 };
 
 function ActionButton({ label, variant, onClick }) {
@@ -69,7 +79,7 @@ function CopyOrderId({ id }) {
 }
 
 export default function OrderCard({ order }) {
-  const { banner, badge, product, caption, savings, refundNote, actions } = order;
+  const { banner, product, caption, savings, refundNote, actions } = order;
   const status = getOrderStatus(order);
   const { navigate, switchTab } = useNavigation();
   const { name: productName, spec } = splitProductSpec(product);
@@ -89,7 +99,8 @@ export default function OrderCard({ order }) {
   // the fresh values.
   const [, forceUpdate] = useState(0);
 
-  function handleEditAddress() {
+  function handleEditAddress(e) {
+    e.stopPropagation();
     navigate('editOrder', order.items ? { orderId: order.id, sku: order.items[0].sku } : { orderId: order.id });
   }
 
@@ -156,22 +167,26 @@ export default function OrderCard({ order }) {
       <div className="order-card__body">
         <div className="order-card__header">
           <CopyOrderId id={order.id} />
-          <span className="order-card__header-right">
+          <div className="order-card__header-row2">
             <span className="order-card__date">{order.date}</span>
-            <CardMoreMenu
-              onEditAddress={handleEditAddress}
-              onReschedule={handleRescheduleDelivery}
-              onNeedHelp={handleMoreHelp}
-            />
-          </span>
+            <span className="order-card__header-right">
+              <button className="order-card__edit-address-btn" onClick={handleEditAddress}>
+                <MapPinIcon width="13" height="13" />
+                Edit Address
+              </button>
+              <CardMoreMenu onReschedule={handleRescheduleDelivery} onNeedHelp={handleMoreHelp} />
+            </span>
+          </div>
         </div>
 
         <div className="order-card__status-row">
           <span className="order-card__status-group">
-            <span className="order-card__status-label" style={{ color: DOT_COLOR[status.dot] }}>
+            <span
+              className="order-card__status-label"
+              style={{ color: DOT_COLOR[status.dot], background: DOT_TINT[status.dot] }}
+            >
               {status.label}
             </span>
-            {badge && <span className="order-card__pill-badge">{badge}</span>}
           </span>
           {expectedDelivery && !caption?.includes(expectedDelivery) && (
             <p className="order-card__edd">

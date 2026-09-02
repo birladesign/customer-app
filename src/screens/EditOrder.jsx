@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ORDERS, splitProductSpec, recomputeOrderTotals, getOrderStatus } from '../data/orders.js';
 import { getVariants, selectionFromSpec, specForSelection, priceForSelection } from '../data/variants.js';
-import { getEditEligibility } from '../data/intents.js';
+import { getEditEligibility, getAddressEditEligibility } from '../data/intents.js';
 import { ADDRESSES } from '../data/profile.js';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
 import ConfirmSheet from '../components/ConfirmSheet.jsx';
@@ -85,7 +85,10 @@ export default function EditOrder({ params }) {
     );
   }
 
-  const eligibility = getEditEligibility(target);
+  // Address-only entry (My Orders' Edit Address CTA) tolerates a later
+  // stage than the qty/variant entry (OrderDetails' Edit Order) — see
+  // getAddressEditEligibility.
+  const eligibility = hideAddress ? getEditEligibility(target) : getAddressEditEligibility(target);
   const oldLinePrice = item ? item.price : order.priceBreakup?.itemPrice ?? order.amount;
   const oldOrderTotal = order.priceBreakup?.total ?? order.amount;
   const unitPrice = oldLinePrice / initialQty;

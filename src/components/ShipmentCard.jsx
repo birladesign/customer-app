@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { splitProductSpec, getShipmentStatus, getExpectedDelivery, getDeliveredDate } from '../data/orders.js';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
-import { CopyIcon, CheckIcon, ChevronRightIcon, CalendarIcon } from './icons.jsx';
+import { CopyIcon, CheckIcon, ChevronRightIcon, CalendarIcon, MapPinIcon } from './icons.jsx';
 import CardMoreMenu from './CardMoreMenu.jsx';
 import './OrderCard.css';
 import './ShipmentCard.css';
@@ -11,6 +11,15 @@ const DOT_COLOR = {
   blue: 'var(--color-info-blue)',
   green: 'var(--color-success)',
   muted: 'var(--color-text-muted)',
+};
+
+// Status now reads as a colored label/chip, not just tinted text — see
+// OrderCard.jsx's matching DOT_TINT.
+const DOT_TINT = {
+  red: 'var(--color-action-red-tint)',
+  blue: 'var(--color-info-blue-tint)',
+  green: 'var(--color-success-tint)',
+  muted: 'var(--color-disabled-bg)',
 };
 
 function CopyShipmentId({ id }) {
@@ -82,7 +91,8 @@ function SameProductShipmentCard({ orders, first }) {
   const deliveredDate = getDeliveredDate(first);
   const totalQty = orders.reduce((sum, o) => sum + (o.qty || 1), 0);
 
-  function handleEditAddress() {
+  function handleEditAddress(e) {
+    e.stopPropagation();
     navigate('editShipmentOrder', { shipmentId: first.shipmentId });
   }
 
@@ -110,18 +120,23 @@ function SameProductShipmentCard({ orders, first }) {
       <div className="order-card__body">
         <div className="order-card__header">
           <CopyShipmentId id={first.shipmentId} />
-          <span className="order-card__header-right">
+          <div className="order-card__header-row2">
             <span className="order-card__date">{first.date}</span>
-            <CardMoreMenu
-              onEditAddress={handleEditAddress}
-              onReschedule={handleRescheduleDelivery}
-              onNeedHelp={handleNeedHelp}
-            />
-          </span>
+            <span className="order-card__header-right">
+              <button className="order-card__edit-address-btn" onClick={handleEditAddress}>
+                <MapPinIcon width="13" height="13" />
+                Edit Address
+              </button>
+              <CardMoreMenu onReschedule={handleRescheduleDelivery} onNeedHelp={handleNeedHelp} />
+            </span>
+          </div>
         </div>
 
         <div className="order-card__status-row">
-          <span className="order-card__status-label" style={{ color: DOT_COLOR[status.dot] }}>
+          <span
+            className="order-card__status-label"
+            style={{ color: DOT_COLOR[status.dot], background: DOT_TINT[status.dot] }}
+          >
             {status.label}
           </span>
           {edd && (
@@ -179,7 +194,8 @@ function MultiProductShipmentCard({ orders, first }) {
   // unit flagged after delivery) still needs its own row to call it out.
   const allUnitsSameStatus = orders.every((o) => o.status.label === orders[0].status.label);
 
-  function handleEditAddress() {
+  function handleEditAddress(e) {
+    e.stopPropagation();
     navigate('editShipmentOrder', { shipmentId: first.shipmentId });
   }
 
@@ -196,17 +212,22 @@ function MultiProductShipmentCard({ orders, first }) {
       <div className="order-card__body">
         <div className="order-card__header">
           <CopyShipmentId id={first.shipmentId} />
-          <span className="order-card__header-right">
+          <div className="order-card__header-row2">
             <span className="order-card__date">{first.date}</span>
-            <CardMoreMenu
-              onEditAddress={handleEditAddress}
-              onReschedule={handleRescheduleDelivery}
-              onNeedHelp={handleNeedHelp}
-            />
-          </span>
+            <span className="order-card__header-right">
+              <button className="order-card__edit-address-btn" onClick={handleEditAddress}>
+                <MapPinIcon width="13" height="13" />
+                Edit Address
+              </button>
+              <CardMoreMenu onReschedule={handleRescheduleDelivery} onNeedHelp={handleNeedHelp} />
+            </span>
+          </div>
         </div>
         <div className="order-card__status-row">
-          <span className="order-card__status-label" style={{ color: DOT_COLOR[shipmentStatus.dot] }}>
+          <span
+            className="order-card__status-label"
+            style={{ color: DOT_COLOR[shipmentStatus.dot], background: DOT_TINT[shipmentStatus.dot] }}
+          >
             {shipmentStatus.label}
           </span>
           {shipmentEdd && (

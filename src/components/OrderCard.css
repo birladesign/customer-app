@@ -22,10 +22,39 @@
   gap: var(--space-3);
 }
 
+/* ID on its own line; date sits below it so the row underneath has room for
+   Edit Address + the kebab without crowding the ID against them. */
 .order-card__header {
   display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.order-card__header-row2 {
+  display: flex;
+  align-items: center;
   justify-content: space-between;
-  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.order-card__edit-address-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: none;
+  background: rgba(26, 43, 88, 0.06);
+  border-radius: var(--radius-full);
+  padding: 6px var(--space-3);
+  font-family: inherit;
+  font-size: var(--text-caption-size);
+  font-weight: 600;
+  color: var(--color-navy-900);
+  transition: transform 0.1s ease-out;
+}
+
+.order-card__edit-address-btn:active {
+  transform: scale(0.96);
 }
 
 .order-card__id {
@@ -184,21 +213,17 @@
   min-width: 0;
 }
 
+/* A color-coded label/chip, not bare colored text — the fill is set inline
+   per status (see DOT_TINT) so the same class works across every status. */
 .order-card__status-label {
+  display: inline-flex;
+  align-items: center;
   font-size: var(--text-body-size);
   letter-spacing: var(--text-body-tracking);
   line-height: var(--text-body-leading);
-  font-weight: 600;
-}
-
-.order-card__pill-badge {
-  background: var(--color-navy-900);
-  color: var(--color-text-inverse);
-  font-size: 9px;
   font-weight: 700;
-  letter-spacing: var(--text-label-tracking);
-  padding: 2px 8px;
-  border-radius: var(--radius-full);
+  padding: 3px 10px;
+  border-radius: var(--radius-xs);
 }
 
 .order-card__product {
@@ -328,6 +353,7 @@
 @media (prefers-reduced-motion: reduce) {
   .order-card__action:not(:disabled):active,
   .order-card__id:active,
+  .order-card__edit-address-btn:active,
   .order-card__more-btn:active,
   .order-card:active {
     transform: none;

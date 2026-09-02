@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { SECTIONS, ORDERS, parseOrderDate } from '../data/orders.js';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
 import OrderCard from '../components/OrderCard.jsx';
@@ -7,6 +8,7 @@ import MultiShipmentOrderCard from '../components/MultiShipmentOrderCard.jsx';
 import TabBar from '../components/TabBar.jsx';
 import SearchAndFilterBar from '../components/SearchAndFilterBar.jsx';
 import { InboxIcon, HelpCircleIcon } from '../components/icons.jsx';
+import { SPRING_STANDARD, DURATION_REDUCED } from '../motion.js';
 import './MyOrders.css';
 
 const TABS = [
@@ -46,6 +48,7 @@ function groupByShipment(orders) {
 
 export default function MyOrders() {
   const { switchTab } = useNavigation();
+  const reduceMotion = useReducedMotion();
   const [activeTab, setActiveTab] = useState('all');
   const [query, setQuery] = useState('');
 
@@ -103,15 +106,32 @@ export default function MyOrders() {
       <main className="my-orders__list">
         {hasAnyResults ? (
           <div className="my-orders__cards">
-            {listEntries.map((entry) =>
-              entry.shipment ? (
-                <ShipmentCard key={entry.key} orders={entry.shipment} />
-              ) : entry.order.items?.[0]?.shipmentGroupId ? (
-                <MultiShipmentOrderCard key={entry.key} order={entry.order} />
-              ) : (
-                <OrderCard key={entry.key} order={entry.order} />
-              )
-            )}
+            {/* Switching tabs or typing a search query changes which cards
+                are eligible — without this, the list jump-cuts instead of
+                reading as the same list settling into a new shape. `layout`
+                lets survivors glide into their new position; entries that
+                actually leave/arrive fade rather than snap. initial={false}
+                skips animating the very first paint. */}
+            <AnimatePresence initial={false}>
+              {listEntries.map((entry) => (
+                <motion.div
+                  key={entry.key}
+                  layout={!reduceMotion}
+                  initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={reduceMotion ? DURATION_REDUCED : SPRING_STANDARD}
+                >
+                  {entry.shipment ? (
+                    <ShipmentCard orders={entry.shipment} />
+                  ) : entry.order.items?.[0]?.shipmentGroupId ? (
+                    <MultiShipmentOrderCard order={entry.order} />
+                  ) : (
+                    <OrderCard order={entry.order} />
+                  )}
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </div>
         ) : (
           <div className="my-orders__empty">
