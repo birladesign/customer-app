@@ -46,7 +46,7 @@ export default function DeliverySchedule({ params }) {
     );
   }
 
-  const { name: productName } = splitProductSpec(order.product);
+  const { name: productName, spec } = splitProductSpec(order.product);
   const isReschedule = wasConfirmed;
   const isUnchanged =
     wasConfirmed && order.deliverySlot?.date === selectedDate && order.deliverySlot?.window === selectedWindow;
@@ -91,6 +91,13 @@ export default function DeliverySchedule({ params }) {
           <img className="delivery-schedule__image" src={order.image} alt={order.product} />
           <div className="delivery-schedule__product-text">
             <p className="delivery-schedule__product">{productName}</p>
+            {(order.qty || spec) && (
+              <p className="delivery-schedule__variant">
+                {order.qty && <span>Qty: {order.qty}</span>}
+                {order.qty && spec && <span className="delivery-schedule__variant-dot" aria-hidden="true" />}
+                {spec && <span>{spec}</span>}
+              </p>
+            )}
             <p className="delivery-schedule__order-id">Order {order.id}</p>
           </div>
         </div>

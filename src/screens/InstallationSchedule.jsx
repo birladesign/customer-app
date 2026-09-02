@@ -56,7 +56,7 @@ export default function InstallationSchedule({ params }) {
     );
   }
 
-  const { name: productName } = splitProductSpec(order.product);
+  const { name: productName, spec } = splitProductSpec(order.product);
   // Once a slot exists at all, any further pick is a reschedule of it —
   // otherwise this is the very first confirmation of the proposed default.
   const isReschedule = wasConfirmed;
@@ -114,6 +114,13 @@ export default function InstallationSchedule({ params }) {
           <img className="installation-schedule__image" src={order.image} alt={order.product} />
           <div className="installation-schedule__product-text">
             <p className="installation-schedule__product">{productName}</p>
+            {(order.qty || spec) && (
+              <p className="installation-schedule__variant">
+                {order.qty && <span>Qty: {order.qty}</span>}
+                {order.qty && spec && <span className="installation-schedule__variant-dot" aria-hidden="true" />}
+                {spec && <span>{spec}</span>}
+              </p>
+            )}
             <p className="installation-schedule__order-id">Order {order.id}</p>
           </div>
         </div>

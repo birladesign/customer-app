@@ -86,6 +86,24 @@
   color: var(--color-text-primary);
 }
 
+.installation-schedule__variant {
+  margin: 2px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--text-caption-size);
+  letter-spacing: var(--text-caption-tracking);
+  color: var(--color-text-muted);
+}
+
+.installation-schedule__variant-dot {
+  width: 3px;
+  height: 3px;
+  border-radius: var(--radius-full);
+  background: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
 .installation-schedule__order-id {
   margin: 2px 0 0;
   font-size: var(--text-body-size);
