@@ -2,10 +2,10 @@ import { useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { ORDERS } from '../../data/orders.js';
 import { getRemediationOptions, getPostBookingUpdate } from '../../data/remediation.js';
+import { createCase } from '../../data/support.js';
 import { useNavigation } from '../../navigation/NavigationContext.jsx';
 import { SPRING_STANDARD, DURATION_REDUCED } from '../../motion.js';
 import { ChevronLeftIcon } from '../../components/icons.jsx';
-import ReasonStep from './ReasonStep.jsx';
 import EvidenceStep from './EvidenceStep.jsx';
 import OptionsStep from './OptionsStep.jsx';
 import RefundMethodStep from './RefundMethodStep.jsx';
@@ -14,8 +14,9 @@ import ApprovalPendingStep from './ApprovalPendingStep.jsx';
 import './ReturnReplaceFlow.css';
 
 const STEP_TITLES = {
-  reason: "What's the issue?",
-  evidence: 'Tell us more',
+  // Reason and evidence used to be two separate steps/taps — merged into
+  // one screen (EvidenceStep now owns both), so one title covers both.
+  evidence: "What's the issue?",
   options: 'Choose an option',
   refundMethod: 'Confirm Refund',
   execution: 'Tracking it',
@@ -24,8 +25,8 @@ const STEP_TITLES = {
 // Refund method + pickup confirmation only makes sense for "Return for
 // Refund" — replace/sendPart never move money, so those levers skip
 // straight from Options to Execution instead of carrying a dead step.
-const STEPS_WITH_REFUND = ['reason', 'evidence', 'options', 'refundMethod', 'execution'];
-const STEPS_WITHOUT_REFUND = ['reason', 'evidence', 'options', 'execution'];
+const STEPS_WITH_REFUND = ['evidence', 'options', 'refundMethod', 'execution'];
+const STEPS_WITHOUT_REFUND = ['evidence', 'options', 'execution'];
 
 export default function ReturnReplaceFlow({ params }) {
   const { goBack } = useNavigation();
@@ -48,14 +49,36 @@ export default function ReturnReplaceFlow({ params }) {
   // doesn't carry its own discount breakdown, so there's nothing honest to
   // display there.
   const itemSavings = !item ? order?.priceBreakup?.discount ?? 0 : 0;
+  // A page-level Replace/Return card (Order Details, once delivered) already
+  // declares the lever — Options only exists to ask that same question, so
+  // the flow it starts skips straight past it instead of re-asking what's
+  // already been answered. Entry points that don't know the lever up front
+  // (e.g. Support chat's Returns lane) still get the full picker.
+  const presetLever = params.lever === 'return' || params.lever === 'replace' ? params.lever : null;
 
   const [step, setStep] = useState(0);
   const [reason, setReason] = useState(null);
   const [photo, setPhoto] = useState(null);
-  const [selectedLever, setSelectedLever] = useState(null);
+  const [selectedLever, setSelectedLever] = useState(presetLever);
+  const [ticketId, setTicketId] = useState(null);
   const directionRef = useRef(1);
+  // Return for Refund hands off to a human agent instead of resolving
+  // automatically — "Request Return" is the one moment that's true, so a
+  // real, trackable support ticket is created right there (same case record
+  // Support's own chat creates), not just a static confirmation screen. The
+  // ref guards against creating a second ticket if the customer goes back
+  // to RefundMethodStep and submits again.
+  const ticketCreatedRef = useRef(false);
 
-  const stepKeys = selectedLever === 'return' ? STEPS_WITH_REFUND : STEPS_WITHOUT_REFUND;
+  // Only skip Options while the preset lever is still actually on offer for
+  // whatever reason gets picked — "Missing parts" only offers Send Part, so
+  // a preset Replace/Return falls back to asking normally in that one case
+  // rather than forcing a lever that was never available.
+  const skipOptions = Boolean(
+    presetLever && (!reason || getRemediationOptions(order, reason).some((o) => o.id === presetLever))
+  );
+  const baseStepKeys = selectedLever === 'return' ? STEPS_WITH_REFUND : STEPS_WITHOUT_REFUND;
+  const stepKeys = skipOptions ? baseStepKeys.filter((k) => k !== 'options') : baseStepKeys;
   const stepCount = stepKeys.length;
   const currentKey = stepKeys[step] ?? stepKeys[stepKeys.length - 1];
   // A needsApproval lever (currently only Return for Refund) ends the flow
@@ -71,9 +94,33 @@ export default function ReturnReplaceFlow({ params }) {
     setStep(next);
   }
 
+  // Steps are conditional (Options is skipped for a preset lever, Refund
+  // only exists for `return`), so advance by name rather than by a hardcoded
+  // index that shifts as the list changes.
+  function goNext() {
+    goToStep(Math.min(step + 1, stepKeys.length - 1));
+  }
+
   function handleBack() {
     if (step > 0) goToStep(step - 1);
     else goBack();
+  }
+
+  function handleSubmitReturnRequest() {
+    if (!ticketCreatedRef.current) {
+      ticketCreatedRef.current = true;
+      const record = createCase({
+        lane: 'returns',
+        order,
+        item: item ?? null,
+        description: `Return requested — ${reason}`,
+        hasPhoto: Boolean(photo),
+        escalate: true,
+        messages: [],
+      });
+      setTicketId(record.id);
+    }
+    goNext();
   }
 
   // No backend in this prototype — mutate the shared order (or, for a
@@ -150,23 +197,16 @@ export default function ReturnReplaceFlow({ params }) {
             exit={reduceMotion ? { opacity: 0 } : { x: direction > 0 ? '-30%' : '100%', opacity: direction > 0 ? 0.6 : 1 }}
             transition={reduceMotion ? DURATION_REDUCED : SPRING_STANDARD}
           >
-            {currentKey === 'reason' && (
-              <ReasonStep
-                selected={reason}
-                onSelect={setReason}
-                onContinue={() => goToStep(1)}
-              />
-            )}
             {currentKey === 'evidence' && (
               <EvidenceStep
                 order={target}
                 reason={reason}
+                onSelectReason={setReason}
                 price={itemPrice}
                 savings={itemSavings}
                 photo={photo}
                 onPhotoChange={setPhoto}
-                onChangeReason={() => goToStep(0)}
-                onContinue={() => goToStep(2)}
+                onContinue={goNext}
               />
             )}
             {currentKey === 'options' && (
@@ -175,14 +215,20 @@ export default function ReturnReplaceFlow({ params }) {
                 reason={reason}
                 selectedLever={selectedLever}
                 onSelectLever={setSelectedLever}
-                onContinue={() => goToStep(3)}
+                onContinue={goNext}
               />
             )}
             {currentKey === 'refundMethod' && (
-              <RefundMethodStep order={target} refundAmount={itemPrice} onSubmit={() => goToStep(4)} />
+              <RefundMethodStep order={target} refundAmount={itemPrice} onSubmit={handleSubmitReturnRequest} />
             )}
             {currentKey === 'execution' && needsApproval && (
-              <ApprovalPendingStep order={target} refundAmount={itemPrice} reason={reason} onDone={handleJourneyComplete} />
+              <ApprovalPendingStep
+                order={target}
+                refundAmount={itemPrice}
+                reason={reason}
+                ticketId={ticketId}
+                onDone={handleJourneyComplete}
+              />
             )}
             {currentKey === 'execution' && !needsApproval && (
               <ExecutionStep order={target} leverId={selectedLever} onDone={handleJourneyComplete} />

@@ -12,7 +12,7 @@ function formatRupees(amount) {
 // this next, not the system. Doubles as the request's receipt: what was
 // asked for, for how much, and where it's going, all in one place instead
 // of forcing a trip back into Order Details to piece it together.
-export default function ApprovalPendingStep({ order, refundAmount, reason, onDone }) {
+export default function ApprovalPendingStep({ order, refundAmount, reason, ticketId, onDone }) {
   const { name, spec } = splitProductSpec(order.product);
 
   return (
@@ -41,6 +41,12 @@ export default function ApprovalPendingStep({ order, refundAmount, reason, onDon
 
       <div className="execution-step__card">
         <p className="execution-step__card-heading">Request Details</p>
+        {ticketId && (
+          <div className="execution-step__detail-row">
+            <span>Ticket ID</span>
+            <span className="execution-step__detail-strong">{ticketId}</span>
+          </div>
+        )}
         <div className="execution-step__detail-row">
           <span>Order ID</span>
           <span>{order.id}</span>

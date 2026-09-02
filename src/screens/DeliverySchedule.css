@@ -217,53 +217,6 @@
   letter-spacing: var(--text-label-tracking);
 }
 
-.delivery-schedule__date-row {
-  display: flex;
-  gap: var(--space-2);
-  overflow-x: auto;
-  padding-bottom: 2px;
-}
-
-.delivery-schedule__date-chip {
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  min-width: 56px;
-  border: 1px solid var(--color-border);
-  background: var(--color-bg-primary);
-  border-radius: var(--radius-md);
-  padding: var(--space-2) var(--space-3);
-  font-family: inherit;
-  transition: transform 0.1s ease-out, background 0.15s var(--ease-standard), color 0.15s var(--ease-standard);
-}
-
-.delivery-schedule__date-chip:active {
-  transform: scale(0.96);
-}
-
-.delivery-schedule__date-day {
-  font-size: var(--text-label-size);
-  color: var(--color-text-muted);
-}
-
-.delivery-schedule__date-label {
-  font-size: var(--text-body-size);
-  font-weight: 700;
-  color: var(--color-text-primary);
-}
-
-.delivery-schedule__date-chip--selected {
-  background: var(--color-navy-900);
-  border-color: var(--color-navy-900);
-}
-
-.delivery-schedule__date-chip--selected .delivery-schedule__date-day,
-.delivery-schedule__date-chip--selected .delivery-schedule__date-label {
-  color: var(--color-text-inverse);
-}
-
 .delivery-schedule__window-row {
   display: flex;
   flex-wrap: wrap;
@@ -327,7 +280,6 @@
 @media (prefers-reduced-motion: reduce) {
   .delivery-schedule__icon-btn:active,
   .delivery-schedule__reschedule-link:active,
-  .delivery-schedule__date-chip:active,
   .delivery-schedule__window-chip:active,
   .delivery-schedule__confirm:not(:disabled):active {
     transform: none;

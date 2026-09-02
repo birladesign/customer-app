@@ -1114,6 +1114,71 @@
   color: var(--color-disabled-text);
 }
 
+/* Once delivered, Return/Replace is the main thing people come back for —
+   two equal, page-level cards instead of one more row buried behind "Need
+   Help". */
+.order-details__lever-cards {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.order-details__lever-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-primary);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  box-shadow: var(--shadow-sm);
+  font-family: inherit;
+  font-size: var(--text-product-size);
+  font-weight: 700;
+  color: var(--color-navy-900);
+  transition: transform 0.1s ease-out;
+}
+
+.order-details__lever-card:active {
+  transform: scale(0.97);
+}
+
+.order-details__lever-card-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  background: rgba(26, 43, 88, 0.06);
+  color: var(--color-navy-900);
+}
+
+/* The sheet this used to open (Return/Replace + Contact Support + Cancel)
+   collapses to just this once the cards above take over and Cancel no
+   longer applies post-delivery — a quiet text link is all that's left to
+   say, not a full card/row.  */
+.order-details__contact-support-link {
+  display: block;
+  width: 100%;
+  margin-top: var(--space-1);
+  border: none;
+  background: none;
+  padding: var(--space-2);
+  font-family: inherit;
+  font-size: var(--text-body-size);
+  font-weight: 600;
+  color: var(--color-navy-900);
+  text-align: center;
+  text-decoration: underline;
+  transition: transform 0.1s ease-out;
+}
+
+.order-details__contact-support-link:active {
+  transform: scale(0.97);
+}
+
 .order-details__cancel-prompt {
   margin: 0 0 var(--space-4);
   font-size: var(--text-body-size);
@@ -1213,6 +1278,8 @@
   .order-details__help-toggle:active,
   .order-details__help-action:active,
   .order-details__help-sheet-cancel:active,
+  .order-details__lever-card:active,
+  .order-details__contact-support-link:active,
   .order-details__technician-call:active,
   .order-details__technician-reschedule:active,
   .order-details__cancel-continue:not(:disabled):active,

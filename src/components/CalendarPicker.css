@@ -1,0 +1,100 @@
+.calendar-picker {
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3);
+}
+
+.calendar-picker__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.calendar-picker__month {
+  font-size: var(--text-product-size);
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.calendar-picker__nav {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--radius-full);
+  background: rgba(26, 43, 88, 0.06);
+  color: var(--color-navy-900);
+  transition: transform 0.1s ease-out;
+}
+
+.calendar-picker__nav:not(:disabled):active {
+  transform: scale(0.92);
+}
+
+.calendar-picker__nav:disabled {
+  background: transparent;
+  color: var(--color-disabled-text);
+}
+
+.calendar-picker__weekdays,
+.calendar-picker__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.calendar-picker__weekday {
+  text-align: center;
+  padding-bottom: var(--space-1);
+  font-size: var(--text-caption-size);
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.calendar-picker__day,
+.calendar-picker__blank {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.calendar-picker__day {
+  border: none;
+  border-radius: var(--radius-full);
+  background: none;
+  font-family: inherit;
+  font-size: var(--text-body-size);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  transition: transform 0.1s ease-out, background 0.15s var(--ease-standard);
+}
+
+.calendar-picker__day:not(:disabled):active {
+  transform: scale(0.9);
+  background: rgba(26, 43, 88, 0.06);
+}
+
+/* A booked-out day still holds its place in the grid so the shape of the
+   month stays readable — it just can't be chosen. */
+.calendar-picker__day:disabled {
+  color: var(--color-disabled-text);
+}
+
+.calendar-picker__day--selected {
+  background: var(--color-navy-900);
+  color: var(--color-text-inverse);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .calendar-picker__nav:not(:disabled):active,
+  .calendar-picker__day:not(:disabled):active {
+    transform: none;
+  }
+}

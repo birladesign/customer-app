@@ -1,17 +1,23 @@
 import { useState } from 'react';
 import { splitProductSpec } from '../../data/orders.js';
+import { RETURN_REASONS } from '../../data/remediation.js';
 import PhotoUploadTile from '../../components/PhotoUploadTile.jsx';
 import { REASON_ICONS } from './reasonIcons.jsx';
+import './ReasonStep.css';
 import './EvidenceStep.css';
 
 function formatRupees(amount) {
   return `₹${amount.toLocaleString('en-IN')}`;
 }
 
-export default function EvidenceStep({ order, reason, price, savings, photo, onPhotoChange, onChangeReason, onContinue }) {
+// Reason + evidence used to be two separate taps (pick a reason, continue,
+// then attach a photo) for what is really one decision — why, with proof.
+// Merging them into a single screen saves that extra click without losing
+// anything: the reason list is right here instead of a "Change" link back
+// to a screen that no longer exists.
+export default function EvidenceStep({ order, reason, onSelectReason, price, savings, photo, onPhotoChange, onContinue }) {
   const [note, setNote] = useState('');
   const { name, spec } = splitProductSpec(order.product);
-  const ReasonIcon = REASON_ICONS[reason];
 
   return (
     <div className="evidence-step">
@@ -27,19 +33,27 @@ export default function EvidenceStep({ order, reason, price, savings, photo, onP
         </div>
       </div>
 
-      <div className="evidence-step__recap">
-        {ReasonIcon && (
-          <span className="evidence-step__recap-icon" aria-hidden="true">
-            <ReasonIcon width="14" height="14" strokeWidth="2" />
-          </span>
-        )}
-        <span className="evidence-step__recap-text">
-          <span className="evidence-step__recap-label">Why do you want to return?</span>
-          <span className="evidence-step__recap-value">{reason}</span>
-        </span>
-        <button className="evidence-step__recap-change" onClick={onChangeReason}>
-          Change
-        </button>
+      <p className="evidence-step__prompt">Choose the reason closest to what happened.</p>
+      <div className="reason-step__list" role="radiogroup">
+        {RETURN_REASONS.map((r) => {
+          const Icon = REASON_ICONS[r];
+          const isSelected = reason === r;
+          return (
+            <button
+              key={r}
+              className={`reason-step__option${isSelected ? ' reason-step__option--selected' : ''}`}
+              onClick={() => onSelectReason(r)}
+              role="radio"
+              aria-checked={isSelected}
+            >
+              <span className="reason-step__icon" aria-hidden="true">
+                <Icon width="16" height="16" strokeWidth="2" />
+              </span>
+              <span className="reason-step__option-label">{r}</span>
+              <span className="reason-step__radio" aria-hidden="true" />
+            </button>
+          );
+        })}
       </div>
 
       <p className="evidence-step__prompt">
@@ -60,10 +74,14 @@ export default function EvidenceStep({ order, reason, price, savings, photo, onP
         onChange={(e) => setNote(e.target.value)}
       />
 
-      <button className="evidence-step__continue" disabled={!photo} onClick={onContinue}>
+      <button className="evidence-step__continue" disabled={!reason || !photo} onClick={onContinue}>
         Continue
       </button>
-      {!photo && <p className="evidence-step__hint">A photo is required to proceed.</p>}
+      {!reason ? (
+        <p className="evidence-step__hint">Choose a reason to proceed.</p>
+      ) : (
+        !photo && <p className="evidence-step__hint">A photo is required to proceed.</p>
+      )}
     </div>
   );
 }

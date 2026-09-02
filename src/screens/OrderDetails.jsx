@@ -186,6 +186,14 @@ export default function OrderDetails({ params }) {
   const itemIntents = scopedItem ? getItemIntents(scopedItem) : null;
   const effectiveWarrantyIntent = scopedItem ? itemIntents.warranty : warrantyIntent;
   const effectiveReturnIntent = scopedItem ? itemIntents.returnReplace : returnIntent;
+  // Once delivered, Return/Replace is the thing most people came here for —
+  // it earns its own two cards directly on the page instead of waiting one
+  // more tap inside "Need Help". Cancel never applies post-delivery anyway,
+  // so the sheet (cancel + return/replace + contact) collapses to just a
+  // plain Contact Support link once these cards take over. Unscoped view of
+  // a multi-item order still routes through the sheet — return/replace there
+  // is a per-item decision, not one this page-level pair can represent.
+  const showReturnReplaceCards = Boolean(effectiveReturnIntent?.enabled && (!order.items || scopedItem));
   // The invoice only exists once the order has actually shipped out — same
   // "available after delivery" window as Warranty, just also true for a
   // multi-item order once every line item (not just the order's headline
@@ -476,6 +484,8 @@ export default function OrderDetails({ params }) {
     : { label: 'On Time', tone: 'green' };
   const currentStep = effectiveTimeline?.steps[effectiveTimeline.currentIndex];
   const progressSubtext = currentStep?.updates?.[0]?.text ?? currentStep?.label ?? null;
+  // Trimming to the last 4 stages happens inside Tracker itself, so every
+  // screen that renders one gets the same cap.
   const compactTrackerSteps = effectiveTimeline?.steps.map((s, i) => ({
     label: s.label,
     date: i <= effectiveTimeline.currentIndex && s.timestamp ? s.timestamp.split(',')[0] : null,
@@ -670,7 +680,13 @@ export default function OrderDetails({ params }) {
             </div>
           )}
 
-          {!isClosedOrder && (
+          {/* Once delivered there's nothing left to edit — showing a
+              disabled button with a "locked" reason just for that state
+              reads as broken, not informative, so it's gone entirely
+              instead. Still-in-transit orders keep the disabled+reason
+              treatment, since editing there is temporarily, not
+              permanently, unavailable. */}
+          {!isClosedOrder && !isDeliveredStatus && (
             <div className="order-details__edit-cta-wrap">
               <button
                 className="order-details__edit-cta"
@@ -1001,10 +1017,53 @@ export default function OrderDetails({ params }) {
           </div>
         )}
 
-        <button className="order-details__help-toggle" onClick={() => setHelpSectionOpen(true)}>
-          <span>Do you need help with the existing order?</span>
-          <ChevronRightIcon className="order-details__help-chevron" />
-        </button>
+        {showReturnReplaceCards ? (
+          <>
+            <div className="order-details__lever-cards">
+              <button
+                className="order-details__lever-card"
+                onClick={() =>
+                  navigate('returnReplace', {
+                    orderId: order.id,
+                    ...(scopedItem ? { sku: scopedItem.sku } : {}),
+                    lever: 'replace',
+                  })
+                }
+              >
+                <span className="order-details__lever-card-icon">
+                  <EditIcon width="18" height="18" />
+                </span>
+                <span>Replace</span>
+              </button>
+              <button
+                className="order-details__lever-card"
+                onClick={() =>
+                  navigate('returnReplace', {
+                    orderId: order.id,
+                    ...(scopedItem ? { sku: scopedItem.sku } : {}),
+                    lever: 'return',
+                  })
+                }
+              >
+                <span className="order-details__lever-card-icon">
+                  <PackageIcon width="18" height="18" />
+                </span>
+                <span>Return</span>
+              </button>
+            </div>
+            <button
+              className="order-details__contact-support-link"
+              onClick={() => switchTab('support', { openChat: true, orderId: order.id })}
+            >
+              Contact Support
+            </button>
+          </>
+        ) : (
+          <button className="order-details__help-toggle" onClick={() => setHelpSectionOpen(true)}>
+            <span>Do you need help with the existing order?</span>
+            <ChevronRightIcon className="order-details__help-chevron" />
+          </button>
+        )}
       </main>
 
       <BottomSheet open={helpSectionOpen} onClose={() => setHelpSectionOpen(false)}>

@@ -2,16 +2,15 @@ import { useEffect, useState } from 'react';
 import { ORDERS, splitProductSpec } from '../data/orders.js';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
 import ConfirmSheet from '../components/ConfirmSheet.jsx';
+import CalendarPicker, { formatSlotDate } from '../components/CalendarPicker.jsx';
 import { ChevronLeftIcon, CalendarIcon, ClockIcon, CheckIcon } from '../components/icons.jsx';
 import './DeliverySchedule.css';
 
-const DATE_OPTIONS = [
-  { value: '20 Aug 2026', day: 'Thu', label: '20 Aug' },
-  { value: '21 Aug 2026', day: 'Fri', label: '21 Aug' },
-  { value: '22 Aug 2026', day: 'Sat', label: '22 Aug' },
-  { value: '23 Aug 2026', day: 'Sun', label: '23 Aug' },
-  { value: '24 Aug 2026', day: 'Mon', label: '24 Aug' },
-];
+// No real availability backend in this prototype — redelivery opens from the
+// first bookable day and stays open for a month, which is enough range for a
+// month-grid picker to be worth having over a fixed row of day-chips.
+const FIRST_BOOKABLE = new Date(2026, 7, 20);
+const LAST_BOOKABLE = new Date(2026, 8, 20);
 
 const TIME_WINDOWS = ['9 AM – 12 PM', '12 PM – 3 PM', '3 PM – 6 PM', '6 PM – 9 PM'];
 
@@ -27,7 +26,7 @@ export default function DeliverySchedule({ params }) {
   const wasConfirmed = order?.status?.label === 'Redelivery Scheduled';
 
   const [pickerOpen, setPickerOpen] = useState(!wasConfirmed || Boolean(params.reschedule));
-  const [selectedDate, setSelectedDate] = useState(order?.deliverySlot?.date ?? DATE_OPTIONS[0].value);
+  const [selectedDate, setSelectedDate] = useState(order?.deliverySlot?.date ?? formatSlotDate(FIRST_BOOKABLE));
   const [selectedWindow, setSelectedWindow] = useState(order?.deliverySlot?.window ?? TIME_WINDOWS[0]);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [bookingConfirmed, setBookingConfirmed] = useState(false);
@@ -154,20 +153,12 @@ export default function DeliverySchedule({ params }) {
           <>
             <section className="delivery-schedule__section">
               <p className="delivery-schedule__section-heading">Choose a Date</p>
-              <div className="delivery-schedule__date-row">
-                {DATE_OPTIONS.map((d) => (
-                  <button
-                    key={d.value}
-                    className={`delivery-schedule__date-chip${
-                      selectedDate === d.value ? ' delivery-schedule__date-chip--selected' : ''
-                    }`}
-                    onClick={() => setSelectedDate(d.value)}
-                  >
-                    <span className="delivery-schedule__date-day">{d.day}</span>
-                    <span className="delivery-schedule__date-label">{d.label}</span>
-                  </button>
-                ))}
-              </div>
+              <CalendarPicker
+                value={selectedDate}
+                onChange={setSelectedDate}
+                minDate={FIRST_BOOKABLE}
+                maxDate={LAST_BOOKABLE}
+              />
             </section>
 
             <section className="delivery-schedule__section">

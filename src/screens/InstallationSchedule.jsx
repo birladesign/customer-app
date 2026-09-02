@@ -2,18 +2,15 @@ import { useEffect, useState } from 'react';
 import { ORDERS, splitProductSpec } from '../data/orders.js';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
 import ConfirmSheet from '../components/ConfirmSheet.jsx';
+import CalendarPicker, { formatSlotDate } from '../components/CalendarPicker.jsx';
 import { ChevronLeftIcon, CalendarIcon, ClockIcon, UserIcon, CheckIcon, PhoneIcon } from '../components/icons.jsx';
 import './InstallationSchedule.css';
 
-// No real availability backend in this prototype — a fixed near-term picker,
-// same "handful of options, not a rules engine" approach as CANCEL_REASONS.
-const DATE_OPTIONS = [
-  { value: '12 Aug 2026', day: 'Tue', label: '12 Aug' },
-  { value: '13 Aug 2026', day: 'Wed', label: '13 Aug' },
-  { value: '14 Aug 2026', day: 'Thu', label: '14 Aug' },
-  { value: '15 Aug 2026', day: 'Fri', label: '15 Aug' },
-  { value: '16 Aug 2026', day: 'Sat', label: '16 Aug' },
-];
+// No real availability backend in this prototype — technician visits open
+// from the first bookable day and stay open for a month, same bounded-window
+// approach as DeliverySchedule.
+const FIRST_BOOKABLE = new Date(2026, 7, 12);
+const LAST_BOOKABLE = new Date(2026, 8, 12);
 
 const TIME_WINDOWS = ['9 AM – 11 AM', '11 AM – 1 PM', '2 PM – 4 PM', '4 PM – 6 PM'];
 
@@ -34,7 +31,7 @@ export default function InstallationSchedule({ params }) {
   // Slot" opens on the read-only current appointment first, matching each
   // button's own stated intent instead of always landing on the same screen.
   const [pickerOpen, setPickerOpen] = useState(!wasConfirmed || Boolean(params.reschedule));
-  const [selectedDate, setSelectedDate] = useState(order?.installationSlot?.date ?? DATE_OPTIONS[0].value);
+  const [selectedDate, setSelectedDate] = useState(order?.installationSlot?.date ?? formatSlotDate(FIRST_BOOKABLE));
   const [selectedWindow, setSelectedWindow] = useState(order?.installationSlot?.window ?? TIME_WINDOWS[0]);
   const [confirmOpen, setConfirmOpen] = useState(false);
   // The journey shouldn't just dump the customer back on My Orders the
@@ -208,20 +205,12 @@ export default function InstallationSchedule({ params }) {
 
             <section className="installation-schedule__section">
               <p className="installation-schedule__section-heading">Choose a Date</p>
-              <div className="installation-schedule__date-row">
-                {DATE_OPTIONS.map((d) => (
-                  <button
-                    key={d.value}
-                    className={`installation-schedule__date-chip${
-                      selectedDate === d.value ? ' installation-schedule__date-chip--selected' : ''
-                    }`}
-                    onClick={() => setSelectedDate(d.value)}
-                  >
-                    <span className="installation-schedule__date-day">{d.day}</span>
-                    <span className="installation-schedule__date-label">{d.label}</span>
-                  </button>
-                ))}
-              </div>
+              <CalendarPicker
+                value={selectedDate}
+                onChange={setSelectedDate}
+                minDate={FIRST_BOOKABLE}
+                maxDate={LAST_BOOKABLE}
+              />
             </section>
 
             <section className="installation-schedule__section">

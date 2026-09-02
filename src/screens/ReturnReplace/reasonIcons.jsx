@@ -1,7 +1,7 @@
 import { AlertTriangleIcon, ZapIcon, PackageIcon, InboxIcon, HelpCircleIcon } from '../../components/icons.jsx';
 
 // One icon per RETURN_REASONS entry (data/remediation.js) — kept as a
-// dedicated map, not inline in ReasonStep, so EvidenceStep's recap can
+// dedicated map, shared by the merged reason+evidence screen so it can
 // reuse the exact same glyph for the reason the customer already picked.
 export const REASON_ICONS = {
   Damaged: AlertTriangleIcon,

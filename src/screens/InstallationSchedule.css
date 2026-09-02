@@ -233,53 +233,6 @@
   letter-spacing: var(--text-label-tracking);
 }
 
-.installation-schedule__date-row {
-  display: flex;
-  gap: var(--space-2);
-  overflow-x: auto;
-  padding-bottom: 2px;
-}
-
-.installation-schedule__date-chip {
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  min-width: 56px;
-  border: 1px solid var(--color-border);
-  background: var(--color-bg-primary);
-  border-radius: var(--radius-md);
-  padding: var(--space-2) var(--space-3);
-  font-family: inherit;
-  transition: transform 0.1s ease-out, background 0.15s var(--ease-standard), color 0.15s var(--ease-standard);
-}
-
-.installation-schedule__date-chip:active {
-  transform: scale(0.96);
-}
-
-.installation-schedule__date-day {
-  font-size: var(--text-label-size);
-  color: var(--color-text-muted);
-}
-
-.installation-schedule__date-label {
-  font-size: var(--text-body-size);
-  font-weight: 700;
-  color: var(--color-text-primary);
-}
-
-.installation-schedule__date-chip--selected {
-  background: var(--color-navy-900);
-  border-color: var(--color-navy-900);
-}
-
-.installation-schedule__date-chip--selected .installation-schedule__date-day,
-.installation-schedule__date-chip--selected .installation-schedule__date-label {
-  color: var(--color-text-inverse);
-}
-
 .installation-schedule__window-row {
   display: flex;
   flex-wrap: wrap;
@@ -343,7 +296,6 @@
 @media (prefers-reduced-motion: reduce) {
   .installation-schedule__icon-btn:active,
   .installation-schedule__reschedule-link:active,
-  .installation-schedule__date-chip:active,
   .installation-schedule__window-chip:active,
   .installation-schedule__confirm:not(:disabled):active {
     transform: none;
