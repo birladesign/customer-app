@@ -70,6 +70,8 @@ export default function EditOrder({ params }) {
   // changed once qty/selectedSize/selectedAddress equal their new values.
   const [savedSummary, setSavedSummary] = useState(null);
 
+  const pageTitle = hideAddress ? 'Edit Order' : 'Edit Address';
+
   if (!order || (params.sku && !item)) {
     return (
       <div className="edit-order">
@@ -77,7 +79,7 @@ export default function EditOrder({ params }) {
           <button className="edit-order__icon-btn" onClick={goBack} aria-label="Back">
             <ChevronLeftIcon />
           </button>
-          <h1>Edit Order</h1>
+          <h1>{pageTitle}</h1>
           <span className="edit-order__icon-btn-spacer" />
         </header>
         <p className="edit-order__not-found">Order not found.</p>
@@ -100,7 +102,7 @@ export default function EditOrder({ params }) {
           <button className="edit-order__icon-btn" onClick={goBack} aria-label="Back">
             <ChevronLeftIcon />
           </button>
-          <h1>Edit Order</h1>
+          <h1>{pageTitle}</h1>
           <span className="edit-order__icon-btn-spacer" />
         </header>
         <div className="edit-order__locked">
@@ -181,7 +183,7 @@ export default function EditOrder({ params }) {
         <button className="edit-order__icon-btn" onClick={goBack} aria-label="Back">
           <ChevronLeftIcon />
         </button>
-        <h1>Edit Order</h1>
+        <h1>{pageTitle}</h1>
         <span className="edit-order__icon-btn-spacer" />
       </header>
 

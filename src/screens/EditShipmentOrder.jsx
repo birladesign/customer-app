@@ -196,6 +196,8 @@ export default function EditShipmentOrder({ params }) {
   // the customer back on Order Details.
   const [savedSummary, setSavedSummary] = useState(null);
 
+  const pageTitle = hideAddress ? 'Edit Order' : 'Edit Address';
+
   if (units.length === 0) {
     return (
       <div className="edit-order">
@@ -203,7 +205,7 @@ export default function EditShipmentOrder({ params }) {
           <button className="edit-order__icon-btn" onClick={goBack} aria-label="Back">
             <ChevronLeftIcon />
           </button>
-          <h1>Edit Order</h1>
+          <h1>{pageTitle}</h1>
           <span className="edit-order__icon-btn-spacer" />
         </header>
         <p className="edit-order__not-found">Shipment not found.</p>
@@ -223,7 +225,7 @@ export default function EditShipmentOrder({ params }) {
           <button className="edit-order__icon-btn" onClick={goBack} aria-label="Back">
             <ChevronLeftIcon />
           </button>
-          <h1>Edit Order</h1>
+          <h1>{pageTitle}</h1>
           <span className="edit-order__icon-btn-spacer" />
         </header>
         <div className="edit-order__locked">
@@ -349,7 +351,7 @@ export default function EditShipmentOrder({ params }) {
         <button className="edit-order__icon-btn" onClick={goBack} aria-label="Back">
           <ChevronLeftIcon />
         </button>
-        <h1>Edit Order</h1>
+        <h1>{pageTitle}</h1>
         <span className="edit-order__icon-btn-spacer" />
       </header>
 
