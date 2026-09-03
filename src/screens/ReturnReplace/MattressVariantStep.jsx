@@ -14,13 +14,17 @@ function formatRupees(amount) {
 // "Model change is possible as part of the replacement journey" / "Size
 // change should be supported during the replacement journey" — a
 // replacement doesn't have to be a same-for-same swap, so this reuses Edit
-// Order's own Size/Height chip picker (data/variants.js) rather than
-// silently shipping back the exact item that didn't work out. There's
-// never a shipping charge here — only a genuine SKU-level price difference
-// between the old and new size/height, same as Edit Order already charges
-// (or refunds) for a variant change outside this flow. Confirming with no
-// actual change selected isn't a real replacement request, so it's blocked
-// rather than silently accepted.
+// Order's own variant chip picker (data/variants.js) rather than silently
+// shipping back the exact item that didn't work out. Despite the name
+// (originally mattress-only), this now also drives the generic "Wrong size
+// or model" → Replace path for any catalog category (chair colors, sofa
+// seating/color) — the chip sections below are keyed off whichever facets
+// that product's variants entry actually declares. There's never a
+// shipping charge here — only a genuine SKU-level price difference between
+// the old and new variant, same as Edit Order already charges (or refunds)
+// for a variant change outside this flow. Confirming with no actual change
+// selected isn't a real replacement request, so it's blocked rather than
+// silently accepted.
 export default function MattressVariantStep({ order, price, onContinue }) {
   const { name, spec: currentSpec } = splitProductSpec(order.product);
   const variants = getVariants(name);
@@ -68,6 +72,40 @@ export default function MattressVariantStep({ order, price, onContinue }) {
                 onClick={() => setSelection((s) => ({ ...s, height: h.label }))}
               >
                 {h.label}
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {variants?.colors && (
+        <section className="mattress-variant-step__section">
+          <p className="mattress-variant-step__heading">Color</p>
+          <div className="mattress-variant-step__chip-row">
+            {variants.colors.map((c) => (
+              <button
+                key={c.label}
+                className={chipClass(selection.color === c.label)}
+                onClick={() => setSelection((s) => ({ ...s, color: c.label }))}
+              >
+                {c.label}
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {variants?.seating && (
+        <section className="mattress-variant-step__section">
+          <p className="mattress-variant-step__heading">Seating Capacity</p>
+          <div className="mattress-variant-step__chip-row">
+            {variants.seating.map((v) => (
+              <button
+                key={v.label}
+                className={chipClass(selection.seating === v.label)}
+                onClick={() => setSelection((s) => ({ ...s, seating: v.label }))}
+              >
+                {v.label}
               </button>
             ))}
           </div>

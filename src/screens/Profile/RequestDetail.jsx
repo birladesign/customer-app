@@ -48,7 +48,15 @@ export default function RequestDetail({ params }) {
 
   const isResolved = kase.status === 'resolved';
   const pill = STATUS_PILL[kase.status];
-  const canReply = !isResolved;
+  // The chat's own filing message (`caseResult`, pushed once by
+  // SupportChat's handleSubmit) is the transcript's real "we've logged this,
+  // the team will take it from here" sign-off — landing on that as the last
+  // message means this specific conversation already reached its own
+  // conclusion, even though the ticket itself stays open until support
+  // resolves it. Showing a live composer right under that closing line reads
+  // as still-active chat; a closed note matches what was actually just said.
+  const justFiled = Boolean(messages[messages.length - 1]?.caseResult);
+  const canReply = !isResolved && !justFiled;
   const exchange = kase.exchange;
   const order = exchange && kase.orderId ? ORDERS.find((o) => o.id === kase.orderId) : null;
 
@@ -282,6 +290,14 @@ export default function RequestDetail({ params }) {
             <button className="request-detail__send" disabled={!reply.trim() && !photo} onClick={handleSend}>
               Send Reply
             </button>
+          </section>
+        )}
+
+        {justFiled && !isResolved && (
+          <section className="request-detail__reply-closed">
+            <p className="request-detail__reply-closed-text">
+              This request has been logged — we'll update you here as it progresses.
+            </p>
           </section>
         )}
       </main>

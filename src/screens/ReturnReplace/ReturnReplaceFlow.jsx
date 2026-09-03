@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { ORDERS, splitProductSpec, getDeliveredDate } from '../../data/orders.js';
 import { getRemediationOptions, getPostBookingUpdate } from '../../data/remediation.js';
+import { getVariants } from '../../data/variants.js';
 import { isMattressProduct, daysSinceDelivery, getMattressVerdict, proRataRefund } from '../../data/mattressRules.js';
 import { createCase } from '../../data/support.js';
 import { useNavigation } from '../../navigation/NavigationContext.jsx';
@@ -27,6 +28,7 @@ const STEP_TITLES = {
   mattressReason: "What's the issue?",
   mattressVerdict: 'Next Steps',
   mattressVariant: 'Choose New Size',
+  variant: 'Choose Replacement Details',
 };
 
 function withSpec(name, spec) {
@@ -102,6 +104,13 @@ export default function ReturnReplaceFlow({ params }) {
   const skipOptions = Boolean(
     presetLever && (!reason || getRemediationOptions(order, reason).some((o) => o.id === presetLever))
   );
+  // "Wrong size or model" + Replace is the one non-mattress case that
+  // shouldn't just ship back a like-for-like unit — ask which color/seating/
+  // size the customer actually wants, same as the mattress journey, for any
+  // category the variant catalog (data/variants.js) actually covers.
+  const showVariantStep = Boolean(
+    !isMattress && reason === 'Wrong size or model' && selectedLever === 'replace' && target && getVariants(splitProductSpec(target.product).name)
+  );
   const deliveredDateStr = isMattress ? getDeliveredDate(target) : null;
   const effectiveDays = smellPersists ? 3 : daysSinceDelivery(deliveredDateStr);
   const mattressProductInfo = isMattress ? splitProductSpec(target.product) : null;
@@ -120,13 +129,16 @@ export default function ReturnReplaceFlow({ params }) {
   const MATTRESS_STEPS_RETURN = ['mattressReason', 'mattressVerdict', 'refundMethod', 'execution'];
   const MATTRESS_STEPS_REPLACE = ['mattressReason', 'mattressVerdict', 'mattressVariant', 'execution'];
   const baseStepKeys = selectedLever === 'return' ? STEPS_WITH_REFUND : STEPS_WITHOUT_REFUND;
+  const stepKeysWithVariant = showVariantStep
+    ? baseStepKeys.flatMap((k) => (k === 'execution' ? ['variant', 'execution'] : [k]))
+    : baseStepKeys;
   const stepKeys = isMattress
     ? selectedLever === 'return'
       ? MATTRESS_STEPS_RETURN
       : MATTRESS_STEPS_REPLACE
     : skipOptions
-    ? baseStepKeys.filter((k) => k !== 'options')
-    : baseStepKeys;
+    ? stepKeysWithVariant.filter((k) => k !== 'options')
+    : stepKeysWithVariant;
   const stepCount = stepKeys.length;
   const currentKey = stepKeys[step] ?? stepKeys[stepKeys.length - 1];
   // A needsApproval lever (currently only Return for Refund) ends the flow
@@ -231,9 +243,9 @@ export default function ReturnReplaceFlow({ params }) {
   function handleJourneyComplete() {
     const update = getPostBookingUpdate(selectedLever, needsApproval);
     const newStatus = { dot: 'blue', label: update.label };
-    // A replacement that changed size/height (mattress-only — see
-    // MattressVariantStep) ships as the new spec, not a like-for-like
-    // reprint of what didn't work out.
+    // A replacement that changed variant (mattress size/height, chair
+    // color, sofa seating/color — see MattressVariantStep) ships as the new
+    // spec, not a like-for-like reprint of what didn't work out.
     const newPrice = itemPrice + variantPriceDelta;
     const specUpdate = newSpec
       ? { product: withSpec(splitProductSpec(item ? item.product : order.product).name, newSpec) }
@@ -364,6 +376,9 @@ export default function ReturnReplaceFlow({ params }) {
                 onSelectLever={setSelectedLever}
                 onContinue={goNext}
               />
+            )}
+            {currentKey === 'variant' && (
+              <MattressVariantStep order={target} price={itemPrice} onContinue={handleVariantContinue} />
             )}
             {currentKey === 'refundMethod' && (
               <RefundMethodStep order={target} refundAmount={itemPrice} onSubmit={handleSubmitReturnRequest} />
