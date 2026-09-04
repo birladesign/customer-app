@@ -97,6 +97,13 @@ export function getVariants(productName) {
   return VARIANTS[productName] ?? null;
 }
 
+// Every catalog mattress model, for the replacement journey's Model
+// dropdown — switching models (not just size/height within the same one)
+// is itself a valid replacement outcome.
+export function getMattressModels() {
+  return Object.keys(VARIANTS).filter((name) => VARIANTS[name].type === 'mattress');
+}
+
 // A variant selection's own natural first-load state, derived from the
 // product's current spec string — "Queen / 8 inch / 60x78 in" for a
 // mattress, "Black" for a chair, "Royal Blue / 3 Seater" for a sofa. Custom

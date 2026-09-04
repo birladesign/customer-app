@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { splitProductSpec } from '../../data/orders.js';
-import { getVariants, selectionFromSpec, specForSelection, priceForSelection } from '../../data/variants.js';
+import { getVariants, getMattressModels, selectionFromSpec, specForSelection, priceForSelection } from '../../data/variants.js';
 import './MattressVariantStep.css';
 
 function chipClass(active) {
@@ -27,10 +27,26 @@ function formatRupees(amount) {
 // silently accepted.
 export default function MattressVariantStep({ order, price, onContinue }) {
   const { name, spec: currentSpec } = splitProductSpec(order.product);
-  const variants = getVariants(name);
-  const [selection, setSelection] = useState(() => (variants ? selectionFromSpec(variants, currentSpec) : {}));
+  const originalVariants = getVariants(name);
+  const isMattress = originalVariants?.type === 'mattress';
+  const mattressModels = isMattress ? getMattressModels() : [];
+
+  const [model, setModel] = useState(name);
+  const variants = getVariants(model);
+  const [selection, setSelection] = useState(() => (originalVariants ? selectionFromSpec(originalVariants, currentSpec) : {}));
+
+  // Switching models resets Size/Height to that model's own defaults —
+  // whatever was picked for the old model (e.g. a King the new model
+  // doesn't offer) has no guaranteed match in the new one.
+  function handleModelChange(nextModel) {
+    setModel(nextModel);
+    const nextVariants = getVariants(nextModel);
+    setSelection({ size: nextVariants?.sizes?.[0]?.label, height: nextVariants?.heights?.[0]?.label });
+  }
+
   const newSpec = variants ? specForSelection(variants, selection) : currentSpec;
-  const unchanged = newSpec === currentSpec;
+  const modelChanged = model !== name;
+  const unchanged = !modelChanged && newSpec === currentSpec;
   const newPrice = variants ? priceForSelection(variants, selection, price) : price;
   const delta = newPrice - price;
 
@@ -43,6 +59,23 @@ export default function MattressVariantStep({ order, price, onContinue }) {
           <p className="mattress-variant-step__current">Current: {currentSpec}</p>
         </div>
       </div>
+
+      {mattressModels.length > 1 && (
+        <section className="mattress-variant-step__section">
+          <p className="mattress-variant-step__heading">Model</p>
+          <select
+            className="mattress-variant-step__select"
+            value={model}
+            onChange={(e) => handleModelChange(e.target.value)}
+          >
+            {mattressModels.map((m) => (
+              <option key={m} value={m}>
+                {m}
+              </option>
+            ))}
+          </select>
+        </section>
+      )}
 
       {variants?.sizes && (
         <section className="mattress-variant-step__section">
@@ -113,10 +146,10 @@ export default function MattressVariantStep({ order, price, onContinue }) {
       )}
 
       {unchanged ? (
-        <p className="mattress-variant-step__hint">Choose a different size or height to replace with.</p>
+        <p className="mattress-variant-step__hint">Choose a different model, size or height to replace with.</p>
       ) : (
         <>
-          <p className="mattress-variant-step__hint">New: {newSpec}</p>
+          <p className="mattress-variant-step__hint">New: {modelChanged ? `${model} — ${newSpec}` : newSpec}</p>
           {delta !== 0 && (
             <div className="mattress-variant-step__delta-row">
               <span>{delta > 0 ? 'Additional Payment' : 'Refund'}</span>
@@ -129,7 +162,7 @@ export default function MattressVariantStep({ order, price, onContinue }) {
       <button
         className="mattress-variant-step__continue"
         disabled={unchanged}
-        onClick={() => onContinue({ spec: newSpec, delta })}
+        onClick={() => onContinue({ model: modelChanged ? model : null, spec: newSpec, delta })}
       >
         Confirm Replacement
       </button>

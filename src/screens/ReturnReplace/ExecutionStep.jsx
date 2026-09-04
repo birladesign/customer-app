@@ -13,11 +13,13 @@ function formatRupees(amount) {
   return `₹${amount.toLocaleString('en-IN')}`;
 }
 
-// priceDelta is optional and only ever non-zero for a mattress replacement
-// that landed on a different-priced size/model (see MattressVariantStep) —
-// every other caller simply doesn't pass it, and this stays silent as
-// before.
-export default function ExecutionStep({ order, leverId, priceDelta = 0, onDone }) {
+// priceDelta and newVariantLabel are optional and only ever set when the
+// replacement actually landed on a different variant (see
+// MattressVariantStep) — every other caller simply doesn't pass them, and
+// this stays silent as before. Without newVariantLabel, "Replacement
+// Requested" never said what the replacement actually was, just the name
+// of the thing that didn't work out.
+export default function ExecutionStep({ order, leverId, priceDelta = 0, newVariantLabel = null, onDone }) {
   const execution = getExecutionSteps(leverId);
   const refundNote =
     leverId === 'return'
@@ -35,6 +37,13 @@ export default function ExecutionStep({ order, leverId, priceDelta = 0, onDone }
           <p className="execution-step__confirm-body">{refundNote}</p>
         </div>
       </div>
+
+      {newVariantLabel && (
+        <div className="execution-step__price-delta">
+          <span>New</span>
+          <span className="execution-step__price-delta-amount">{newVariantLabel}</span>
+        </div>
+      )}
 
       {priceDelta !== 0 && (
         <div className="execution-step__price-delta">

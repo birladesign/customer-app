@@ -8,6 +8,7 @@ import { createCase } from '../../data/support.js';
 import { useNavigation } from '../../navigation/NavigationContext.jsx';
 import { SPRING_STANDARD, DURATION_REDUCED } from '../../motion.js';
 import { ChevronLeftIcon } from '../../components/icons.jsx';
+import BottomSheet from '../../components/BottomSheet.jsx';
 import EvidenceStep from './EvidenceStep.jsx';
 import MattressReasonStep from './MattressReasonStep.jsx';
 import MattressVerdictStep from './MattressVerdictStep.jsx';
@@ -26,8 +27,7 @@ const STEP_TITLES = {
   refundMethod: 'Confirm Refund',
   execution: 'Tracking it',
   mattressReason: "What's the issue?",
-  mattressVerdict: 'Next Steps',
-  mattressVariant: 'Choose New Size',
+  mattressVariant: 'Choose Model & Size',
   variant: 'Choose Replacement Details',
 };
 
@@ -78,12 +78,19 @@ export default function ReturnReplaceFlow({ params }) {
   const [photo, setPhoto] = useState(null);
   const [selectedLever, setSelectedLever] = useState(presetLever);
   const [ticketId, setTicketId] = useState(null);
-  const [faultAttribution, setFaultAttribution] = useState(null);
+  // MattressVerdictStep ("Next Steps") renders as a bottom sheet layered on
+  // the reason screen rather than its own step — this is independent of
+  // `step`/stepKeys, which only track full-page navigation.
+  const [verdictSheetOpen, setVerdictSheetOpen] = useState(false);
   // M8 (smell, ≤2 days) is advice-only — "it still smells" after following
   // that advice is what actually promotes it to M9's replace/return path,
   // not a fixed day count, so this overrides the real elapsed days once hit.
   const [smellPersists, setSmellPersists] = useState(false);
   const [newSpec, setNewSpec] = useState(null);
+  // Set only when the replacement journey (mattress or generic) actually
+  // switched to a different model — null means the same model, just a
+  // different size/color/etc.
+  const [newModel, setNewModel] = useState(null);
   // The only money that ever moves for a mattress replacement — a genuine
   // SKU-level price difference for a different size/height, never a
   // shipping charge (see MattressVariantStep).
@@ -104,30 +111,43 @@ export default function ReturnReplaceFlow({ params }) {
   const skipOptions = Boolean(
     presetLever && (!reason || getRemediationOptions(order, reason).some((o) => o.id === presetLever))
   );
-  // "Wrong size or model" + Replace is the one non-mattress case that
-  // shouldn't just ship back a like-for-like unit — ask which color/seating/
-  // size the customer actually wants, same as the mattress journey, for any
-  // category the variant catalog (data/variants.js) actually covers.
+  // "Wrong size or model" + Replace is the obvious case for asking which
+  // model/color/size the customer actually wants instead of shipping back a
+  // like-for-like unit — but Discomfort can just as easily mean "I don't
+  // get on with this specific model", so it gets the same choice rather
+  // than a mystery "Replacement Requested" that never says what changed.
+  const VARIANT_ELIGIBLE_REASONS = ['Wrong size or model', 'Discomfort / Not as expected'];
   const showVariantStep = Boolean(
-    !isMattress && reason === 'Wrong size or model' && selectedLever === 'replace' && target && getVariants(splitProductSpec(target.product).name)
+    !isMattress &&
+      VARIANT_ELIGIBLE_REASONS.includes(reason) &&
+      selectedLever === 'replace' &&
+      target &&
+      getVariants(splitProductSpec(target.product).name)
   );
   const deliveredDateStr = isMattress ? getDeliveredDate(target) : null;
   const effectiveDays = smellPersists ? 3 : daysSinceDelivery(deliveredDateStr);
   const mattressProductInfo = isMattress ? splitProductSpec(target.product) : null;
+  // "Wrong size or model" has an obvious fix — pick the right size — so it
+  // skips the verdict/lever-choice sheet entirely and heads straight to
+  // MattressVariantStep instead of asking whose mistake it was first or
+  // making the customer pick Replace off a card.
+  const isWrongSizeModel = isMattress && reason === 'wrongSizeModel';
   const verdict =
-    isMattress && reason
+    isMattress && reason && !isWrongSizeModel
       ? getMattressVerdict({
           reasonKey: reason,
           daysSinceDelivery: effectiveDays,
-          faultAttribution,
           productName: mattressProductInfo.name,
           spec: mattressProductInfo.spec,
         })
       : null;
   const proRataAmount = verdict?.proRata ? proRataRefund(itemPrice, deliveredDateStr) : 0;
 
-  const MATTRESS_STEPS_RETURN = ['mattressReason', 'mattressVerdict', 'refundMethod', 'execution'];
-  const MATTRESS_STEPS_REPLACE = ['mattressReason', 'mattressVerdict', 'mattressVariant', 'execution'];
+  // "Next Steps" (MattressVerdictStep) now surfaces as a bottom sheet over
+  // the reason screen instead of its own page — it's a quick decision, not
+  // a destination — so it's no longer one of these named steps.
+  const MATTRESS_STEPS_RETURN = ['mattressReason', 'refundMethod', 'execution'];
+  const MATTRESS_STEPS_REPLACE = ['mattressReason', 'mattressVariant', 'execution'];
   const baseStepKeys = selectedLever === 'return' ? STEPS_WITH_REFUND : STEPS_WITHOUT_REFUND;
   const stepKeysWithVariant = showVariantStep
     ? baseStepKeys.flatMap((k) => (k === 'execution' ? ['variant', 'execution'] : [k]))
@@ -192,7 +212,23 @@ export default function ReturnReplaceFlow({ params }) {
 
   function handleChooseLever(lever) {
     setSelectedLever(lever);
+    setVerdictSheetOpen(false);
     goNext();
+  }
+
+  // "Wrong size or model" skips the verdict sheet entirely (see
+  // isWrongSizeModel above) — lock the lever in here, the moment the
+  // customer moves past the reason screen, so downstream (ExecutionStep,
+  // the post-booking status update) still sees the replace it's actually
+  // running. Every other mattress reason opens the "Next Steps" sheet on
+  // top of this same reason screen instead of navigating away.
+  function handleMattressReasonContinue() {
+    if (isWrongSizeModel) {
+      setSelectedLever('replace');
+      goNext();
+      return;
+    }
+    setVerdictSheetOpen(true);
   }
 
   // Topper accepted (M5's retention ladder) and a warranty claim (M6) both
@@ -210,6 +246,7 @@ export default function ReturnReplaceFlow({ params }) {
       escalate: false,
       messages: [],
     });
+    setVerdictSheetOpen(false);
     goBack();
   }
 
@@ -223,6 +260,7 @@ export default function ReturnReplaceFlow({ params }) {
       escalate: true,
       messages: [],
     });
+    setVerdictSheetOpen(false);
     goBack();
   }
 
@@ -230,7 +268,8 @@ export default function ReturnReplaceFlow({ params }) {
     setSmellPersists(true);
   }
 
-  function handleVariantContinue({ spec, delta }) {
+  function handleVariantContinue({ model, spec, delta }) {
+    setNewModel(model ?? null);
     setNewSpec(spec);
     setVariantPriceDelta(delta);
     goNext();
@@ -243,13 +282,14 @@ export default function ReturnReplaceFlow({ params }) {
   function handleJourneyComplete() {
     const update = getPostBookingUpdate(selectedLever, needsApproval);
     const newStatus = { dot: 'blue', label: update.label };
-    // A replacement that changed variant (mattress size/height, chair
+    // A replacement that changed variant (mattress size/height/model, chair
     // color, sofa seating/color — see MattressVariantStep) ships as the new
-    // spec, not a like-for-like reprint of what didn't work out.
+    // spec, not a like-for-like reprint of what didn't work out. `newModel`
+    // is only set when the customer actually switched to a different
+    // catalog model, not just a different size/color of the same one.
     const newPrice = itemPrice + variantPriceDelta;
-    const specUpdate = newSpec
-      ? { product: withSpec(splitProductSpec(item ? item.product : order.product).name, newSpec) }
-      : {};
+    const baseName = splitProductSpec(item ? item.product : order.product).name;
+    const specUpdate = newSpec ? { product: withSpec(newModel ?? baseName, newSpec) } : {};
     // A different size/height is a different SKU price — only actually
     // apply it if it changed, so an unpriced/no-op replacement doesn't
     // silently rewrite priceBreakup with the exact same numbers.
@@ -336,21 +376,9 @@ export default function ReturnReplaceFlow({ params }) {
                 savings={itemSavings}
                 reason={reason}
                 onSelectReason={setReason}
-                faultAttribution={faultAttribution}
-                onSelectFault={setFaultAttribution}
                 photo={photo}
                 onPhotoChange={setPhoto}
-                onContinue={goNext}
-              />
-            )}
-            {currentKey === 'mattressVerdict' && verdict && (
-              <MattressVerdictStep
-                verdict={verdict}
-                proRataAmount={proRataAmount}
-                onChooseLever={handleChooseLever}
-                onAcceptTopper={handleAcceptTopper}
-                onSubmitWarrantyClaim={handleSubmitWarrantyClaim}
-                onSmellPersists={handleSmellPersists}
+                onContinue={handleMattressReasonContinue}
               />
             )}
             {currentKey === 'mattressVariant' && (
@@ -397,12 +425,28 @@ export default function ReturnReplaceFlow({ params }) {
                 order={target}
                 leverId={selectedLever}
                 priceDelta={newSpec ? variantPriceDelta : 0}
+                newVariantLabel={newSpec ? (newModel ? `${newModel} (${newSpec})` : newSpec) : null}
                 onDone={handleJourneyComplete}
               />
             )}
           </motion.div>
         </AnimatePresence>
       </div>
+
+      {isMattress && (
+        <BottomSheet open={verdictSheetOpen} onClose={() => setVerdictSheetOpen(false)}>
+          {verdict && (
+            <MattressVerdictStep
+              verdict={verdict}
+              proRataAmount={proRataAmount}
+              onChooseLever={handleChooseLever}
+              onAcceptTopper={handleAcceptTopper}
+              onSubmitWarrantyClaim={handleSubmitWarrantyClaim}
+              onSmellPersists={handleSmellPersists}
+            />
+          )}
+        </BottomSheet>
+      )}
     </div>
   );
 }

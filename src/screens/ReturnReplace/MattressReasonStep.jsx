@@ -22,25 +22,14 @@ function formatRupees(amount) {
 }
 
 // Mattress-specific counterpart to the generic ReasonStep+EvidenceStep merge
-// — same one-screen shape, but with the PRD's own reason set (§7.7) and, for
-// "Wrong size or model", the fault-attribution question (M2 vs M3/M4) that
-// decides whether a shipping charge applies at all.
-export default function MattressReasonStep({
-  order,
-  price,
-  savings,
-  reason,
-  onSelectReason,
-  faultAttribution,
-  onSelectFault,
-  photo,
-  onPhotoChange,
-  onContinue,
-}) {
+// — same one-screen shape, but with the PRD's own reason set (§7.7).
+// "Wrong size or model" skips straight to picking the new size (see
+// ReturnReplaceFlow) instead of asking whose mistake it was first — one less
+// question between the customer and the fix.
+export default function MattressReasonStep({ order, price, savings, reason, onSelectReason, photo, onPhotoChange, onContinue }) {
   const [note, setNote] = useState('');
   const { name, spec } = splitProductSpec(order.product);
-  const needsFault = reason === 'wrongSizeModel';
-  const canContinue = Boolean(reason && photo && (!needsFault || faultAttribution));
+  const canContinue = Boolean(reason && photo);
 
   return (
     <div className="evidence-step">
@@ -79,32 +68,6 @@ export default function MattressReasonStep({
         })}
       </div>
 
-      {needsFault && (
-        <>
-          <p className="evidence-step__prompt">Did you order the wrong size/model, or did we send the wrong one?</p>
-          <div className="reason-step__list" role="radiogroup">
-            <button
-              className={`reason-step__option${faultAttribution === 'customer' ? ' reason-step__option--selected' : ''}`}
-              onClick={() => onSelectFault('customer')}
-              role="radio"
-              aria-checked={faultAttribution === 'customer'}
-            >
-              <span className="reason-step__option-label">I ordered the wrong size/model</span>
-              <span className="reason-step__radio" aria-hidden="true" />
-            </button>
-            <button
-              className={`reason-step__option${faultAttribution === 'tsc' ? ' reason-step__option--selected' : ''}`}
-              onClick={() => onSelectFault('tsc')}
-              role="radio"
-              aria-checked={faultAttribution === 'tsc'}
-            >
-              <span className="reason-step__option-label">You sent the wrong size/model</span>
-              <span className="reason-step__radio" aria-hidden="true" />
-            </button>
-          </div>
-        </>
-      )}
-
       <p className="evidence-step__prompt">
         A quick photo of <strong>{name}</strong> helps us confirm the issue faster.
       </p>
@@ -127,8 +90,6 @@ export default function MattressReasonStep({
       </button>
       {!reason ? (
         <p className="evidence-step__hint">Choose a reason to proceed.</p>
-      ) : needsFault && !faultAttribution ? (
-        <p className="evidence-step__hint">Let us know whose mistake this was.</p>
       ) : (
         !photo && <p className="evidence-step__hint">A photo is required to proceed.</p>
       )}
