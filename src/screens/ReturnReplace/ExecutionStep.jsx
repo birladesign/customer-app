@@ -42,12 +42,7 @@ export default function ExecutionStep({
   onDone,
 }) {
   const execution = getExecutionSteps(leverId);
-  const refundNote =
-    leverId === 'return'
-      ? "Once the quality check is passed, we'll refund to your original payment method within 2–5 business days."
-      : leverId === 'sendPart'
-      ? "A support agent will confirm exactly which part is missing, then create an order to ship it. We'll keep you updated right here and in My Orders."
-      : `We'll keep you updated on ${order.product} right here and in My Orders.`;
+  const refundNote = 'Our agent will connect with you soon.';
 
   return (
     <div className="execution-step">
