@@ -244,17 +244,11 @@ export default function DeliveryIssueFlow({ params }) {
                 </p>
                 <p className="execution-step__confirm-body">
                   {breached
-                    ? "The 48-hour investigation window passed without resolution, so a replacement was dispatched automatically — no need to wait or follow up."
-                    : "We're checking this with the courier. If it isn't resolved before the window below runs out, a replacement ships automatically — you won't need to ask."}
+                    ? "The investigation time ended without resolution. A free replacement has been shipped automatically."
+                    : "We're checking with the courier. If it isn't resolved within 48 hours, a free replacement will ship automatically."}
                 </p>
               </div>
             </div>
-            {!breached && clock && (
-              <div className="delivery-issue__countdown">
-                <ClockIcon width="16" height="16" />
-                <span>{clock.hoursRemaining}h remaining until auto-replacement</span>
-              </div>
-            )}
             <div className="execution-step__card">
               <div className="execution-step__detail-row">
                 <span>Reference ID</span>
