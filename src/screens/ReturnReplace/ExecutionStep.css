@@ -179,6 +179,11 @@
   transform: scale(0.97);
 }
 
+.execution-step__done:disabled {
+  background: var(--color-border);
+  color: var(--color-text-muted);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .execution-step__done:active {
     transform: none;

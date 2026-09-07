@@ -92,6 +92,33 @@
   color: var(--color-text-primary);
 }
 
+.delivery-issue__option--selected {
+  border-color: var(--color-navy-900);
+  background: var(--color-accent-cyan-wash);
+}
+
+.delivery-issue__checkbox {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-xs);
+  border: 2px solid var(--color-border);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-inverse);
+}
+
+.delivery-issue__option--selected .delivery-issue__checkbox {
+  border-color: var(--color-navy-900);
+  background: var(--color-navy-900);
+}
+
+.delivery-issue__continue {
+  width: 100%;
+  margin-top: var(--space-4);
+}
+
 .delivery-issue__spaced {
   margin-top: var(--space-3);
 }

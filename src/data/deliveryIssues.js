@@ -50,7 +50,7 @@ export const ISSUE_TYPES = [
   },
   {
     key: 'fakeDelivery',
-    label: "Marked delivered, but I haven't received it",
+    label: 'I have not received my order',
     phases: [PHASES.DELIVERED_0_10],
     lane: 'logistics',
     voc: 'Fake-Delivery',
@@ -58,7 +58,7 @@ export const ISSUE_TYPES = [
   },
   {
     key: 'missingFromParcel',
-    label: 'Something is missing from the parcel',
+    label: 'Delivered shipment is incomplete',
     phases: [PHASES.DELIVERED_0_10, PHASES.D11_100],
     lane: 'logistics',
     voc: 'Missing',

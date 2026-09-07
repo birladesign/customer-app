@@ -70,6 +70,21 @@ export default function ReturnReplaceFlow({ params }) {
   // doesn't carry its own discount breakdown, so there's nothing honest to
   // display there.
   const itemSavings = !item ? order?.priceBreakup?.discount ?? 0 : 0;
+  // Refund Confirm's own itemized breakdown — same fields itemPrice/itemSavings
+  // are already netted from, just kept separate instead of pre-subtracted so
+  // RefundMethodStep can show the arithmetic instead of a single number. A
+  // line item inside a multi-SKU order has no discount/shipping/tax of its
+  // own (see itemSavings above), so it only ever shows its flat price.
+  const refundBreakup = item
+    ? { itemPrice: item.price, discount: 0, shipping: 0, tax: 0 }
+    : order
+    ? {
+        itemPrice: order.priceBreakup?.itemPrice ?? order.amount,
+        discount: order.priceBreakup?.discount ?? 0,
+        shipping: order.priceBreakup?.shipping ?? 0,
+        tax: order.priceBreakup?.tax ?? 0,
+      }
+    : null;
   // A page-level Replace/Return card (Order Details, once delivered) already
   // declares the lever — Options only exists to ask that same question, so
   // the flow it starts skips straight past it instead of re-asking what's
@@ -157,8 +172,11 @@ export default function ReturnReplaceFlow({ params }) {
   const effectiveDays = smellPersists ? 3 : daysSinceDelivery(deliveredDateStr);
   const mattressProductInfo = isMattress ? splitProductSpec(target.product) : null;
   // Only "wrong size or model" branches on fault (M2 vs M3/M4); asking it for
-  // a damaged mattress would be noise, so the question is conditional.
-  const needsFault = isMattress && reason === 'wrongSizeModel';
+  // a damaged mattress would be noise, so the question is conditional. The
+  // generic (non-mattress) flow asks the exact same who-erred question for
+  // its own "Wrong size or model" reason, just without an M-table verdict
+  // keying off the answer.
+  const needsFault = reason === (isMattress ? 'wrongSizeModel' : 'Wrong size or model');
   // The verdict is always computed once a reason is picked — including for
   // wrong-size, which previously bypassed it entirely and left M2/M3/M4
   // unreachable. `faultAttribution` is what M2 keys off, so it has to reach
@@ -301,6 +319,13 @@ export default function ReturnReplaceFlow({ params }) {
   // one — leaving it set would silently feed the engine an answer to a
   // question the customer was never asked for this reason.
   function handleSelectMattressReason(next) {
+    setReason(next);
+    setFaultAttribution(null);
+  }
+
+  // Same invalidation as the mattress reason screen — a fault answer only
+  // ever applies to the reason it was asked for.
+  function handleSelectReason(next) {
     setReason(next);
     setFaultAttribution(null);
   }
@@ -606,7 +631,10 @@ export default function ReturnReplaceFlow({ params }) {
               <EvidenceStep
                 order={target}
                 reason={reason}
-                onSelectReason={setReason}
+                onSelectReason={handleSelectReason}
+                needsFault={needsFault}
+                faultAttribution={faultAttribution}
+                onSelectFault={setFaultAttribution}
                 price={itemPrice}
                 savings={itemSavings}
                 photo={photo}
@@ -618,7 +646,12 @@ export default function ReturnReplaceFlow({ params }) {
               <MattressVariantStep order={target} price={itemPrice} onContinue={handleVariantContinue} />
             )}
             {currentKey === 'refundMethod' && (
-              <RefundMethodStep order={target} refundAmount={itemPrice} onSubmit={handleRequestReturnTap} />
+              <RefundMethodStep
+                order={target}
+                refundAmount={itemPrice}
+                priceBreakup={refundBreakup}
+                onSubmit={handleRequestReturnTap}
+              />
             )}
             {currentKey === 'execution' && needsApproval && (
               <ApprovalPendingStep

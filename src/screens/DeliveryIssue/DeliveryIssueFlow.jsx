@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ORDERS, splitProductSpec, getExpectedDelivery } from '../../data/orders.js';
-import { getPhase, PHASES } from '../../data/phases.js';
+import { getPhase } from '../../data/phases.js';
 import {
   getAvailableIssueTypes,
   isSelfResolvable,
@@ -24,6 +24,19 @@ import './DeliveryIssueFlow.css';
 export default function DeliveryIssueFlow({ params }) {
   const { goBack, navigate } = useNavigation();
   const order = ORDERS.find((o) => o.id === params.orderId);
+  // A multi-SKU order (order.items) can have an issue with one specific item
+  // or with the shipment as a whole — a single-item order has nothing to
+  // choose, so scope is implicit and this question never renders for it.
+  const orderItems = order?.items ?? null;
+  const isMultiItem = Boolean(orderItems && orderItems.length > 1);
+
+  const [scope, setScope] = useState(null); // 'item' | 'order' — only meaningful when isMultiItem
+  // Entered from an item's own Order Details view, so "This Item" already has
+  // its answer and skips the picker; "Entire Order" ignores it and asks which
+  // items are affected instead.
+  const [scopedSku, setScopedSku] = useState(params.sku ?? null);
+  const [scopedSkus, setScopedSkus] = useState([]);
+  const [itemsConfirmed, setItemsConfirmed] = useState(false);
   const [issueKey, setIssueKey] = useState(null);
   const [caseRecord, setCaseRecord] = useState(null);
   const [breached, setBreached] = useState(false);
@@ -43,12 +56,38 @@ export default function DeliveryIssueFlow({ params }) {
     );
   }
 
-  const { name, spec } = splitProductSpec(order.product);
-  const phase = getPhase(order);
-  const issues = getAvailableIssueTypes(phase);
+  // Whether the scope questions still need answering before anything else
+  // (the item card, the reason list) can resolve to a real target.
+  const needsScopeChoice = isMultiItem && !scope;
+  const needsItemPick = isMultiItem && scope === 'item' && !scopedSku;
+  const needsItemsPick = isMultiItem && scope === 'order' && !itemsConfirmed;
+  const scopeResolved = !needsScopeChoice && !needsItemPick && !needsItemsPick;
+
+  const scopedItem = isMultiItem && scope === 'item' ? orderItems.find((i) => i.sku === scopedSku) ?? null : null;
+  const affectedItems =
+    isMultiItem && scope === 'order' && itemsConfirmed ? orderItems.filter((i) => scopedSkus.includes(i.sku)) : null;
+  // What the rest of the flow (phase, PoD, the reason list, the case itself)
+  // actually reports against — the one chosen item, or the order as a whole
+  // (a single-item order and an "Entire Order" scope both fall through here).
+  const target = scopedItem
+    ? { ...order, product: scopedItem.product, image: scopedItem.image, timeline: scopedItem.timeline, status: scopedItem.status }
+    : order;
+
+  const { name, spec } = splitProductSpec(target.product);
+  // What the reason list is actually filtered against. A multi-item order
+  // carries no timeline of its own — its items each carry theirs — so an
+  // "Entire Order" report reads the items the customer picked instead, and
+  // only offers an issue every one of them supports: "I have not received my
+  // order" across a set where one is still in transit would be a claim about
+  // a parcel that was never due yet.
+  const scopeEntities = affectedItems?.length ? affectedItems : [target];
+  const representative = scopeEntities[0];
+  const issues = getAvailableIssueTypes(getPhase(representative)).filter((issue) =>
+    scopeEntities.every((entity) => getAvailableIssueTypes(getPhase(entity)).some((i) => i.key === issue.key))
+  );
   const edd = getExpectedDelivery(order);
-  const isOnTime = order.status?.dot !== 'red';
-  const pod = getProofOfDelivery(order.timeline, { address: order.address });
+  const isOnTime = representative.status?.dot !== 'red';
+  const pod = getProofOfDelivery(representative.timeline, { address: order.address });
 
   function handlePickIssue(issue) {
     if (issue.key === 'refuseDamaged') {
@@ -63,13 +102,50 @@ export default function DeliveryIssueFlow({ params }) {
   const activeIssue = issues.find((i) => i.key === issueKey) ?? null;
   const selfResolve = activeIssue && isSelfResolvable(activeIssue.key, { edd, isOnTime });
 
+  // Nothing's been filed yet (still looking at the scope/item pickers, the
+  // reason list, the PoD screen, the pre-report DL-06 prompt, or the "still
+  // on track" answer) — the back arrow undoes one step at a time instead of
+  // exiting the whole flow and losing that context. Once a case actually
+  // exists, there's no "undo": the back arrow goes back to Order Details like
+  // every other terminal step.
+  function handleHeaderBack() {
+    if (issueKey && !caseRecord) {
+      setIssueKey(null);
+      return;
+    }
+    if (isMultiItem && scope === 'item' && scopedSku) {
+      setScopedSku(null);
+      return;
+    }
+    if (isMultiItem && scope === 'order' && itemsConfirmed) {
+      setItemsConfirmed(false);
+      return;
+    }
+    if (isMultiItem && scope) {
+      setScope(null);
+      return;
+    }
+    goBack();
+  }
+
+  function toggleScopedSku(sku) {
+    setScopedSkus((prev) => (prev.includes(sku) ? prev.filter((s) => s !== sku) : [...prev, sku]));
+  }
+
   function fileLogisticsCase(issue, { description, escalate = true, extra = {} } = {}) {
+    // "Entire Order" with more than one item picked has no single item to
+    // attach to the case (createCase only ever carries one) — folded into the
+    // description instead so which SKUs are affected isn't lost.
+    const affectedNote =
+      affectedItems && affectedItems.length
+        ? ` — ${affectedItems.map((i) => splitProductSpec(i.product).name).join(', ')}`
+        : '';
     const record = createCase({
       lane: issue.lane,
       prefix: CASE_PREFIX.complaint,
       order,
-      item: null,
-      description: description ?? `${issue.label} — reported by customer`,
+      item: scopedItem,
+      description: description ?? `${issue.label}${affectedNote} — reported by customer`,
       hasPhoto: false,
       escalate,
       messages: [],
@@ -81,6 +157,10 @@ export default function DeliveryIssueFlow({ params }) {
       outcome: 'escalated',
       ...extra,
     });
+    // Same gate Order Details already reads for a booked replace/return
+    // (order.intentOverrides.returnReplace) — a delivery issue that's already
+    // been filed can't be reported again, so the CTA needs to know.
+    order.intentOverrides = { ...order.intentOverrides, deliveryIssue: 'An investigation is already open for this order' };
     setCaseRecord(record);
     return record;
   }
@@ -136,7 +216,7 @@ export default function DeliveryIssueFlow({ params }) {
   return (
     <div className="delivery-issue">
       <header className="delivery-issue__topbar">
-        <button className="delivery-issue__icon-btn" onClick={goBack} aria-label="Back">
+        <button className="delivery-issue__icon-btn" onClick={handleHeaderBack} aria-label="Back">
           <ChevronLeftIcon />
         </button>
         <h1>Delivery Issue</h1>
@@ -145,18 +225,99 @@ export default function DeliveryIssueFlow({ params }) {
 
       <div className="delivery-issue__stage">
         <div className="execution-step__card">
-          <p className="execution-step__card-heading">Item</p>
-          <div className="execution-step__item">
-            <img className="execution-step__item-image" src={order.image} alt={order.product} />
-            <div className="execution-step__item-text">
-              <p className="execution-step__item-name">{name}</p>
-              {spec && <p className="execution-step__item-spec">{spec}</p>}
+          <p className="execution-step__card-heading">
+            {!scopeResolved ? 'Order' : affectedItems ? 'Items' : 'Item'}
+          </p>
+          {!scopeResolved ? (
+            <div className="execution-step__item">
+              <img className="execution-step__item-image" src={order.image} alt={order.product} />
+              <div className="execution-step__item-text">
+                <p className="execution-step__item-name">{splitProductSpec(order.product).name}</p>
+              </div>
             </div>
-          </div>
+          ) : affectedItems ? (
+            affectedItems.map((it) => (
+              <div className="execution-step__item" key={it.sku}>
+                <img className="execution-step__item-image" src={it.image} alt={it.product} />
+                <div className="execution-step__item-text">
+                  <p className="execution-step__item-name">{splitProductSpec(it.product).name}</p>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="execution-step__item">
+              <img className="execution-step__item-image" src={target.image} alt={target.product} />
+              <div className="execution-step__item-text">
+                <p className="execution-step__item-name">{name}</p>
+                {spec && <p className="execution-step__item-spec">{spec}</p>}
+              </div>
+            </div>
+          )}
         </div>
 
+        {/* Scope, asked before anything else on a multi-item order: one item,
+            or the whole order (in which case the customer says which items). */}
+        {needsScopeChoice && (
+          <>
+            <p className="delivery-issue__prompt">What does this affect?</p>
+            <div className="delivery-issue__list" role="radiogroup">
+              <button className="delivery-issue__option" onClick={() => setScope('item')}>
+                <span className="delivery-issue__option-label">This Item</span>
+              </button>
+              <button className="delivery-issue__option" onClick={() => setScope('order')}>
+                <span className="delivery-issue__option-label">Entire Order</span>
+              </button>
+            </div>
+          </>
+        )}
+
+        {needsItemPick && (
+          <>
+            <p className="delivery-issue__prompt">Which item?</p>
+            <div className="delivery-issue__list" role="radiogroup">
+              {orderItems.map((it) => (
+                <button key={it.sku} className="delivery-issue__option" onClick={() => setScopedSku(it.sku)}>
+                  <span className="delivery-issue__option-label">{splitProductSpec(it.product).name}</span>
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+
+        {needsItemsPick && (
+          <>
+            <p className="delivery-issue__prompt">Which items have an issue?</p>
+            <div className="delivery-issue__list" role="group">
+              {orderItems.map((it) => {
+                const checked = scopedSkus.includes(it.sku);
+                return (
+                  <button
+                    key={it.sku}
+                    className={`delivery-issue__option${checked ? ' delivery-issue__option--selected' : ''}`}
+                    onClick={() => toggleScopedSku(it.sku)}
+                    role="checkbox"
+                    aria-checked={checked}
+                  >
+                    <span className="delivery-issue__option-label">{splitProductSpec(it.product).name}</span>
+                    <span className="delivery-issue__checkbox" aria-hidden="true">
+                      {checked && <CheckIcon width="12" height="12" strokeWidth="3" />}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              className="execution-step__done delivery-issue__continue"
+              disabled={scopedSkus.length === 0}
+              onClick={() => setItemsConfirmed(true)}
+            >
+              Continue
+            </button>
+          </>
+        )}
+
         {/* S1 — status-filtered reason list (DL-01) */}
-        {!issueKey && (
+        {scopeResolved && !issueKey && (
           <>
             <p className="delivery-issue__prompt">What's the issue?</p>
             {issues.length === 0 ? (

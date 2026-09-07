@@ -1,10 +1,19 @@
 import { useState } from 'react';
 import { splitProductSpec } from '../../data/orders.js';
-import { RETURN_REASONS } from '../../data/remediation.js';
+import { getReturnReasons } from '../../data/remediation.js';
 import PhotoUploadTile from '../../components/PhotoUploadTile.jsx';
+import { PackageIcon } from '../../components/icons.jsx';
 import { REASON_ICONS } from './reasonIcons.jsx';
 import './ReasonStep.css';
 import './EvidenceStep.css';
+
+// Same who-erred question the mattress flow asks for its own "Wrong size or
+// model" reason (§7.6) — a picked-and-shipped mistake and a customer's own
+// ordering mistake aren't the same fault, whatever the product category.
+const FAULT_OPTIONS = [
+  { key: 'tsc', label: 'Sent wrong size or model' },
+  { key: 'customer', label: 'Ordered wrong size or model' },
+];
 
 function formatRupees(amount) {
   return `₹${amount.toLocaleString('en-IN')}`;
@@ -15,9 +24,22 @@ function formatRupees(amount) {
 // Merging them into a single screen saves that extra click without losing
 // anything: the reason list is right here instead of a "Change" link back
 // to a screen that no longer exists.
-export default function EvidenceStep({ order, reason, onSelectReason, price, savings, photo, onPhotoChange, onContinue }) {
+export default function EvidenceStep({
+  order,
+  reason,
+  onSelectReason,
+  needsFault,
+  faultAttribution,
+  onSelectFault,
+  price,
+  savings,
+  photo,
+  onPhotoChange,
+  onContinue,
+}) {
   const [note, setNote] = useState('');
   const { name, spec } = splitProductSpec(order.product);
+  const faultAnswered = !needsFault || Boolean(faultAttribution);
 
   return (
     <div className="evidence-step">
@@ -35,7 +57,7 @@ export default function EvidenceStep({ order, reason, onSelectReason, price, sav
 
       <p className="evidence-step__prompt">Choose the reason closest to what happened.</p>
       <div className="reason-step__list" role="radiogroup">
-        {RETURN_REASONS.map((r) => {
+        {getReturnReasons(order.product).map((r) => {
           const Icon = REASON_ICONS[r];
           const isSelected = reason === r;
           return (
@@ -56,6 +78,31 @@ export default function EvidenceStep({ order, reason, onSelectReason, price, sav
         })}
       </div>
 
+      {needsFault && (
+        <>
+          <p className="evidence-step__prompt">Which of these is closer to what happened?</p>
+          <div className="reason-step__grid" role="radiogroup">
+            {FAULT_OPTIONS.map((f) => {
+              const isSelected = faultAttribution === f.key;
+              return (
+                <button
+                  key={f.key}
+                  className={`reason-step__grid-option${isSelected ? ' reason-step__grid-option--selected' : ''}`}
+                  onClick={() => onSelectFault(f.key)}
+                  role="radio"
+                  aria-checked={isSelected}
+                >
+                  <span className="reason-step__icon" aria-hidden="true">
+                    <PackageIcon width="16" height="16" strokeWidth="2" />
+                  </span>
+                  <span className="reason-step__option-label">{f.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
+
       <p className="evidence-step__prompt">
         A quick photo of <strong>{name}</strong> helps us confirm the issue faster.
       </p>
@@ -74,11 +121,17 @@ export default function EvidenceStep({ order, reason, onSelectReason, price, sav
         onChange={(e) => setNote(e.target.value)}
       />
 
-      <button className="evidence-step__continue" disabled={!reason || !photo?.length} onClick={onContinue}>
+      <button
+        className="evidence-step__continue"
+        disabled={!reason || !faultAnswered || !photo?.length}
+        onClick={onContinue}
+      >
         Continue
       </button>
       {!reason ? (
         <p className="evidence-step__hint">Choose a reason to proceed.</p>
+      ) : !faultAnswered ? (
+        <p className="evidence-step__hint">Tell us what happened to continue.</p>
       ) : (
         !photo?.length && <p className="evidence-step__hint">A photo is required to proceed.</p>
       )}
