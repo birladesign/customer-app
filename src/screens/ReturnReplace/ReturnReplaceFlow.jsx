@@ -319,6 +319,15 @@ export default function ReturnReplaceFlow({ params }) {
     goNext();
   }
 
+  const skipMattressVerdict = Boolean(
+    presetLever &&
+      verdict &&
+      !verdict.retention &&
+      !verdict.adviceOnly &&
+      !verdict.proRata &&
+      verdict.leverOptions?.includes(presetLever)
+  );
+
   // "Wrong size or model" skips the verdict sheet entirely (see
   // isWrongSizeModel above) — lock the lever in here, the moment the
   // customer moves past the reason screen, so downstream (ExecutionStep,
@@ -328,6 +337,10 @@ export default function ReturnReplaceFlow({ params }) {
   function handleMattressReasonContinue() {
     if (skipVerdictSheet) {
       setSelectedLever('replace');
+      goNext();
+      return;
+    }
+    if (skipMattressVerdict) {
       goNext();
       return;
     }
