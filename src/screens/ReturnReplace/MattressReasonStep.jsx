@@ -21,8 +21,8 @@ const MATTRESS_REASON_ICONS = {
 // "customer erred", so the copy describes the situation and the engine maps
 // it to the fault attribution the M-table branches on.
 const FAULT_OPTIONS = [
-  { key: 'tsc', label: 'I received a different size or model than I ordered' },
-  { key: 'customer', label: 'I ordered the wrong size or model' },
+  { key: 'tsc', label: 'Sent wrong size or model' },
+  { key: 'customer', label: 'Ordered wrong size or model' },
 ];
 
 function formatRupees(amount) {
@@ -98,13 +98,13 @@ export default function MattressReasonStep({
       {needsFault && (
         <>
           <p className="evidence-step__prompt">Which of these is closer to what happened?</p>
-          <div className="reason-step__list" role="radiogroup">
+          <div className="reason-step__grid" role="radiogroup">
             {FAULT_OPTIONS.map((f) => {
               const isSelected = faultAttribution === f.key;
               return (
                 <button
                   key={f.key}
-                  className={`reason-step__option${isSelected ? ' reason-step__option--selected' : ''}`}
+                  className={`reason-step__grid-option${isSelected ? ' reason-step__grid-option--selected' : ''}`}
                   onClick={() => onSelectFault(f.key)}
                   role="radio"
                   aria-checked={isSelected}
@@ -113,7 +113,6 @@ export default function MattressReasonStep({
                     <PackageIcon width="16" height="16" strokeWidth="2" />
                   </span>
                   <span className="reason-step__option-label">{f.label}</span>
-                  <span className="reason-step__radio" aria-hidden="true" />
                 </button>
               );
             })}
