@@ -32,9 +32,6 @@ function formatBillingLine(address) {
   return address.billingLines ? address.billingLines.join(', ') : null;
 }
 
-const QTY_MIN = 1;
-const QTY_MAX = 5;
-
 const DOT_COLOR = {
   red: 'var(--color-action-red)',
   blue: 'var(--color-info-blue)',
@@ -57,11 +54,13 @@ export default function EditOrder({ params }) {
   // back to safe defaults rather than reading off it directly.
   const { name: baseName, spec: currentSpec } = target ? splitProductSpec(target.product) : { name: '', spec: null };
   const variants = target ? getVariants(baseName) : null;
-  const initialQty = target?.qty ?? 1;
+  // Quantity is not editable here — the stepper was deliberately removed
+  // (commit 86d3775); this screen changes variant and address only. The line
+  // quantity still has to feed the price math, so it's read, never set.
+  const qty = target?.qty ?? 1;
   const initialSelection = variants ? selectionFromSpec(variants, currentSpec) : {};
 
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [qty, setQty] = useState(initialQty);
   const [selection, setSelection] = useState(initialSelection);
   const [selectedAddress, setSelectedAddress] = useState('current');
   // Same reasoning as InstallationSchedule's bookingConfirmed — saving
@@ -93,7 +92,7 @@ export default function EditOrder({ params }) {
   const eligibility = hideAddress ? getEditEligibility(target) : getAddressEditEligibility(target);
   const oldLinePrice = item ? item.price : order.priceBreakup?.itemPrice ?? order.amount;
   const oldOrderTotal = order.priceBreakup?.total ?? order.amount;
-  const unitPrice = oldLinePrice / initialQty;
+  const unitPrice = oldLinePrice / qty;
 
   if (!eligibility.enabled) {
     return (
@@ -121,7 +120,7 @@ export default function EditOrder({ params }) {
   const delta = newLinePrice - oldLinePrice;
   const newOrderTotal = oldOrderTotal + delta;
   const variantChanged = Boolean(variants) && !selectionsEqual(selection, initialSelection);
-  const hasChanges = qty !== initialQty || variantChanged || selectedAddress !== 'current';
+  const hasChanges = variantChanged || selectedAddress !== 'current';
 
   const sheetCopy =
     delta > 0
@@ -168,8 +167,6 @@ export default function EditOrder({ params }) {
 
     setConfirmOpen(false);
     setSavedSummary({
-      qtyChanged: qty !== initialQty,
-      newQty: qty,
       variantChanged,
       newVariantLabel: variants ? specForSelection(variants, selection) : null,
       addressChanged: Boolean(newAddress),
@@ -225,12 +222,6 @@ export default function EditOrder({ params }) {
             )}
 
             <section className="edit-order__summary">
-              {savedSummary.qtyChanged && (
-                <div className="edit-order__summary-row">
-                  <span>Quantity</span>
-                  <span>{savedSummary.newQty}</span>
-                </div>
-              )}
               {savedSummary.variantChanged && (
                 <div className="edit-order__summary-row">
                   <span>Variant</span>

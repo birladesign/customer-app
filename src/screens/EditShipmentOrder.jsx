@@ -147,9 +147,6 @@ function formatBillingLine(address) {
   return address.billingLines ? address.billingLines.join(', ') : null;
 }
 
-const QTY_MIN = 1;
-const QTY_MAX = 5;
-
 const DOT_COLOR = {
   red: 'var(--color-action-red)',
   blue: 'var(--color-info-blue)',
@@ -182,7 +179,6 @@ export default function EditShipmentOrder({ params }) {
   // return below — units may be empty (shipment not found), so initializers
   // fall back to safe defaults rather than reading off unit[0] directly.
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [sharedQty, setSharedQty] = useState(units[0]?.qty ?? 1);
   const [sharedSelection, setSharedSelection] = useState(sharedInitialSelection);
   const [lineEdits, setLineEdits] = useState(() =>
     units.map((u) => {
@@ -241,7 +237,7 @@ export default function EditShipmentOrder({ params }) {
   // one parallel-to-units array so every downstream calculation only has
   // one shape to deal with regardless of sameProduct.
   const perUnitChanges = sameProduct
-    ? units.map(() => ({ qty: sharedQty, selection: sharedSelection }))
+    ? units.map((u) => ({ qty: u.qty ?? 1, selection: sharedSelection }))
     : lineEdits;
 
   const computed = units.map((unit, i) => {
@@ -278,14 +274,8 @@ export default function EditShipmentOrder({ params }) {
   const oldShipmentTotal = units.reduce((sum, u) => sum + (u.priceBreakup?.total ?? u.amount), 0);
   const newShipmentTotal = oldShipmentTotal + totalDelta;
   const hasChanges =
-    computed.some((c) => c.qty !== c.initialQty || !selectionsEqual(c.selection, c.initialSelection)) ||
+    computed.some((c) => !selectionsEqual(c.selection, c.initialSelection)) ||
     selectedAddress !== 'current';
-
-  function updateLineQty(index, dir) {
-    setLineEdits((prev) =>
-      prev.map((le, i) => (i === index ? { ...le, qty: Math.max(QTY_MIN, Math.min(QTY_MAX, le.qty + dir)) } : le))
-    );
-  }
 
   function updateLineSelection(index, nextSelection) {
     setLineEdits((prev) => prev.map((le, i) => (i === index ? { ...le, selection: nextSelection } : le)));
@@ -330,8 +320,6 @@ export default function EditShipmentOrder({ params }) {
       return {
         orderId: c.unit.id,
         product: c.newProduct,
-        qtyChanged: c.qty !== c.initialQty,
-        newQty: c.qty,
         variantChanged: Boolean(c.variants) && !selectionsEqual(c.selection, c.initialSelection),
         newVariantLabel: c.variants ? specForSelection(c.variants, c.selection) : null,
       };
@@ -339,7 +327,7 @@ export default function EditShipmentOrder({ params }) {
 
     setConfirmOpen(false);
     setSavedSummary({
-      perUnit: perUnitSummaries.filter((s) => s.qtyChanged || s.variantChanged),
+      perUnit: perUnitSummaries.filter((s) => s.variantChanged),
       addressChanged: Boolean(newAddress),
       newAddressText: newAddress ? formatAddressLine(newAddress) : null,
     });
@@ -397,8 +385,6 @@ export default function EditShipmentOrder({ params }) {
                 <div key={s.orderId} className="edit-order__summary-row">
                   <span>{splitProductSpec(s.product).name}</span>
                   <span>
-                    {s.qtyChanged && `Qty: ${s.newQty}`}
-                    {s.qtyChanged && s.variantChanged && ' · '}
                     {s.variantChanged && s.newVariantLabel}
                   </span>
                 </div>

@@ -43,6 +43,10 @@ export default function RtoReplaceFlow({ params }) {
   // Order Details both reflect the RTO the moment we navigate back.
   function handleDone() {
     const update = getRtoPostCancelUpdate();
+    // §7.13: rto_count > 2 is a terminal — the order can only be cancelled
+    // and refunded from there, never re-attempted. Counted here because this
+    // is the one place an RTO is actually initiated.
+    order.rtoCount = (order.rtoCount ?? 0) + 1;
     Object.assign(order, {
       section: 'inProgress',
       status: update.status,

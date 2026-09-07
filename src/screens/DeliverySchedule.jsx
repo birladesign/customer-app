@@ -3,14 +3,14 @@ import { ORDERS, splitProductSpec } from '../data/orders.js';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
 import ConfirmSheet from '../components/ConfirmSheet.jsx';
 import CalendarPicker, { formatSlotDate } from '../components/CalendarPicker.jsx';
+import { bookingWindow } from '../data/clock.js';
 import { ChevronLeftIcon, CalendarIcon, ClockIcon, CheckIcon } from '../components/icons.jsx';
 import './DeliverySchedule.css';
 
-// No real availability backend in this prototype — redelivery opens from the
-// first bookable day and stays open for a month, which is enough range for a
-// month-grid picker to be worth having over a fixed row of day-chips.
-const FIRST_BOOKABLE = new Date(2026, 7, 20);
-const LAST_BOOKABLE = new Date(2026, 8, 20);
+// No real availability backend in this prototype — redelivery opens two days
+// out (a failed delivery has to cycle back through the hub first) and stays
+// open for a month. Relative to the shared app clock, same as installation.
+const { first: FIRST_BOOKABLE, last: LAST_BOOKABLE } = bookingWindow({ leadDays: 2, spanDays: 30 });
 
 const TIME_WINDOWS = ['9 AM – 12 PM', '12 PM – 3 PM', '3 PM – 6 PM', '6 PM – 9 PM'];
 

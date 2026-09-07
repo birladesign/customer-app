@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { clearSnapshot } from '../data/persist.js';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
 import { CURRENT_USER } from '../data/profile.js';
 import Avatar from '../components/Avatar.jsx';
@@ -31,6 +32,7 @@ const MENU = [
 export default function Profile() {
   const { navigate, replace, switchTab } = useNavigation();
   const [confirmingLogout, setConfirmingLogout] = useState(false);
+  const [confirmingReset, setConfirmingReset] = useState(false);
 
   function handleMenuClick(key) {
     if (key === 'support') switchTab('support');
@@ -40,6 +42,15 @@ export default function Profile() {
   function handleLogout() {
     setConfirmingLogout(false);
     replace('login');
+  }
+
+  // The session now persists across reloads, which is what a shared demo link
+  // needs — but it also means a walkthrough starts wherever the last person
+  // left it. This puts the seeded fixtures back.
+  function handleResetDemo() {
+    setConfirmingReset(false);
+    clearSnapshot();
+    window.location.reload();
   }
 
   return (
@@ -71,6 +82,9 @@ export default function Profile() {
           ))}
         </div>
 
+        <button className="profile__logout" onClick={() => setConfirmingReset(true)}>
+          Reset demo data
+        </button>
         <button className="profile__logout" onClick={() => setConfirmingLogout(true)}>
           <LogoutIcon width="16" height="16" />
           Logout
@@ -85,6 +99,16 @@ export default function Profile() {
         danger
         onConfirm={handleLogout}
         onClose={() => setConfirmingLogout(false)}
+      />
+
+      <ConfirmSheet
+        open={confirmingReset}
+        title="Reset demo data?"
+        body="Orders, cases and addresses go back to their starting state. Anything booked in this session is discarded."
+        confirmLabel="Reset"
+        danger
+        onConfirm={handleResetDemo}
+        onClose={() => setConfirmingReset(false)}
       />
     </div>
   );

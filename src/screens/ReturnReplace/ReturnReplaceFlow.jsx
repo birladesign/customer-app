@@ -3,8 +3,14 @@ import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { ORDERS, splitProductSpec, getDeliveredDate } from '../../data/orders.js';
 import { getRemediationOptions, getPostBookingUpdate } from '../../data/remediation.js';
 import { getVariants } from '../../data/variants.js';
-import { isMattressProduct, daysSinceDelivery, getMattressVerdict, proRataRefund } from '../../data/mattressRules.js';
-import { createCase } from '../../data/support.js';
+import {
+  isMattressProduct,
+  daysSinceDelivery,
+  getMattressVerdict,
+  proRataRefund,
+  MATTRESS_REASONS,
+} from '../../data/mattressRules.js';
+import { createCase, CASE_PREFIX } from '../../data/support.js';
 import { useNavigation } from '../../navigation/NavigationContext.jsx';
 import { SPRING_STANDARD, DURATION_REDUCED } from '../../motion.js';
 import { ChevronLeftIcon } from '../../components/icons.jsx';
@@ -16,6 +22,7 @@ import MattressVariantStep from './MattressVariantStep.jsx';
 import OptionsStep from './OptionsStep.jsx';
 import RefundMethodStep from './RefundMethodStep.jsx';
 import ApprovalPendingStep from './ApprovalPendingStep.jsx';
+import ExecutionStep from './ExecutionStep.jsx';
 import './ReturnReplaceFlow.css';
 
 const STEP_TITLES = {
@@ -76,6 +83,12 @@ export default function ReturnReplaceFlow({ params }) {
 
   const [step, setStep] = useState(0);
   const [reason, setReason] = useState(null);
+  // §7.6 "who-erred" — the single input that decides whether a remediation is
+  // free or chargeable, and the one the M-table branches on (M2 vs M3/M4).
+  // Asked on the reason screen; null until the reason actually needs it.
+  const [faultAttribution, setFaultAttribution] = useState(null);
+  // The reference the Execution Tracker shows once an action is booked.
+  const [bookedCaseId, setBookedCaseId] = useState(null);
   const [photo, setPhoto] = useState([]);
   const [selectedLever, setSelectedLever] = useState(presetLever);
   const [ticketId, setTicketId] = useState(null);
@@ -143,20 +156,36 @@ export default function ReturnReplaceFlow({ params }) {
   const deliveredDateStr = isMattress ? getDeliveredDate(target) : null;
   const effectiveDays = smellPersists ? 3 : daysSinceDelivery(deliveredDateStr);
   const mattressProductInfo = isMattress ? splitProductSpec(target.product) : null;
-  // "Wrong size or model" has an obvious fix — pick the right size — so it
-  // skips the verdict/lever-choice sheet entirely and heads straight to
-  // MattressVariantStep instead of asking whose mistake it was first or
-  // making the customer pick Replace off a card.
-  const isWrongSizeModel = isMattress && reason === 'wrongSizeModel';
+  // Only "wrong size or model" branches on fault (M2 vs M3/M4); asking it for
+  // a damaged mattress would be noise, so the question is conditional.
+  const needsFault = isMattress && reason === 'wrongSizeModel';
+  // The verdict is always computed once a reason is picked — including for
+  // wrong-size, which previously bypassed it entirely and left M2/M3/M4
+  // unreachable. `faultAttribution` is what M2 keys off, so it has to reach
+  // the engine rather than being dropped on the floor.
   const verdict =
-    isMattress && reason && !isWrongSizeModel
+    isMattress && reason && (!needsFault || faultAttribution)
       ? getMattressVerdict({
           reasonKey: reason,
           daysSinceDelivery: effectiveDays,
-          productName: mattressProductInfo.name,
-          spec: mattressProductInfo.spec,
+          faultAttribution,
         })
       : null;
+  // §7.10 — the evidence matrix decides whether a photo blocks submit, not
+  // the screen. Mattress reasons are mostly "optional"; sagging (M6/M1) is
+  // the one that's mandatory.
+  const photoRequired = verdict?.images === 'mandatory';
+  // "Wrong size or model" has an obvious fix — pick the right size — so it
+  // still skips the lever-choice sheet, but only when the verdict has no gate
+  // of its own to show first (M4 past the 10-day window has to insist).
+  const isWrongSizeModel = isMattress && reason === 'wrongSizeModel';
+  const skipVerdictSheet = isWrongSizeModel && verdict && !verdict.retention;
+  const reasonLabel = isMattress ? MATTRESS_REASONS.find((r) => r.key === reason)?.label ?? reason : reason;
+  const offeredLevers = isMattress
+    ? verdict?.leverOptions ?? []
+    : reason
+    ? getRemediationOptions(order, reason).map((o) => o.id)
+    : [];
   const proRataAmount = verdict?.proRata ? proRataRefund(itemPrice, deliveredDateStr) : 0;
   // Whether Replace is actually a real alternative to offer at the return
   // nudge — "Missing parts" only ever offers Send Part, and M6/M8's own
@@ -218,12 +247,22 @@ export default function ReturnReplaceFlow({ params }) {
       ticketCreatedRef.current = true;
       const record = createCase({
         lane: 'returns',
+        prefix: CASE_PREFIX.returnReplace,
         order,
         item: item ?? null,
-        description: `Return requested — ${reason}`,
+        description: `Return requested — ${reasonLabel}`,
         hasPhoto: Boolean(photo?.length),
         escalate: true,
         messages: [],
+        intent: 'returnReplace',
+        family: isMattress ? 'mattress' : 'non_mattress',
+        reason: reasonLabel,
+        whoErred: faultAttribution,
+        ruleTrace: verdict?.rule ? [verdict.rule] : [],
+        verdict: verdict ?? null,
+        offered: offeredLevers,
+        chosen: 'return',
+        outcome: 'returned',
       });
       setTicketId(record.id);
     }
@@ -258,6 +297,22 @@ export default function ReturnReplaceFlow({ params }) {
     goToStep(1);
   }
 
+  // Changing the reason invalidates a fault answer given for the previous
+  // one — leaving it set would silently feed the engine an answer to a
+  // question the customer was never asked for this reason.
+  function handleSelectMattressReason(next) {
+    setReason(next);
+    setFaultAttribution(null);
+  }
+
+  // Return-for-Refund waits on a human, so it has already written its own
+  // ticket (handleSubmitReturnRequest). Booking the order-side state still
+  // has to happen before leaving, or My Orders shows nothing was requested.
+  function handleApprovalDone() {
+    applyBooking();
+    goBack();
+  }
+
   function handleChooseLever(lever) {
     setSelectedLever(lever);
     setVerdictSheetOpen(false);
@@ -271,7 +326,7 @@ export default function ReturnReplaceFlow({ params }) {
   // running. Every other mattress reason opens the "Next Steps" sheet on
   // top of this same reason screen instead of navigating away.
   function handleMattressReasonContinue() {
-    if (isWrongSizeModel) {
+    if (skipVerdictSheet) {
       setSelectedLever('replace');
       goNext();
       return;
@@ -309,15 +364,29 @@ export default function ReturnReplaceFlow({ params }) {
   // Order Details, the same "receipt already shown, nothing left to track
   // here" shape as ApprovalPendingStep.
   function handleAcceptTopper() {
+    // The retention ladder's whole point (§7.11, §13): a topper accepted is a
+    // replacement/return that didn't happen, and that only counts if it's on
+    // the record. `topper_provided` is the state the PRD tracks here.
     createCase({
       lane: 'returns',
+      prefix: CASE_PREFIX.returnReplace,
       order,
       item: item ?? null,
       description: 'Comfort topper requested (retention offer accepted)',
       hasPhoto: Boolean(photo?.length),
       escalate: false,
       messages: [],
+      intent: 'returnReplace',
+      family: 'mattress',
+      reason: reasonLabel,
+      ruleTrace: verdict?.rule ? [verdict.rule] : [],
+      verdict: verdict ?? null,
+      offered: offeredLevers,
+      chosen: 'topper',
+      outcome: 'retained_topper',
     });
+    if (item) item.topperProvided = true;
+    else if (order) order.topperProvided = true;
     setVerdictSheetOpen(false);
     goBack();
   }
@@ -325,12 +394,21 @@ export default function ReturnReplaceFlow({ params }) {
   function handleSubmitWarrantyClaim() {
     createCase({
       lane: 'returns',
+      prefix: CASE_PREFIX.warranty,
       order,
       item: item ?? null,
-      description: `Warranty claim (sagging/dip) — pro-rata refund ₹${proRataAmount.toLocaleString('en-IN')}`,
+      description: `Warranty claim (sagging/dip) — pro-rata refund ₹${proRataAmount.toLocaleString('en-IN')} (provisional)`,
       hasPhoto: Boolean(photo?.length),
       escalate: true,
       messages: [],
+      intent: 'warranty',
+      family: 'mattress',
+      reason: reasonLabel,
+      ruleTrace: verdict?.rule ? [verdict.rule] : [],
+      verdict: verdict ?? null,
+      offered: offeredLevers,
+      chosen: 'proRataRefund',
+      outcome: 'warranty_claim',
     });
     setVerdictSheetOpen(false);
     goBack();
@@ -351,7 +429,7 @@ export default function ReturnReplaceFlow({ params }) {
   // multi-SKU order, the one line item) in place, same pattern as
   // OrderDetails' handleCancelOrder/handlePutOnHold, so My Orders and Order
   // Details both reflect the booked journey the moment we navigate back.
-  function handleJourneyComplete() {
+  function applyBooking() {
     const update = getPostBookingUpdate(selectedLever, needsApproval);
     const newStatus = { dot: 'blue', label: update.label };
     // A replacement that changed variant (mattress size/height/model, chair
@@ -390,15 +468,54 @@ export default function ReturnReplaceFlow({ params }) {
       order.timeline?.steps.push({ label: update.label, timestamp: null, description: update.description });
       if (order.timeline) order.timeline.currentIndex = order.timeline.steps.length - 1;
     }
-    goBack();
+
+    // §7.13 caps are counted on the line, not remembered by an agent: two
+    // replacements is the ceiling before refund becomes the only lever left.
+    // Nothing reads these yet (the cap gate is Tier 2), but the count has to
+    // start accruing from the moment replacements are actually booked or it
+    // can never be enforced retroactively.
+    const counted = item ?? order;
+    if (counted && selectedLever === 'replace') counted.rpCount = (counted.rpCount ?? 0) + 1;
+    if (counted && selectedLever === 'sendPart') {
+      counted.partRpCount = (counted.partRpCount ?? 0) + 1;
+      counted.firstPartRpDay = counted.firstPartRpDay ?? new Date().toISOString();
+    }
+    if (counted && faultAttribution) counted.whoErred = faultAttribution;
+
+    // Every booked action writes a Case (§8, §13) carrying the decision trail
+    // that produced it — which rule fired, what was on the table, what the
+    // customer picked — so a later handover doesn't re-ask and the retention
+    // ladder is measurable rather than anecdotal. The approval path already
+    // wrote its own ticket at submit time, so it isn't duplicated here.
+    if (needsApproval) return;
+    const record = createCase({
+      lane: 'returns',
+      prefix: CASE_PREFIX.returnReplace,
+      order,
+      item: item ?? null,
+      description: `${update.label} — ${reasonLabel}`,
+      hasPhoto: Boolean(photo?.length),
+      escalate: false,
+      messages: [],
+      intent: 'returnReplace',
+      family: isMattress ? 'mattress' : 'non_mattress',
+      reason: reasonLabel,
+      whoErred: faultAttribution,
+      ruleTrace: verdict?.rule ? [verdict.rule] : [],
+      verdict: verdict ?? null,
+      offered: offeredLevers,
+      chosen: selectedLever,
+      outcome: selectedLever === 'return' ? 'returned' : 'retained_replacement',
+    });
+    setBookedCaseId(record.id);
   }
 
   useEffect(() => {
     if (currentKey === 'execution' && !needsApproval && !journeyCompletedRef.current) {
       journeyCompletedRef.current = true;
-      handleJourneyComplete();
+      applyBooking();
     }
-    // handleJourneyComplete reads plenty of state but is only ever invoked
+    // applyBooking reads plenty of state but is only ever invoked
     // here at the one instant currentKey/needsApproval actually reach this
     // combination — re-running it on every unrelated state change would
     // both be wrong (the ref guard already exists for a reason) and unnecessary.
@@ -459,9 +576,13 @@ export default function ReturnReplaceFlow({ params }) {
                 price={itemPrice}
                 savings={itemSavings}
                 reason={reason}
-                onSelectReason={setReason}
+                onSelectReason={handleSelectMattressReason}
+                needsFault={needsFault}
+                faultAttribution={faultAttribution}
+                onSelectFault={setFaultAttribution}
                 photo={photo}
                 onPhotoChange={setPhoto}
+                photoRequired={photoRequired}
                 onContinue={handleMattressReasonContinue}
               />
             )}
@@ -492,12 +613,19 @@ export default function ReturnReplaceFlow({ params }) {
                 refundAmount={itemPrice}
                 reason={reason}
                 ticketId={ticketId}
-                onDone={handleJourneyComplete}
+                onDone={handleApprovalDone}
               />
             )}
-            {/* No JSX here for execution+!needsApproval — the effect above
-                applies the update and navigates back to Order Details the
-                instant this step is reached, so there's nothing to render. */}
+            {currentKey === 'execution' && !needsApproval && (
+              <ExecutionStep
+                order={target}
+                leverId={selectedLever}
+                priceDelta={variantPriceDelta}
+                newVariantLabel={newSpec ? withSpec(newModel ?? splitProductSpec(target.product).name, newSpec) : null}
+                caseId={bookedCaseId}
+                onDone={goBack}
+              />
+            )}
           </motion.div>
         </AnimatePresence>
       </div>

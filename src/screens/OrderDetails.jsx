@@ -10,7 +10,7 @@ import {
   parseOrderDate,
 } from '../data/orders.js';
 import { getOrderIntents, getEditEligibility, getShipmentEditEligibility, getItemIntents, isPostDispatch } from '../data/intents.js';
-import { getOpenCaseForOrder } from '../data/support.js';
+import { getOpenCaseForOrder, createCase, CASE_PREFIX } from '../data/support.js';
 import { CURRENT_USER } from '../data/profile.js';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
 import { SPRING_STANDARD, DURATION_REDUCED } from '../motion.js';
@@ -222,6 +222,38 @@ export default function OrderDetails({ params }) {
     setCancelReason(reason);
   }
 
+  // Which retention levers this reason actually put on the table, so the case
+  // records "offered vs chosen" (§13) rather than just the end state.
+  const retentionOffered = [
+    ...(cancelReason === DELAY_REASON ? ['expedite'] : []),
+    ...(postDispatch ? [] : ['hold']),
+    'cancel',
+  ];
+
+  // PRD CX-08: every cancellation outcome writes a Case, retained ones
+  // included. Without this, the product's north-star metric ("cancel intent →
+  // retained %", §4/§13) has no source data — a save looks identical to a
+  // customer who simply wandered off.
+  function recordCancellationOutcome({ description, chosen, outcome, escalate = false }) {
+    return createCase({
+      lane: 'general',
+      prefix: CASE_PREFIX.cancellation,
+      order,
+      item: null,
+      description,
+      hasPhoto: false,
+      escalate,
+      messages: [],
+      intent: 'cancel',
+      family: 'order',
+      reason: cancelReason,
+      ruleTrace: [postDispatch ? 'CX-04 post-dispatch' : 'CX-03 pre-dispatch'],
+      offered: retentionOffered,
+      chosen,
+      outcome,
+    });
+  }
+
   function continueToAlternative() {
     setCancelStep(cancelReason === DELAY_REASON ? 'delayed' : 'alternative');
   }
@@ -232,6 +264,11 @@ export default function OrderDetails({ params }) {
   function handleExpediteRequest() {
     Object.assign(order, {
       caption: 'Expedited delivery requested — we will prioritize dispatch and confirm the updated ETA shortly.',
+    });
+    recordCancellationOutcome({
+      description: `Expedite requested instead of cancelling — ${cancelReason}`,
+      chosen: 'expedite',
+      outcome: 'retained_expedite',
     });
     closeCancelFlow();
     goBack();
@@ -250,6 +287,12 @@ export default function OrderDetails({ params }) {
   }
 
   function handleConfirmRtoIntercept() {
+    recordCancellationOutcome({
+      description: `Post-dispatch cancellation — RTO intercept requested (${cancelReason ?? 'no reason given'})`,
+      chosen: 'rtoIntercept',
+      outcome: 'not_retained',
+      escalate: true,
+    });
     setShowRtoIntercept(false);
     setCancelReason(null);
     navigate('rtoReplace', { orderId: order.id });
@@ -285,6 +328,11 @@ export default function OrderDetails({ params }) {
     });
     order.timeline?.steps.push({ label: 'On Hold', timestamp: null, description: 'Awaiting your decision' });
     if (order.timeline) order.timeline.currentIndex = order.timeline.steps.length - 1;
+    recordCancellationOutcome({
+      description: `Order put on hold instead of cancelling — ${cancelReason ?? 'no reason given'}`,
+      chosen: 'hold',
+      outcome: 'retained_hold',
+    });
     closeCancelFlow();
     goBack();
   }
@@ -306,6 +354,11 @@ export default function OrderDetails({ params }) {
     });
     order.timeline?.steps.push({ label: 'Cancelled', timestamp: null, description: 'Cancelled as per your request' });
     if (order.timeline) order.timeline.currentIndex = order.timeline.steps.length - 1;
+    recordCancellationOutcome({
+      description: `Order cancelled — ${cancelReason ?? 'no reason given'}`,
+      chosen: 'cancel',
+      outcome: 'not_retained',
+    });
     setConfirmingCancel(false);
     setCancelReason(null);
     goBack();

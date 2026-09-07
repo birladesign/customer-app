@@ -1,16 +1,18 @@
 import { useEffect, useState } from 'react';
 import { ORDERS, splitProductSpec } from '../data/orders.js';
+import { createCase, CASE_PREFIX } from '../data/support.js';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
 import ConfirmSheet from '../components/ConfirmSheet.jsx';
 import CalendarPicker, { formatSlotDate } from '../components/CalendarPicker.jsx';
+import { bookingWindow } from '../data/clock.js';
 import { ChevronLeftIcon, CalendarIcon, ClockIcon, UserIcon, CheckIcon, PhoneIcon } from '../components/icons.jsx';
 import './InstallationSchedule.css';
 
-// No real availability backend in this prototype — technician visits open
-// from the first bookable day and stay open for a month, same bounded-window
-// approach as DeliverySchedule.
-const FIRST_BOOKABLE = new Date(2026, 7, 12);
-const LAST_BOOKABLE = new Date(2026, 8, 12);
+// No real availability backend in this prototype — technician visits open a
+// day out and stay open for a month. Expressed relative to the shared app
+// clock rather than as fixed calendar dates so the picker can never run dry
+// once real time walks past a hardcoded end date.
+const { first: FIRST_BOOKABLE, last: LAST_BOOKABLE } = bookingWindow({ leadDays: 1, spanDays: 30 });
 
 const TIME_WINDOWS = ['9 AM – 11 AM', '11 AM – 1 PM', '2 PM – 4 PM', '4 PM – 6 PM'];
 
@@ -94,6 +96,25 @@ export default function InstallationSchedule({ params }) {
         { text: `Visit slot confirmed: ${slotText}` },
       ];
     }
+
+    // A booked visit is an "action booked" terminal (§8), so it gets a case
+    // and a TEC- reference like any other — previously scheduling left no
+    // trace in My Cases at all.
+    createCase({
+      lane: 'tech',
+      prefix: CASE_PREFIX.technician,
+      order,
+      item: null,
+      description: `${isReschedule ? 'Installation rescheduled' : 'Installation scheduled'} — ${slotText}`,
+      hasPhoto: false,
+      escalate: false,
+      messages: [],
+      intent: 'technician',
+      family: 'service',
+      reason: isReschedule ? 'Rearrange technician visit' : 'Installation booking',
+      chosen: isReschedule ? 'reschedule' : 'schedule',
+      outcome: 'booked',
+    });
 
     setConfirmOpen(false);
     setBookingConfirmed(true);

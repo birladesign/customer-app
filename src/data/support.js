@@ -88,7 +88,7 @@ export const FAQ_ITEMS = [
     category: 'returns',
     question: "What's the return window?",
     answer:
-      'Most items can be returned within 7 days of delivery if unused and in original packaging. Mattresses and select items include a 100-night trial — check the product page for details.',
+      'Mattresses can be reported for a replacement or return up to 100 days from delivery; a size or model mix-up has a 10-day window if the wrong item was ordered rather than shipped. Other categories follow their own window — start a request and we will tell you exactly what applies to your item.',
   },
   {
     id: 'warranty-claim',
@@ -123,7 +123,30 @@ export const USER_CASES = [];
 // Seeded once so a fresh demo run doesn't always start at CMP-YYYY-00001.
 let caseSeq = 90000 + Math.floor(Math.random() * 9000);
 
-export function generateCaseId(prefix = 'CMP') {
+// PRD §9.10 — one reference convention per family, so a customer quoting
+// "RR-2026-90142" already tells an agent which lane it belongs to before the
+// case is even opened. Previously every case got a CMP- id regardless of what
+// it actually was.
+export const CASE_PREFIX = {
+  cancellation: 'CXL',
+  returnReplace: 'RR',
+  complaint: 'CMP',
+  warranty: 'WTY',
+  technician: 'TEC',
+  refund: 'RFD',
+};
+
+// Which reference family a support lane files under, when a case is created
+// from the lane rather than from a named journey.
+const LANE_PREFIX = {
+  logistics: CASE_PREFIX.complaint,
+  tech: CASE_PREFIX.technician,
+  returns: CASE_PREFIX.returnReplace,
+  refunds: CASE_PREFIX.refund,
+  general: CASE_PREFIX.complaint,
+};
+
+export function generateCaseId(prefix = CASE_PREFIX.complaint) {
   const year = new Date().getFullYear();
   caseSeq += 1;
   return `${prefix}-${year}-${String(caseSeq).padStart(5, '0')}`;
@@ -162,11 +185,38 @@ export function findOpenCaseForOrder(orderId, laneKey, itemSku = null) {
 // can replay exactly what was said. `item` is the specific line item a
 // multi-item order's case is about (null for a single-item order, or when
 // the customer meant the whole order rather than one item in it).
-export function createCase({ lane, order, item, description, hasPhoto, escalate, messages }) {
+// The Case is the PRD's contract between this app and the future agent app
+// (§7.5), so it carries the decision trail, not just the complaint text:
+// which intent the customer expressed, what reason they gave, who erred,
+// which rule fired, and what was offered before they picked. A handover
+// (§8.10 HO-01) is only context-carrying if that trail is on the record —
+// and §13's retention analytics can only be computed from `outcome`.
+//
+// Called once per terminal outcome, never from render, so the generated id is
+// stable across re-renders.
+export function createCase({
+  lane,
+  order,
+  item,
+  description,
+  hasPhoto,
+  escalate,
+  messages,
+  prefix,
+  intent = null,
+  family = null,
+  reason = null,
+  whoErred = null,
+  ruleTrace = [],
+  verdict = null,
+  offered = [],
+  chosen = null,
+  outcome = null,
+}) {
   const laneMeta = CASE_LANES.find((l) => l.key === lane);
   const { classification, status, slaLabel } = classifyCase(lane, escalate);
   const record = {
-    id: generateCaseId('CMP'),
+    id: generateCaseId(prefix ?? LANE_PREFIX[lane] ?? CASE_PREFIX.complaint),
     lane,
     laneLabel: laneMeta?.label ?? 'Something Else',
     orderId: order?.id ?? null,
@@ -181,6 +231,18 @@ export function createCase({ lane, order, item, description, hasPhoto, escalate,
     slaLabel,
     createdAt: new Date().toISOString(),
     messages: messages ?? [],
+    // §7.5 decision trail — what the engine saw and what it offered.
+    intent,
+    family,
+    reason,
+    whoErred,
+    ruleTrace,
+    verdict,
+    offered,
+    chosen,
+    // §13 — the retention outcome this case represents, so "cancel intent →
+    // retained" is a number rather than an anecdote.
+    outcome,
   };
   USER_CASES.unshift(record);
   return record;
@@ -197,7 +259,7 @@ function seedCase({ lane, orderId, orderProduct, itemSku, itemProduct, escalate,
   const laneMeta = CASE_LANES.find((l) => l.key === lane);
   const { classification, status, slaLabel } = classifyCase(lane, escalate);
   return {
-    id: generateCaseId('CMP'),
+    id: generateCaseId(LANE_PREFIX[lane] ?? CASE_PREFIX.complaint),
     lane,
     laneLabel: laneMeta?.label ?? 'Something Else',
     orderId,

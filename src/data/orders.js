@@ -173,11 +173,55 @@ export function getShipmentInfo(key) {
   return SHIPMENTS[key] ?? null;
 }
 
+// PRD §7.4 — the stateful counters and flags the policy engine reads. They
+// live on the order line and are enforced by the engine, never by agent
+// memory: caps (§7.13) count RPs and RTOs, charges depend on who erred, and
+// the channel/premium overlays (§7.14-7.15) change eligibility outright.
+//
+// Nothing in the prototype's fixtures set these by hand — every order is
+// normalised through withPolicyDefaults below, so a screen can read
+// `order.rpCount` without null-guarding 27 fixtures, and so the shape a real
+// OMS would have to supply is written down in one place.
+const POLICY_DEFAULTS = {
+  premium: false,
+  channel: 'website',
+  rpCount: 0,
+  rtoCount: 0,
+  partRpCount: 0,
+  firstPartRpDay: null,
+  damagedDeliveryCount: 0,
+  topperProvided: false,
+  forgoPickup: false,
+  firstAttemptDenied: false,
+  // Fault attribution is only known once a customer tells us (§7.6), so it
+  // stays null until a remediation flow asks.
+  whoErred: null,
+  // 'not_required' for anything that doesn't install; set per fixture where
+  // an install actually happens.
+  installState: 'not_required',
+  // The date every day-window is measured from (§7.4 policy_anchor_date).
+  // Null means "derive from the delivery timestamp", which is what the
+  // rules engine already does.
+  policyAnchorDate: null,
+  missCount: 0,
+};
+
+function withPolicyDefaults(order) {
+  const normalised = { ...POLICY_DEFAULTS, ...order };
+  if (Array.isArray(normalised.items)) {
+    normalised.items = normalised.items.map((item) => ({ ...POLICY_DEFAULTS, ...item }));
+  }
+  return normalised;
+}
+
 export const ORDERS = [
 
   {
     id: 'TSC89203',
     section: 'needsAttention',
+    damagedDeliveryCount: 1,
+    whoErred: 'tsc',
+    installState: 'installed',
     date: '15 Jul 2026',
     image: imgBedElev8Adjustable,
     status: { dot: 'red', label: 'Damaged — Reported' },
@@ -803,6 +847,8 @@ export const ORDERS = [
   // origin, one already refunded, so the RTO tab shows both live states.
   {
     id: 'TSC80215',
+    rtoCount: 1,
+    missCount: 3,
     section: 'inProgress',
     date: '10 Aug 2026',
     image: imgMattressOrthoRoyale,
@@ -1503,4 +1549,4 @@ export const ORDERS = [
       currentIndex: 0,
     },
   },
-];
+].map(withPolicyDefaults);

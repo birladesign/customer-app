@@ -10,6 +10,7 @@
 
 import { getVariants } from './variants.js';
 import { splitProductSpec } from './orders.js';
+import { daysSince } from './clock.js';
 
 // Accepts either the bare catalog name or the full "Name (Spec)" string an
 // order/item actually carries — getVariants only recognizes the former, and
@@ -19,19 +20,11 @@ export function isMattressProduct(product) {
   return getVariants(splitProductSpec(product).name)?.type === 'mattress';
 }
 
-// A fixed "today" for this prototype's fictional order timeline (see
-// orders.js's own hardcoded 2026 dates) — there's no real clock these day
-// windows could sensibly measure against otherwise.
-export const RULES_TODAY = new Date(2026, 7, 21);
-
-function atMidnight(date) {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
-}
-
+// These day windows measure against the shared app clock (clock.js), the same
+// one the installation/delivery pickers book against — a verdict and a
+// calendar on the same screen must agree on what "today" means.
 export function daysSinceDelivery(deliveredDateStr) {
-  if (!deliveredDateStr) return 0;
-  const ms = atMidnight(RULES_TODAY) - atMidnight(new Date(deliveredDateStr));
-  return Math.max(0, Math.round(ms / 86400000));
+  return daysSince(deliveredDateStr);
 }
 
 // M8-M9 (odor) and M6 (sagging) are their own reasons; M10 (tolerance) and
