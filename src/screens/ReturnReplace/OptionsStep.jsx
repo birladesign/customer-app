@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { getRemediationOptions } from '../../data/remediation.js';
 import { PackageIcon, TruckIcon, WalletIcon } from '../../components/icons.jsx';
 import ConfirmSheet from '../../components/ConfirmSheet.jsx';
@@ -22,6 +22,12 @@ export default function OptionsStep({ order, reason, selectedLever, onSelectLeve
   // confirm the submission instead of silently treating it as approved.
   const [confirmOpen, setConfirmOpen] = useState(false);
 
+  useEffect(() => {
+    if (options.length === 1 && selectedLever !== options[0].id) {
+      onSelectLever(options[0].id);
+    }
+  }, [options, selectedLever, onSelectLever]);
+
   function handleConfirmChoice() {
     if (selectedOption?.needsApproval) {
       setConfirmOpen(true);
@@ -32,7 +38,11 @@ export default function OptionsStep({ order, reason, selectedLever, onSelectLeve
 
   return (
     <div className="options-step">
-      <p className="options-step__prompt">Here's what we can do, ordered by what gets you sorted fastest.</p>
+      <p className="options-step__prompt">
+        {options.length > 1
+          ? "Here's what we can do, ordered by what gets you sorted fastest."
+          : "Here's what we can do to resolve this."}
+      </p>
 
       <div className="options-step__list">
         {options.map((option) => {
@@ -43,8 +53,8 @@ export default function OptionsStep({ order, reason, selectedLever, onSelectLeve
               key={option.id}
               className={`options-step__card${isSelected ? ' options-step__card--selected' : ''}`}
               onClick={() => onSelectLever(option.id)}
-              role="radio"
-              aria-checked={isSelected}
+              role={options.length > 1 ? "radio" : undefined}
+              aria-checked={options.length > 1 ? isSelected : undefined}
             >
               <span className="options-step__card-icon" aria-hidden="true">
                 <Icon width="16" height="16" strokeWidth="2" />
@@ -52,7 +62,7 @@ export default function OptionsStep({ order, reason, selectedLever, onSelectLeve
               <span className="options-step__card-body">
                 <span className="options-step__card-label-row">
                   <span className="options-step__card-label">{option.label}</span>
-                  <span className="options-step__radio" aria-hidden="true" />
+                  {options.length > 1 && <span className="options-step__radio" aria-hidden="true" />}
                 </span>
                 <p className="options-step__card-description">{option.description}</p>
                 <div className="options-step__card-footer">
