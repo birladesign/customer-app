@@ -145,16 +145,18 @@ export default function MattressReasonStep({
         onChange={(e) => setNote(e.target.value)}
       />
 
-      <button className="evidence-step__continue" disabled={!canContinue} onClick={onContinue}>
-        Continue
-      </button>
-      {!reason ? (
-        <p className="evidence-step__hint">Choose a reason to proceed.</p>
-      ) : !faultAnswered ? (
-        <p className="evidence-step__hint">Tell us what happened to continue.</p>
-      ) : (
-        photoRequired && !photo?.length && <p className="evidence-step__hint">A photo is required to proceed.</p>
-      )}
+      <div className="evidence-step__footer">
+        <button className="evidence-step__continue" disabled={!canContinue} onClick={onContinue}>
+          Continue
+        </button>
+        {!reason ? (
+          <p className="evidence-step__hint">Choose a reason to proceed.</p>
+        ) : !faultAnswered ? (
+          <p className="evidence-step__hint">Tell us what happened to continue.</p>
+        ) : (
+          photoRequired && !photo?.length && <p className="evidence-step__hint">A photo is required to proceed.</p>
+        )}
+      </div>
     </div>
   );
 }

@@ -79,8 +79,10 @@
   position: absolute;
   inset: 0;
   overflow-y: auto;
+  /* No bottom-tab-bar reservation — this whole flow hides the tab bar
+     (see the setHideTabBar effect in ReturnReplaceFlow.jsx), so there's no
+     real dock at the bottom of the viewport for a sticky footer to clear. */
   padding: var(--space-4);
-  padding-bottom: calc(var(--bottom-tab-bar-height) + var(--space-4));
 }
 
 .return-replace__not-found {

@@ -50,8 +50,17 @@ const STEPS_WITH_REFUND = ['evidence', 'refundMethod', 'execution'];
 const STEPS_WITHOUT_REFUND = ['evidence', 'execution'];
 
 export default function ReturnReplaceFlow({ params }) {
-  const { goBack } = useNavigation();
+  const { goBack, setHideTabBar } = useNavigation();
   const reduceMotion = useReducedMotion();
+
+  // A wizard step, not a tab root — the tab bar competing for the same strip
+  // as EvidenceStep's own sticky Continue button (and every other step's
+  // primary action) reads as two navigations stacked on each other. Same
+  // pattern as DeliverySchedule/InstallationSchedule.
+  useEffect(() => {
+    setHideTabBar(true);
+    return () => setHideTabBar(false);
+  }, [setHideTabBar]);
   const order = ORDERS.find((o) => o.id === params.orderId);
   // For a multi-SKU order, params.sku scopes the flow to one line item —
   // EvidenceStep/ExecutionStep only ever read `.product` off what's passed

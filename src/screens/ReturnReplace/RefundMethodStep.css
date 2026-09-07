@@ -157,7 +157,11 @@
 
 .refund-method-step__footer {
   position: sticky;
-  bottom: calc(-1 * (var(--bottom-tab-bar-height) + var(--space-4)));
+  /* Flush against the true viewport bottom, cancelling the scroll
+     container's own bottom padding — this flow hides the tab bar for its
+     whole duration (see ReturnReplaceFlow's setHideTabBar effect), so
+     there's no dock at the bottom to clear. */
+  bottom: calc(-1 * var(--space-4));
   margin-top: var(--space-4);
   padding: var(--space-3) var(--space-4);
   display: flex;

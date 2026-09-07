@@ -97,11 +97,34 @@
   border-color: var(--color-navy-900);
 }
 
+/* The reason list, the fault question, a photo tile and a note field add up to
+   more than one phone screen, which left Continue below the fold — the one
+   thing that tells you the answer registered and there's a next step. It rides
+   the bottom of the scroll container instead. This flow hides the bottom tab
+   bar for its whole duration (see ReturnReplaceFlow's setHideTabBar effect),
+   so there's no dock to clear — flush against the true viewport bottom (a
+   negative offset matching the container's own side padding, so the bar
+   still spans edge to edge). Glass, not an opaque strip, so content reads as
+   continuing underneath. */
+.evidence-step__footer {
+  position: sticky;
+  bottom: calc(-1 * var(--space-4));
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  /* Span the step's own side padding so the bar reaches both edges. */
+  margin: var(--space-2) calc(-1 * var(--space-4)) 0;
+  padding: var(--space-3) var(--space-4) var(--space-4);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+}
+
 .evidence-step__continue {
   border: none;
   border-radius: var(--radius-full);
   padding: var(--space-3);
-  margin-top: var(--space-2);
   background: var(--color-navy-900);
   color: var(--color-text-inverse);
   font-family: inherit;
