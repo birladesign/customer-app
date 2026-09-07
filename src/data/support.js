@@ -158,7 +158,7 @@ export function generateCaseId(prefix = CASE_PREFIX.complaint) {
 // escalated case regardless of lane — becomes a tracked, open case.
 export function classifyCase(laneKey, escalate) {
   if (escalate) {
-    return { classification: 'nonFCR', status: 'open', slaLabel: 'A specialist will call you within 30 minutes' };
+    return { classification: 'nonFCR', status: 'open', slaLabel: 'Our team will call you within 30 minutes' };
   }
   if (laneKey === 'general') {
     return { classification: 'FCR', status: 'resolved', slaLabel: 'Resolved now — check your email for a summary' };

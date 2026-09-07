@@ -277,10 +277,10 @@ export default function DeliveryIssueFlow({ params }) {
             {!caseRecord ? (
               <>
                 <p className="execution-step__confirm-body">
-                  We'll route this to our Logistics team with your order's tracking history attached.
+                  We'll send this straight to our delivery team for review.
                 </p>
                 <button className="execution-step__done" onClick={handleReportGeneric}>
-                  Report This Issue
+                  Report Issue
                 </button>
               </>
             ) : (
@@ -290,9 +290,9 @@ export default function DeliveryIssueFlow({ params }) {
                     <CheckIcon width="18" height="18" strokeWidth="3" />
                   </span>
                   <div>
-                    <p className="execution-step__confirm-title">Reported to Logistics</p>
+                    <p className="execution-step__confirm-title">Issue Reported</p>
                     <p className="execution-step__confirm-body">
-                      {caseRecord.slaLabel ?? "We'll update you within 24–48 hours."}
+                      {caseRecord.slaLabel ?? "We'll update you within 48 hours."}
                     </p>
                   </div>
                 </div>
