@@ -1,9 +1,18 @@
+import { useEffect, useState } from 'react';
 import './LoginHeroAnimation.css';
 
 export default function LoginHeroAnimation() {
+  const [playKey, setPlayKey] = useState(0);
+
+  useEffect(() => {
+    // 3.0s animation + 1.2s pause = 4.2s loop
+    const timer = setInterval(() => setPlayKey((k) => k + 1), 4200);
+    return () => clearInterval(timer);
+  }, []);
+
   return (
     <div className="login-hero-stage">
-      <div className="login-hero-va">
+      <div className="login-hero-va" key={playKey}>
         <h2 className="login-hero-hl">Everything for your order.</h2>
         <div className="login-hero-rule"></div>
 
