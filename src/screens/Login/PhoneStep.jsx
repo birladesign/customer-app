@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { AlertTriangleIcon } from '../../components/icons.jsx';
+import LoginHeroAnimation from './LoginHeroAnimation.jsx';
 import './PhoneStep.css';
 
 // Only Indian mobile numbers (6-9 leading digit, 10 digits) are treated as
@@ -33,7 +34,7 @@ export default function PhoneStep({ mode = 'login', onContinue, onSkip, onSwitch
   return (
     <div className="phone-step">
       <div className="phone-step__hero" aria-hidden="true">
-        <div className="phone-step__hero-image" />
+        <LoginHeroAnimation />
       </div>
 
       {error && (

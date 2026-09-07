@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { AlertTriangleIcon, ChevronLeftIcon, EditIcon } from '../../components/icons.jsx';
+import LoginHeroAnimation from './LoginHeroAnimation.jsx';
 import './OtpStep.css';
 
 // No backend in this prototype — a fixed mock code stands in for a real SMS
@@ -119,7 +120,7 @@ export default function OtpStep({ phone, onVerified, onBack, onSkip }) {
   return (
     <div className="otp-step">
       <div className="otp-step__hero" aria-hidden="true">
-        <div className="otp-step__hero-image" />
+        <LoginHeroAnimation />
       </div>
 
       <div className="otp-step__sheet">

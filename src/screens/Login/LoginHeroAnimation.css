@@ -1,0 +1,153 @@
+:root {
+  --e: cubic-bezier(.22,.61,.36,1);
+}
+
+.login-hero-stage {
+  width: 100%;
+  height: 100%;
+  background: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  /* Optional: if there's a dark mode, handle background appropriately, but background: #FFFFFF matches the request */
+}
+
+.login-hero-va {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 560px;
+}
+
+.login-hero-hl {
+  margin: 0;
+  font-size: clamp(19px, 2.1vw, 25px);
+  font-weight: 700;
+  letter-spacing: -.025em;
+  color: var(--color-navy-900);
+  text-align: center;
+  text-wrap: balance;
+  opacity: 0;
+  animation: rise .55s var(--e) 0s forwards;
+}
+
+.login-hero-rule {
+  height: 2px;
+  background: var(--color-accent-cyan-wash); /* Reusing a pale blue from variables */
+  border-radius: 2px;
+  transform: scaleX(0);
+  transform-origin: left;
+  width: 78px;
+  opacity: 0;
+  animation: sweep .5s var(--e) .40s forwards;
+}
+
+.login-hero-foot {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  text-align: center;
+  opacity: 0;
+  animation: rise .4s var(--e) 2.60s forwards;
+}
+
+.login-hero-va__row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  width: 100%;
+}
+
+.login-hero-va__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+}
+
+.login-hero-ico,
+.login-hero-lb,
+.login-hero-sb {
+  opacity: 0;
+}
+
+.login-hero-ico {
+  animation: rise .45s var(--e) var(--d) forwards;
+}
+
+.login-hero-lb {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -.01em;
+  color: var(--color-navy-900);
+  min-height: 2.5em;
+  animation: rise .45s var(--e) calc(var(--d) + .18s) forwards;
+}
+
+.login-hero-sb {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  line-height: 1.3;
+  max-width: 19ch;
+  animation: rise .45s var(--e) calc(var(--d) + .26s) forwards;
+}
+
+/* Icons */
+.login-hero-ic { width: 42px; height: 42px; display: block; }
+.login-hero-ic path, .login-hero-ic circle {
+  stroke: var(--color-navy-900);
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.login-hero-ic .login-hero-tk { stroke: var(--color-accent-cyan); stroke-width: 2.2; }
+.login-hero-ic .login-hero-nd { fill: #fff; }
+.login-hero-ic .n3 { fill: var(--color-accent-cyan); }
+.login-hero-ic .login-hero-dot { fill: var(--color-navy-900); stroke: none; }
+
+.login-hero-dr, .login-hero-ck, .login-hero-tk {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+
+.login-hero-dr { animation: draw .62s var(--e) calc(var(--d) + .12s) forwards; }
+.login-hero-tk { animation: draw .45s var(--e) calc(var(--d) + .40s) forwards; }
+.login-hero-ck { animation: draw .40s var(--e) calc(var(--d) + .55s) forwards; }
+
+.login-hero-nd, .login-hero-dot {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: pop .3s var(--e) calc(var(--d) + .55s) forwards;
+}
+.login-hero-va__item .n2,
+.login-hero-va__item .d2 { animation-delay: calc(var(--d) + .65s); }
+.login-hero-va__item .n3,
+.login-hero-va__item .d3 { animation-delay: calc(var(--d) + .75s); }
+
+@keyframes draw { to { stroke-dashoffset: 0; } }
+@keyframes rise { from { opacity: 0; transform: translateY(13px); } to { opacity: 1; transform: none; } }
+@keyframes pop { from { opacity: 0; transform: scale(.4); } to { opacity: 1; transform: none; } }
+@keyframes sweep { 
+  0% { transform: scaleX(0); opacity: 1; }
+  100% { transform: scaleX(1); opacity: 1; } 
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-hero-stage * { animation: none !important; }
+  .login-hero-dr, .login-hero-ck, .login-hero-tk { stroke-dashoffset: 0 !important; }
+  .login-hero-hl, .login-hero-foot, .login-hero-ico, .login-hero-lb, .login-hero-sb,
+  .login-hero-nd, .login-hero-dot {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .login-hero-rule { opacity: 1 !important; transform: scaleX(1) !important; }
+}
