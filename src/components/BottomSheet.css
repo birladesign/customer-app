@@ -1,11 +1,20 @@
 .bottom-sheet-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(17, 24, 39, 0.4);
   display: flex;
   align-items: flex-end;
   justify-content: center;
   z-index: 50;
+}
+
+/* The dim is its own layer so it can track the drag frame by frame (the sheet
+   pulling away lightens it) while the overlay above keeps owning the plain
+   fade in and out. One element can't do both without the two fighting over
+   opacity. */
+.bottom-sheet-overlay__scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.4);
 }
 
 /* Solid, not glass — a sheet like Tracking Updates is mostly text, and text

@@ -105,3 +105,13 @@
     --glass-blur: none;
   }
 }
+
+/* Increased contrast asks for the opposite of glass: chrome should read as a
+   surface of its own rather than something the content shows through, so the
+   ground goes fully solid and the blur goes away entirely. */
+@media (prefers-contrast: more) {
+  :root {
+    --glass-bg: rgb(224, 228, 236);
+    --glass-blur: none;
+  }
+}
