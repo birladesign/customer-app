@@ -21,6 +21,7 @@ import MattressVerdictStep from './MattressVerdictStep.jsx';
 import MattressVariantStep from './MattressVariantStep.jsx';
 import WrongItemEvidenceStep from './WrongItemEvidenceStep.jsx';
 import WrongItemTicketStep from './WrongItemTicketStep.jsx';
+import RequestCreatedStep from './RequestCreatedStep.jsx';
 import OptionsStep from './OptionsStep.jsx';
 import RefundMethodStep from './RefundMethodStep.jsx';
 import ApprovalPendingStep from './ApprovalPendingStep.jsx';
@@ -28,6 +29,10 @@ import ExecutionStep from './ExecutionStep.jsx';
 import './ReturnReplaceFlow.css';
 
 const STEP_TITLES = {
+  // The flow's own entrance step (§9) — a ticket exists before any reason is
+  // even picked, same "agent will connect" language as a needsApproval
+  // lever's own terminal screen, since it's the same kind of moment.
+  requestCreated: 'Request Sent',
   // Reason and evidence used to be two separate steps/taps — merged into
   // one screen (EvidenceStep now owns both), so one title covers both.
   evidence: "What's the issue?",
@@ -151,6 +156,12 @@ export default function ReturnReplaceFlow({ params }) {
   const [receivedDetail, setReceivedDetail] = useState('');
   const [wrongItemTicketId, setWrongItemTicketId] = useState(null);
   const wrongItemTicketCreatedRef = useRef(false);
+  // The flow's entrance ticket — opened the moment the flow itself mounts,
+  // before any reason is even picked, so an agent is already in the loop
+  // regardless of category (mattress or generic) or which lever this ends
+  // up as.
+  const [requestTicketId, setRequestTicketId] = useState(null);
+  const requestOpenedRef = useRef(false);
   const directionRef = useRef(1);
   // Return for Refund hands off to a human agent instead of resolving
   // automatically — "Request Return" is the one moment that's true, so a
@@ -261,11 +272,18 @@ export default function ReturnReplaceFlow({ params }) {
       : showVariantStep
       ? baseStepKeys.flatMap((k) => (k === 'execution' ? ['variant', 'execution'] : [k]))
       : baseStepKeys;
-  const stepKeys = isMattress
-    ? selectedLever === 'return'
-      ? MATTRESS_STEPS_RETURN
-      : MATTRESS_STEPS_REPLACE
-    : stepKeysWithVariant;
+  // Every category (mattress or generic) and either lever starts the same
+  // way now: a ticket already exists before the customer has said anything
+  // about what's wrong, so an agent is in the loop from the first screen —
+  // everything from "What's the issue?" onward is unchanged.
+  const stepKeys = [
+    'requestCreated',
+    ...(isMattress
+      ? selectedLever === 'return'
+        ? MATTRESS_STEPS_RETURN
+        : MATTRESS_STEPS_REPLACE
+      : stepKeysWithVariant),
+  ];
   const stepCount = stepKeys.length;
   const currentKey = stepKeys[step] ?? stepKeys[stepKeys.length - 1];
   // A needsApproval lever (currently only Return for Refund) ends the flow
@@ -345,14 +363,16 @@ export default function ReturnReplaceFlow({ params }) {
   }
 
   // Switches the lever and jumps to whatever comes right after the reason
-  // screen for a replace journey — index 1 lands on 'mattressVariant' for a
-  // mattress or 'variant'/'execution' for the generic flow (both occupy
-  // that same position — see stepKeys above), so this works without
-  // needing to recompute the array here.
+  // screen for a replace journey — 'mattressVariant' for a mattress or
+  // 'variant'/'execution' for the generic flow (both occupy the same
+  // position relative to the reason screen — see stepKeys above). Found by
+  // name rather than a hardcoded index, since the entrance step ahead of it
+  // shifts that index around.
   function handleNudgeReplaceInstead() {
     setSelectedLever('replace');
     setReturnNudgeOpen(false);
-    goToStep(1);
+    const reasonKey = isMattress ? 'mattressReason' : 'evidence';
+    goToStep(stepKeys.indexOf(reasonKey) + 1);
   }
 
   // Changing the reason invalidates a fault answer given for the previous
@@ -656,6 +676,41 @@ export default function ReturnReplaceFlow({ params }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentKey, needsApproval]);
 
+  // The entrance ticket — opened once, the moment the flow itself mounts.
+  // Neither reason nor lever is known yet, so this is deliberately a plain
+  // "a request exists" record; whichever specific-outcome case the rest of
+  // the flow writes later (handleSubmitReturnRequest, applyBooking, ...)
+  // stands on its own, same as a real support ticket gets updated as the
+  // conversation progresses rather than replaced by a new one.
+  useEffect(() => {
+    if (!order || requestOpenedRef.current) return;
+    requestOpenedRef.current = true;
+    const record = createCase({
+      lane: 'returns',
+      prefix: CASE_PREFIX.returnReplace,
+      order,
+      item: item ?? null,
+      description: `Return/replacement request opened for ${splitProductSpec(target.product).name}`,
+      hasPhoto: false,
+      escalate: true,
+      messages: [],
+      intent: 'returnReplace',
+      family: isMattress ? 'mattress' : 'non_mattress',
+      reason: null,
+      whoErred: null,
+      ruleTrace: [],
+      verdict: null,
+      offered: [],
+      chosen: null,
+      outcome: 'opened',
+    });
+    setRequestTicketId(record.id);
+    // Runs once per flow instance (guarded by requestOpenedRef) — every
+    // dependency here is fixed for the lifetime of that instance (the order
+    // being opened against), so there's nothing to re-run on.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [order]);
+
   const direction = directionRef.current;
 
   if (!order) {
@@ -704,6 +759,9 @@ export default function ReturnReplaceFlow({ params }) {
             exit={reduceMotion ? { opacity: 0 } : { x: direction > 0 ? '-30%' : '100%', opacity: direction > 0 ? 0.6 : 1 }}
             transition={reduceMotion ? DURATION_REDUCED : SPRING_STANDARD}
           >
+            {currentKey === 'requestCreated' && (
+              <RequestCreatedStep order={target} price={itemPrice} ticketId={requestTicketId} onContinue={goNext} />
+            )}
             {currentKey === 'mattressReason' && (
               <MattressReasonStep
                 order={target}

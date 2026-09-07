@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { splitProductSpec, getShipmentStatus, getExpectedDelivery, getDeliveredDate } from '../data/orders.js';
+import { getShipmentAddressEditEligibility } from '../data/intents.js';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
 import { CopyIcon, CheckIcon, ChevronRightIcon, CalendarIcon, MapPinIcon } from './icons.jsx';
 import CardMoreMenu from './CardMoreMenu.jsx';
@@ -90,6 +91,9 @@ function SameProductShipmentCard({ orders, first }) {
   const edd = getExpectedDelivery(first);
   const deliveredDate = getDeliveredDate(first);
   const totalQty = orders.reduce((sum, o) => sum + (o.qty || 1), 0);
+  // Every unit in the shipment travels together, so the button is only ever
+  // on the table while all of them are still pre-dispatch (§8.2).
+  const canEditAddress = getShipmentAddressEditEligibility(orders).enabled;
 
   function handleEditAddress(e) {
     e.stopPropagation();
@@ -123,10 +127,12 @@ function SameProductShipmentCard({ orders, first }) {
           <div className="order-card__header-row2">
             <span className="order-card__date">{first.date}</span>
             <span className="order-card__header-right">
-              <button className="order-card__edit-address-btn" onClick={handleEditAddress}>
-                <MapPinIcon width="13" height="13" />
-                Edit Address
-              </button>
+              {canEditAddress && (
+                <button className="order-card__edit-address-btn" onClick={handleEditAddress}>
+                  <MapPinIcon width="13" height="13" />
+                  Edit Address
+                </button>
+              )}
               <CardMoreMenu onReschedule={handleRescheduleDelivery} onNeedHelp={handleNeedHelp} />
             </span>
           </div>
@@ -193,6 +199,9 @@ function MultiProductShipmentCard({ orders, first }) {
   // board means nothing new to say per row; a real difference (e.g. one
   // unit flagged after delivery) still needs its own row to call it out.
   const allUnitsSameStatus = orders.every((o) => o.status.label === orders[0].status.label);
+  // Every unit in the shipment travels together, so the button is only ever
+  // on the table while all of them are still pre-dispatch (§8.2).
+  const canEditAddress = getShipmentAddressEditEligibility(orders).enabled;
 
   function handleEditAddress(e) {
     e.stopPropagation();
@@ -215,10 +224,12 @@ function MultiProductShipmentCard({ orders, first }) {
           <div className="order-card__header-row2">
             <span className="order-card__date">{first.date}</span>
             <span className="order-card__header-right">
-              <button className="order-card__edit-address-btn" onClick={handleEditAddress}>
-                <MapPinIcon width="13" height="13" />
-                Edit Address
-              </button>
+              {canEditAddress && (
+                <button className="order-card__edit-address-btn" onClick={handleEditAddress}>
+                  <MapPinIcon width="13" height="13" />
+                  Edit Address
+                </button>
+              )}
               <CardMoreMenu onReschedule={handleRescheduleDelivery} onNeedHelp={handleNeedHelp} />
             </span>
           </div>

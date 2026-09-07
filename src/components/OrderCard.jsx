@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { splitProductSpec, getOrderStatus, getExpectedDelivery, getDeliveredDate, resumeOrder } from '../data/orders.js';
 import { getOpenCaseForOrder } from '../data/support.js';
+import { getAddressEditEligibility } from '../data/intents.js';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
 import { CopyIcon, CheckIcon, ChevronRightIcon, WalletIcon, CheckCircleIcon, CalendarIcon, MapPinIcon } from './icons.jsx';
 import StarRating from './StarRating.jsx';
@@ -89,6 +90,11 @@ export default function OrderCard({ order }) {
   // gap where nothing says which day it actually arrived.
   const deliveredDate = !caption && status.label === 'Delivered' ? getDeliveredDate(order) : null;
   const visibleActions = actions.filter((a) => !a.label.startsWith('Track'));
+  // Once the courier has it (in transit, shipped, out for delivery,
+  // delivered, ...) the address on file has already been handed over —
+  // editing it here would be a no-op at best, so the CTA disappears rather
+  // than opening a screen that just says "locked" (§8.2).
+  const canEditAddress = getAddressEditEligibility(order).enabled;
   // No backend in this prototype — mutate the shared order object in place
   // (same pattern as elsewhere) so Order Details reflects the same rating
   // if the customer taps through after rating from the list.
@@ -173,10 +179,12 @@ export default function OrderCard({ order }) {
           <div className="order-card__header-row2">
             <span className="order-card__date">{order.date}</span>
             <span className="order-card__header-right">
-              <button className="order-card__edit-address-btn" onClick={handleEditAddress}>
-                <MapPinIcon width="13" height="13" />
-                Edit Address
-              </button>
+              {canEditAddress && (
+                <button className="order-card__edit-address-btn" onClick={handleEditAddress}>
+                  <MapPinIcon width="13" height="13" />
+                  Edit Address
+                </button>
+              )}
               <CardMoreMenu onReschedule={handleRescheduleDelivery} onNeedHelp={handleMoreHelp} />
             </span>
           </div>
