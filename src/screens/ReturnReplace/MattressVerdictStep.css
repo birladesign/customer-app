@@ -42,10 +42,19 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
   padding: var(--space-2) var(--space-3);
+  font-family: inherit;
   font-size: var(--text-body-size);
   font-weight: 600;
   color: var(--color-text-primary);
   background: var(--color-bg-app);
+  cursor: pointer;
+  transition: all 0.1s ease-out;
+}
+
+.mattress-verdict__chip--selected {
+  border-color: var(--color-navy-900);
+  background: var(--color-navy-900);
+  color: var(--color-text-inverse);
 }
 
 .mattress-verdict__refund-row {
@@ -93,7 +102,13 @@
   transition: transform 0.1s ease-out;
 }
 
-.mattress-verdict__primary:active {
+.mattress-verdict__primary:disabled {
+  background: var(--color-disabled-bg);
+  color: var(--color-disabled-text);
+  cursor: not-allowed;
+}
+
+.mattress-verdict__primary:not(:disabled):active {
   transform: scale(0.97);
 }
 
@@ -148,7 +163,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .mattress-verdict__primary:active,
+  .mattress-verdict__primary:not(:disabled):active,
   .mattress-verdict__lever-card:active {
     transform: none;
   }

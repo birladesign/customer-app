@@ -497,7 +497,7 @@ export default function ReturnReplaceFlow({ params }) {
   // machinery below — each files its own case and returns straight to
   // Order Details, the same "receipt already shown, nothing left to track
   // here" shape as ApprovalPendingStep.
-  function handleAcceptTopper() {
+  function handleAcceptTopper(topperType) {
     // The retention ladder's whole point (§7.11, §13): a topper accepted is a
     // replacement/return that didn't happen, and that only counts if it's on
     // the record. `topper_provided` is the state the PRD tracks here.
@@ -506,7 +506,7 @@ export default function ReturnReplaceFlow({ params }) {
       prefix: CASE_PREFIX.returnReplace,
       order,
       item: item ?? null,
-      description: 'Comfort topper requested (retention offer accepted)',
+      description: `Comfort topper requested (${topperType}, retention offer accepted)`,
       hasPhoto: Boolean(photo?.length),
       escalate: false,
       messages: [],

@@ -12,6 +12,7 @@ function formatRupees(amount) {
 // three screens deep before the customer even gets to Replace/Return.
 function RetentionLadder({ onAcceptTopper, onChooseLever }) {
   const [stage, setStage] = useState('education');
+  const [selectedTopper, setSelectedTopper] = useState(null);
 
   if (stage === 'education') {
     return (
@@ -41,11 +42,25 @@ function RetentionLadder({ onAcceptTopper, onChooseLever }) {
             soft, sent at no cost.
           </p>
           <div className="mattress-verdict__chip-row">
-            <span className="mattress-verdict__chip">Firm Topper</span>
-            <span className="mattress-verdict__chip">Soft Topper</span>
+            <button
+              className={`mattress-verdict__chip${selectedTopper === 'firm' ? ' mattress-verdict__chip--selected' : ''}`}
+              onClick={() => setSelectedTopper('firm')}
+            >
+              Firm Topper
+            </button>
+            <button
+              className={`mattress-verdict__chip${selectedTopper === 'soft' ? ' mattress-verdict__chip--selected' : ''}`}
+              onClick={() => setSelectedTopper('soft')}
+            >
+              Soft Topper
+            </button>
           </div>
         </div>
-        <button className="mattress-verdict__primary" onClick={onAcceptTopper}>
+        <button
+          className="mattress-verdict__primary"
+          disabled={!selectedTopper}
+          onClick={() => onAcceptTopper(selectedTopper)}
+        >
           Send Me a Topper
         </button>
         <button className="mattress-verdict__secondary" onClick={() => setStage('replacement')}>
