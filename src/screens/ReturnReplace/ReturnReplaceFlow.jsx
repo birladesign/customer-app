@@ -19,6 +19,8 @@ import EvidenceStep from './EvidenceStep.jsx';
 import MattressReasonStep from './MattressReasonStep.jsx';
 import MattressVerdictStep from './MattressVerdictStep.jsx';
 import MattressVariantStep from './MattressVariantStep.jsx';
+import WrongItemEvidenceStep from './WrongItemEvidenceStep.jsx';
+import WrongItemTicketStep from './WrongItemTicketStep.jsx';
 import OptionsStep from './OptionsStep.jsx';
 import RefundMethodStep from './RefundMethodStep.jsx';
 import ApprovalPendingStep from './ApprovalPendingStep.jsx';
@@ -34,6 +36,8 @@ const STEP_TITLES = {
   mattressReason: "What's the issue?",
   mattressVariant: 'Choose Model & Size',
   variant: 'Choose Replacement Details',
+  wrongItemEvidence: 'What did you receive?',
+  wrongItemTicket: 'Ticket Raised',
 };
 
 function withSpec(name, spec) {
@@ -140,6 +144,13 @@ export default function ReturnReplaceFlow({ params }) {
   // SKU-level price difference for a different size/height, never a
   // shipping charge (see MattressVariantStep).
   const [variantPriceDelta, setVariantPriceDelta] = useState(0);
+  // M2's evidence-of-mismatch, kept separate from the reason screen's own
+  // (optional) photo — that one documents the reason picked, this one
+  // documents specifically what showed up instead of what was ordered.
+  const [wrongItemPhoto, setWrongItemPhoto] = useState([]);
+  const [receivedDetail, setReceivedDetail] = useState('');
+  const [wrongItemTicketId, setWrongItemTicketId] = useState(null);
+  const wrongItemTicketCreatedRef = useRef(false);
   const directionRef = useRef(1);
   // Return for Refund hands off to a human agent instead of resolving
   // automatically — "Request Return" is the one moment that's true, so a
@@ -164,15 +175,15 @@ export default function ReturnReplaceFlow({ params }) {
   const skipOptions = Boolean(
     presetLever && (!reason || getRemediationOptions(order, reason).some((o) => o.id === presetLever))
   );
-  // "Wrong size or model" + Replace is the obvious case for asking which
-  // model/color/size the customer actually wants instead of shipping back a
-  // like-for-like unit — but Discomfort can just as easily mean "I don't
-  // get on with this specific model", so it gets the same choice rather
-  // than a mystery "Replacement Requested" that never says what changed.
-  const VARIANT_ELIGIBLE_REASONS = ['Wrong size or model', 'Discomfort / Not as expected'];
+  // Confirming a new size/model is only a real question when the customer
+  // themselves ordered the wrong one — picking again is their call to make.
+  // When TSC shipped the wrong item, there's nothing to pick: the
+  // replacement is simply the item they originally ordered (see
+  // needsWrongItemEvidence below).
   const showVariantStep = Boolean(
     !isMattress &&
-      VARIANT_ELIGIBLE_REASONS.includes(reason) &&
+      reason === 'Wrong size or model' &&
+      faultAttribution === 'customer' &&
       selectedLever === 'replace' &&
       target &&
       getVariants(splitProductSpec(target.product).name)
@@ -207,6 +218,13 @@ export default function ReturnReplaceFlow({ params }) {
   // of its own to show first (M4 past the 10-day window has to insist).
   const isWrongSizeModel = isMattress && reason === 'wrongSizeModel';
   const skipVerdictSheet = isWrongSizeModel && verdict && !verdict.retention;
+  // TSC's own mistake (M2) — the customer never chose a new size/model, so a
+  // replacement here ships the exact thing they originally ordered, verified
+  // first rather than booked instantly. Shared by both the mattress and
+  // generic (chair/sofa/...) paths, since who-erred is asked identically in
+  // both — see EvidenceStep/MattressReasonStep's shared FAULT_OPTIONS.
+  const needsWrongItemEvidence =
+    reason === (isMattress ? 'wrongSizeModel' : 'Wrong size or model') && faultAttribution === 'tsc';
   const reasonLabel = isMattress ? MATTRESS_REASONS.find((r) => r.key === reason)?.label ?? reason : reason;
   const offeredLevers = isMattress
     ? verdict?.leverOptions ?? []
@@ -225,11 +243,24 @@ export default function ReturnReplaceFlow({ params }) {
   // the reason screen instead of its own page — it's a quick decision, not
   // a destination — so it's no longer one of these named steps.
   const MATTRESS_STEPS_RETURN = ['mattressReason', 'refundMethod', 'execution'];
-  const MATTRESS_STEPS_REPLACE = ['mattressReason', 'mattressVariant', 'execution'];
+  // A replace only earns a variant-picking step for "wrong size or model" —
+  // every other mattress reason (damaged, discomfort, sagging, smell) ships
+  // a like-for-like replacement, not a new pick. Within "wrong size or
+  // model" itself, TSC's own mistake (needsWrongItemEvidence) routes through
+  // the evidence+ticket sub-flow instead, since there's nothing to pick
+  // there either.
+  const MATTRESS_STEPS_REPLACE = needsWrongItemEvidence
+    ? ['mattressReason', 'wrongItemEvidence', 'wrongItemTicket']
+    : isWrongSizeModel
+    ? ['mattressReason', 'mattressVariant', 'execution']
+    : ['mattressReason', 'execution'];
   const baseStepKeys = selectedLever === 'return' ? STEPS_WITH_REFUND : STEPS_WITHOUT_REFUND;
-  const stepKeysWithVariant = showVariantStep
-    ? baseStepKeys.flatMap((k) => (k === 'execution' ? ['variant', 'execution'] : [k]))
-    : baseStepKeys;
+  const stepKeysWithVariant =
+    needsWrongItemEvidence && selectedLever === 'replace'
+      ? baseStepKeys.flatMap((k) => (k === 'execution' ? ['wrongItemEvidence', 'wrongItemTicket'] : [k]))
+      : showVariantStep
+      ? baseStepKeys.flatMap((k) => (k === 'execution' ? ['variant', 'execution'] : [k]))
+      : baseStepKeys;
   const stepKeys = isMattress
     ? selectedLever === 'return'
       ? MATTRESS_STEPS_RETURN
@@ -344,6 +375,62 @@ export default function ReturnReplaceFlow({ params }) {
   // has to happen before leaving, or My Orders shows nothing was requested.
   function handleApprovalDone() {
     applyBooking();
+    goBack();
+  }
+
+  // M2 (TSC's mistake) — the ticket itself is raised the moment the evidence
+  // is submitted, same as Return-for-Refund's own ticket (handleSubmitReturnRequest),
+  // so it exists even if the customer never taps through to the confirmation.
+  function handleWrongItemEvidenceContinue() {
+    if (!wrongItemTicketCreatedRef.current) {
+      wrongItemTicketCreatedRef.current = true;
+      const record = createCase({
+        lane: 'returns',
+        prefix: CASE_PREFIX.returnReplace,
+        order,
+        item: item ?? null,
+        description: `Wrong item received — customer reports receiving ${receivedDetail}`,
+        hasPhoto: Boolean(wrongItemPhoto?.length),
+        escalate: true,
+        messages: [],
+        intent: 'returnReplace',
+        family: isMattress ? 'mattress' : 'non_mattress',
+        reason: reasonLabel,
+        whoErred: faultAttribution,
+        ruleTrace: verdict?.rule ? [verdict.rule] : [],
+        verdict: verdict ?? null,
+        offered: offeredLevers,
+        chosen: 'replace',
+        outcome: 'verification_pending',
+      });
+      setWrongItemTicketId(record.id);
+    }
+    goNext();
+  }
+
+  // Same split as Return-for-Refund: the ticket already exists (written at
+  // submit time above), but the order/item-side state — what My Orders and
+  // Order Details actually show — only has to be true before leaving this
+  // screen, not before the confirmation renders.
+  function handleWrongItemDone() {
+    const newStatus = { dot: 'blue', label: 'Replacement Requested — Verification Pending' };
+    const description = "We're verifying the item you received before shipping your original order.";
+    if (item) {
+      Object.assign(item, { status: newStatus });
+      item.timeline?.steps.push({ label: newStatus.label, timestamp: null, description });
+      if (item.timeline) item.timeline.currentIndex = item.timeline.steps.length - 1;
+    } else {
+      Object.assign(order, {
+        section: 'inProgress',
+        status: newStatus,
+        intentOverrides: {
+          ...order.intentOverrides,
+          returnReplace: 'A replacement request is already awaiting verification for this order',
+        },
+      });
+      order.timeline?.steps.push({ label: newStatus.label, timestamp: null, description });
+      if (order.timeline) order.timeline.currentIndex = order.timeline.steps.length - 1;
+    }
     goBack();
   }
 
@@ -653,6 +740,21 @@ export default function ReturnReplaceFlow({ params }) {
             )}
             {currentKey === 'variant' && (
               <MattressVariantStep order={target} price={itemPrice} onContinue={handleVariantContinue} />
+            )}
+            {currentKey === 'wrongItemEvidence' && (
+              <WrongItemEvidenceStep
+                order={target}
+                price={itemPrice}
+                savings={itemSavings}
+                photo={wrongItemPhoto}
+                onPhotoChange={setWrongItemPhoto}
+                receivedDetail={receivedDetail}
+                onReceivedDetailChange={setReceivedDetail}
+                onContinue={handleWrongItemEvidenceContinue}
+              />
+            )}
+            {currentKey === 'wrongItemTicket' && (
+              <WrongItemTicketStep order={target} ticketId={wrongItemTicketId} onDone={handleWrongItemDone} />
             )}
             {currentKey === 'refundMethod' && (
               <RefundMethodStep

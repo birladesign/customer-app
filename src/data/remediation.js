@@ -40,7 +40,14 @@ export function getRemediationOptions(order, reason) {
   switch (reason) {
     case 'Missing parts':
       return [
-        { id: 'sendPart', label: LEVER_LABELS.sendPart, chargeLabel: 'No charge', description: 'We ship the missing part directly — no need to send anything back.', needsApproval: false, ...base },
+        {
+          id: 'sendPart',
+          label: LEVER_LABELS.sendPart,
+          chargeLabel: 'No charge',
+          description: "We'll confirm exactly what's missing, then ship it directly — no need to send anything back.",
+          needsApproval: false,
+          ...base,
+        },
       ];
     case 'Damaged':
     case 'Defective / Not working':
@@ -65,7 +72,15 @@ export function getRemediationOptions(order, reason) {
 export function getExecutionSteps(leverId) {
   switch (leverId) {
     case 'sendPart':
-      return { steps: [{ label: 'Part Dispatched' }, { label: 'Out for Delivery' }, { label: 'Delivered' }], currentIndex: 0 };
+      // Nothing has actually shipped the moment this is booked — a support
+      // agent still has to confirm which part is missing before an order for
+      // it exists at all. "Part Dispatched" as the *current* step (not yet
+      // reached) would read as already in motion; "Request Created" is the
+      // one thing that's actually true right now.
+      return {
+        steps: [{ label: 'Request Created' }, { label: 'Part Confirmed' }, { label: 'Dispatched' }, { label: 'Delivered' }],
+        currentIndex: 0,
+      };
     case 'replace':
       return { steps: [{ label: 'Replacement Confirmed' }, { label: 'Pickup Scheduled' }, { label: 'New Item Dispatched' }, { label: 'Delivered' }], currentIndex: 0 };
     case 'return':
@@ -82,7 +97,7 @@ export function getExecutionSteps(leverId) {
 // used by the hand-authored in-progress demo orders (TSC85611, TSC83940).
 const POST_BOOKING_COPY = {
   sendPart: {
-    description: 'Missing part requested — track its delivery below.',
+    description: "Request received — we'll confirm what's missing and get it shipped. Track progress below.",
     actions: [{ label: 'Track Order', variant: 'secondary' }],
     overrideReason: 'A missing-part request is already in progress for this order',
   },

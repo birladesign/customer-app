@@ -14,7 +14,11 @@ import './ExecutionStep.css';
 // confirmation and no reference the customer could quote.
 
 const LEVER_CONFIRMATION = {
-  sendPart: 'Replacement part on its way',
+  // Nothing has shipped yet — a support agent still has to confirm which
+  // part is actually missing before an order for it exists (see
+  // getExecutionSteps in data/remediation.js). "On its way" would claim
+  // progress that hasn't happened.
+  sendPart: 'Missing-part request received',
   replace: 'Replacement Requested',
   return: 'Return booked',
 };
@@ -41,6 +45,8 @@ export default function ExecutionStep({
   const refundNote =
     leverId === 'return'
       ? "Once the quality check is passed, we'll refund to your original payment method within 2–5 business days."
+      : leverId === 'sendPart'
+      ? "A support agent will confirm exactly which part is missing, then create an order to ship it. We'll keep you updated right here and in My Orders."
       : `We'll keep you updated on ${order.product} right here and in My Orders.`;
 
   return (
