@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { splitProductSpec, getExpectedDelivery } from '../data/orders.js';
+import { getShipmentAddressEditEligibility } from '../data/intents.js';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
 import { CopyIcon, CheckIcon, ChevronRightIcon, CalendarIcon, MapPinIcon } from './icons.jsx';
 import CardMoreMenu from './CardMoreMenu.jsx';
@@ -63,6 +64,11 @@ export default function MultiShipmentOrderCard({ order }) {
     }, {})
   );
 
+  // The one button spans every shipment under this order, so it's only ever
+  // on the table while every one of them is still pre-dispatch (§8.2) — one
+  // shipment already picked up is enough to lock it for the whole order.
+  const canEditAddress = getShipmentAddressEditEligibility(order.items).enabled;
+
   function handleEditAddress(e) {
     e.stopPropagation();
     navigate('editOrder', { orderId: order.id, sku: order.items[0].sku });
@@ -76,10 +82,12 @@ export default function MultiShipmentOrderCard({ order }) {
           <div className="order-card__header-row2">
             <span className="order-card__date">{order.date}</span>
             <span className="order-card__header-right">
-              <button className="order-card__edit-address-btn" onClick={handleEditAddress}>
-                <MapPinIcon width="13" height="13" />
-                Edit Address
-              </button>
+              {canEditAddress && (
+                <button className="order-card__edit-address-btn" onClick={handleEditAddress}>
+                  <MapPinIcon width="13" height="13" />
+                  Edit Address
+                </button>
+              )}
             </span>
           </div>
         </div>
