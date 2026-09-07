@@ -74,13 +74,13 @@ export default function EvidenceStep({ order, reason, onSelectReason, price, sav
         onChange={(e) => setNote(e.target.value)}
       />
 
-      <button className="evidence-step__continue" disabled={!reason || !photo} onClick={onContinue}>
+      <button className="evidence-step__continue" disabled={!reason || !photo?.length} onClick={onContinue}>
         Continue
       </button>
       {!reason ? (
         <p className="evidence-step__hint">Choose a reason to proceed.</p>
       ) : (
-        !photo && <p className="evidence-step__hint">A photo is required to proceed.</p>
+        !photo?.length && <p className="evidence-step__hint">A photo is required to proceed.</p>
       )}
     </div>
   );

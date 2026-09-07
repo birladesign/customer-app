@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { ORDERS, splitProductSpec, getDeliveredDate } from '../../data/orders.js';
 import { getRemediationOptions, getPostBookingUpdate } from '../../data/remediation.js';
@@ -15,7 +15,6 @@ import MattressVerdictStep from './MattressVerdictStep.jsx';
 import MattressVariantStep from './MattressVariantStep.jsx';
 import OptionsStep from './OptionsStep.jsx';
 import RefundMethodStep from './RefundMethodStep.jsx';
-import ExecutionStep from './ExecutionStep.jsx';
 import ApprovalPendingStep from './ApprovalPendingStep.jsx';
 import './ReturnReplaceFlow.css';
 
@@ -23,7 +22,6 @@ const STEP_TITLES = {
   // Reason and evidence used to be two separate steps/taps — merged into
   // one screen (EvidenceStep now owns both), so one title covers both.
   evidence: "What's the issue?",
-  options: 'Choose an option',
   refundMethod: 'Confirm Refund',
   execution: 'Tracking it',
   mattressReason: "What's the issue?",
@@ -37,9 +35,12 @@ function withSpec(name, spec) {
 
 // Refund method + pickup confirmation only makes sense for "Return for
 // Refund" — replace/sendPart never move money, so those levers skip
-// straight from Options to Execution instead of carrying a dead step.
-const STEPS_WITH_REFUND = ['evidence', 'options', 'refundMethod', 'execution'];
-const STEPS_WITHOUT_REFUND = ['evidence', 'options', 'execution'];
+// straight to Execution instead of carrying a dead step. Options ("Choose
+// an option") isn't in here either — like the mattress verdict, it's a
+// quick decision that surfaces as a bottom sheet over the reason screen,
+// not a destination of its own.
+const STEPS_WITH_REFUND = ['evidence', 'refundMethod', 'execution'];
+const STEPS_WITHOUT_REFUND = ['evidence', 'execution'];
 
 export default function ReturnReplaceFlow({ params }) {
   const { goBack } = useNavigation();
@@ -75,13 +76,20 @@ export default function ReturnReplaceFlow({ params }) {
 
   const [step, setStep] = useState(0);
   const [reason, setReason] = useState(null);
-  const [photo, setPhoto] = useState(null);
+  const [photo, setPhoto] = useState([]);
   const [selectedLever, setSelectedLever] = useState(presetLever);
   const [ticketId, setTicketId] = useState(null);
-  // MattressVerdictStep ("Next Steps") renders as a bottom sheet layered on
-  // the reason screen rather than its own step — this is independent of
-  // `step`/stepKeys, which only track full-page navigation.
+  // MattressVerdictStep ("Next Steps") and the generic OptionsStep ("Choose
+  // an option") both render as a bottom sheet layered on the reason screen
+  // rather than their own step — independent of `step`/stepKeys, which only
+  // track full-page navigation.
   const [verdictSheetOpen, setVerdictSheetOpen] = useState(false);
+  const [optionsSheetOpen, setOptionsSheetOpen] = useState(false);
+  // "Request Return" nudges toward Replace first (free, no wait for a
+  // refund) whenever Replace is actually on the table for this reason —
+  // the same cheapest-first ordering the retention ladder already applies
+  // elsewhere (§7.2), just one more prompt before Return actually commits.
+  const [returnNudgeOpen, setReturnNudgeOpen] = useState(false);
   // M8 (smell, ≤2 days) is advice-only — "it still smells" after following
   // that advice is what actually promotes it to M9's replace/return path,
   // not a fixed day count, so this overrides the real elapsed days once hit.
@@ -103,6 +111,14 @@ export default function ReturnReplaceFlow({ params }) {
   // ref guards against creating a second ticket if the customer goes back
   // to RefundMethodStep and submits again.
   const ticketCreatedRef = useRef(false);
+  // A self-serve action (sendPart/replace/mattress replace or return) never
+  // needed a human, so there's nothing to wait for once it's booked — the
+  // status update applies itself the instant this step is reached, and the
+  // customer lands straight back on Order Details (which already shows the
+  // tracker/status this would otherwise have repeated on its own page).
+  // Return-for-Refund still stops at ApprovalPendingStep first — a human
+  // review really is pending there, so that confirmation stays.
+  const journeyCompletedRef = useRef(false);
 
   // Only skip Options while the preset lever is still actually on offer for
   // whatever reason gets picked — "Missing parts" only offers Send Part, so
@@ -142,6 +158,12 @@ export default function ReturnReplaceFlow({ params }) {
         })
       : null;
   const proRataAmount = verdict?.proRata ? proRataRefund(itemPrice, deliveredDateStr) : 0;
+  // Whether Replace is actually a real alternative to offer at the return
+  // nudge — "Missing parts" only ever offers Send Part, and M6/M8's own
+  // proRata/advice-only verdicts never put Replace on the table either.
+  const canReplaceInstead = isMattress
+    ? Boolean(verdict?.leverOptions?.includes('replace'))
+    : Boolean(reason && getRemediationOptions(order, reason).some((o) => o.id === 'replace'));
 
   // "Next Steps" (MattressVerdictStep) now surfaces as a bottom sheet over
   // the reason screen instead of its own page — it's a quick decision, not
@@ -156,8 +178,6 @@ export default function ReturnReplaceFlow({ params }) {
     ? selectedLever === 'return'
       ? MATTRESS_STEPS_RETURN
       : MATTRESS_STEPS_REPLACE
-    : skipOptions
-    ? stepKeysWithVariant.filter((k) => k !== 'options')
     : stepKeysWithVariant;
   const stepCount = stepKeys.length;
   const currentKey = stepKeys[step] ?? stepKeys[stepKeys.length - 1];
@@ -201,13 +221,41 @@ export default function ReturnReplaceFlow({ params }) {
         order,
         item: item ?? null,
         description: `Return requested — ${reason}`,
-        hasPhoto: Boolean(photo),
+        hasPhoto: Boolean(photo?.length),
         escalate: true,
         messages: [],
       });
       setTicketId(record.id);
     }
     goNext();
+  }
+
+  // Tapping "Request Return" doesn't commit right away when Replace is
+  // still a live option — the nudge sheet gets one more chance to steer
+  // toward it first, same as OptionsStep already orders levers cheapest
+  // (least drastic) first.
+  function handleRequestReturnTap() {
+    if (canReplaceInstead) {
+      setReturnNudgeOpen(true);
+      return;
+    }
+    handleSubmitReturnRequest();
+  }
+
+  function handleNudgeContinueReturn() {
+    setReturnNudgeOpen(false);
+    handleSubmitReturnRequest();
+  }
+
+  // Switches the lever and jumps to whatever comes right after the reason
+  // screen for a replace journey — index 1 lands on 'mattressVariant' for a
+  // mattress or 'variant'/'execution' for the generic flow (both occupy
+  // that same position — see stepKeys above), so this works without
+  // needing to recompute the array here.
+  function handleNudgeReplaceInstead() {
+    setSelectedLever('replace');
+    setReturnNudgeOpen(false);
+    goToStep(1);
   }
 
   function handleChooseLever(lever) {
@@ -231,6 +279,30 @@ export default function ReturnReplaceFlow({ params }) {
     setVerdictSheetOpen(true);
   }
 
+  // Same shortcut as the mattress reason screen: a preset lever (tapped
+  // Replace/Return straight off Order Details) already answers what
+  // Options would ask, so continuing just advances; otherwise it opens the
+  // Options sheet over this same reason screen instead of navigating away.
+  function handleEvidenceContinue() {
+    if (skipOptions) {
+      goNext();
+      return;
+    }
+    // A preset lever from Order Details (e.g. "Replace") can be stale here —
+    // "Missing parts" only ever offers Send Part, so a leftover 'replace'
+    // would otherwise leave Confirm Choice looking already-answered without
+    // the customer ever actually picking the one option on offer.
+    if (selectedLever && !getRemediationOptions(order, reason).some((o) => o.id === selectedLever)) {
+      setSelectedLever(null);
+    }
+    setOptionsSheetOpen(true);
+  }
+
+  function handleOptionsContinue() {
+    setOptionsSheetOpen(false);
+    goNext();
+  }
+
   // Topper accepted (M5's retention ladder) and a warranty claim (M6) both
   // resolve the issue without ever touching the standard replace/return
   // machinery below — each files its own case and returns straight to
@@ -242,7 +314,7 @@ export default function ReturnReplaceFlow({ params }) {
       order,
       item: item ?? null,
       description: 'Comfort topper requested (retention offer accepted)',
-      hasPhoto: Boolean(photo),
+      hasPhoto: Boolean(photo?.length),
       escalate: false,
       messages: [],
     });
@@ -256,7 +328,7 @@ export default function ReturnReplaceFlow({ params }) {
       order,
       item: item ?? null,
       description: `Warranty claim (sagging/dip) — pro-rata refund ₹${proRataAmount.toLocaleString('en-IN')}`,
-      hasPhoto: Boolean(photo),
+      hasPhoto: Boolean(photo?.length),
       escalate: true,
       messages: [],
     });
@@ -320,6 +392,18 @@ export default function ReturnReplaceFlow({ params }) {
     }
     goBack();
   }
+
+  useEffect(() => {
+    if (currentKey === 'execution' && !needsApproval && !journeyCompletedRef.current) {
+      journeyCompletedRef.current = true;
+      handleJourneyComplete();
+    }
+    // handleJourneyComplete reads plenty of state but is only ever invoked
+    // here at the one instant currentKey/needsApproval actually reach this
+    // combination — re-running it on every unrelated state change would
+    // both be wrong (the ref guard already exists for a reason) and unnecessary.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentKey, needsApproval]);
 
   const direction = directionRef.current;
 
@@ -393,23 +477,14 @@ export default function ReturnReplaceFlow({ params }) {
                 savings={itemSavings}
                 photo={photo}
                 onPhotoChange={setPhoto}
-                onContinue={goNext}
-              />
-            )}
-            {currentKey === 'options' && (
-              <OptionsStep
-                order={target}
-                reason={reason}
-                selectedLever={selectedLever}
-                onSelectLever={setSelectedLever}
-                onContinue={goNext}
+                onContinue={handleEvidenceContinue}
               />
             )}
             {currentKey === 'variant' && (
               <MattressVariantStep order={target} price={itemPrice} onContinue={handleVariantContinue} />
             )}
             {currentKey === 'refundMethod' && (
-              <RefundMethodStep order={target} refundAmount={itemPrice} onSubmit={handleSubmitReturnRequest} />
+              <RefundMethodStep order={target} refundAmount={itemPrice} onSubmit={handleRequestReturnTap} />
             )}
             {currentKey === 'execution' && needsApproval && (
               <ApprovalPendingStep
@@ -420,15 +495,9 @@ export default function ReturnReplaceFlow({ params }) {
                 onDone={handleJourneyComplete}
               />
             )}
-            {currentKey === 'execution' && !needsApproval && (
-              <ExecutionStep
-                order={target}
-                leverId={selectedLever}
-                priceDelta={newSpec ? variantPriceDelta : 0}
-                newVariantLabel={newSpec ? (newModel ? `${newModel} (${newSpec})` : newSpec) : null}
-                onDone={handleJourneyComplete}
-              />
-            )}
+            {/* No JSX here for execution+!needsApproval — the effect above
+                applies the update and navigates back to Order Details the
+                instant this step is reached, so there's nothing to render. */}
           </motion.div>
         </AnimatePresence>
       </div>
@@ -445,6 +514,36 @@ export default function ReturnReplaceFlow({ params }) {
               onSmellPersists={handleSmellPersists}
             />
           )}
+        </BottomSheet>
+      )}
+
+      {!isMattress && (
+        <BottomSheet open={optionsSheetOpen} onClose={() => setOptionsSheetOpen(false)}>
+          {reason && (
+            <OptionsStep
+              order={target}
+              reason={reason}
+              selectedLever={selectedLever}
+              onSelectLever={setSelectedLever}
+              onContinue={handleOptionsContinue}
+            />
+          )}
+        </BottomSheet>
+      )}
+
+      {canReplaceInstead && (
+        <BottomSheet open={returnNudgeOpen} onClose={() => setReturnNudgeOpen(false)}>
+          <p className="return-replace__nudge-title">Try a replacement instead?</p>
+          <p className="return-replace__nudge-body">
+            Replacing this item is free and doesn't need you to wait for a refund — we'll get the exchange moving
+            right away instead of sending your money back.
+          </p>
+          <button className="return-replace__nudge-primary" onClick={handleNudgeReplaceInstead}>
+            Replace Instead
+          </button>
+          <button className="return-replace__nudge-secondary" onClick={handleNudgeContinueReturn}>
+            Continue with Return
+          </button>
         </BottomSheet>
       )}
     </div>

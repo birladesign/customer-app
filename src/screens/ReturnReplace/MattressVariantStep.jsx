@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { splitProductSpec } from '../../data/orders.js';
-import { getVariants, getMattressModels, selectionFromSpec, specForSelection, priceForSelection } from '../../data/variants.js';
+import { getVariants, getModelsOfType, selectionFromSpec, specForSelection, priceForSelection } from '../../data/variants.js';
 import './MattressVariantStep.css';
 
 function chipClass(active) {
@@ -29,26 +29,46 @@ export default function MattressVariantStep({ order, price, onContinue }) {
   const { name, spec: currentSpec } = splitProductSpec(order.product);
   const originalVariants = getVariants(name);
   const isMattress = originalVariants?.type === 'mattress';
-  const mattressModels = isMattress ? getMattressModels() : [];
+  // Pillows have no Size/Height/Color facet at all (see data/variants.js) —
+  // a "different variant" can only mean a different model outright, so
+  // this skips the chip-row machinery entirely for that type and drives
+  // price/spec straight off the model list instead.
+  const isPillow = originalVariants?.type === 'pillow';
+  const modelOptions = isMattress
+    ? getModelsOfType('mattress')
+    : isPillow
+    ? originalVariants.models.map((m) => m.label)
+    : [];
 
   const [model, setModel] = useState(name);
-  const variants = getVariants(model);
-  const [selection, setSelection] = useState(() => (originalVariants ? selectionFromSpec(originalVariants, currentSpec) : {}));
+  const variants = isPillow ? null : getVariants(model);
+  const [selection, setSelection] = useState(() =>
+    originalVariants && !isPillow ? selectionFromSpec(originalVariants, currentSpec) : {}
+  );
 
   // Switching models resets Size/Height to that model's own defaults —
   // whatever was picked for the old model (e.g. a King the new model
   // doesn't offer) has no guaranteed match in the new one.
   function handleModelChange(nextModel) {
     setModel(nextModel);
+    if (isPillow) return;
     const nextVariants = getVariants(nextModel);
     setSelection({ size: nextVariants?.sizes?.[0]?.label, height: nextVariants?.heights?.[0]?.label });
   }
 
-  const newSpec = variants ? specForSelection(variants, selection) : currentSpec;
   const modelChanged = model !== name;
+  // A pillow swap never touches the spec string (there isn't one to
+  // change) — only the model name itself, so `unchanged` collapses to
+  // "did the model actually change".
+  const newSpec = isPillow ? currentSpec : variants ? specForSelection(variants, selection) : currentSpec;
   const unchanged = !modelChanged && newSpec === currentSpec;
-  const newPrice = variants ? priceForSelection(variants, selection, price) : price;
+  const newPrice = isPillow
+    ? originalVariants.models.find((m) => m.label === model)?.price ?? price
+    : variants
+    ? priceForSelection(variants, selection, price)
+    : price;
   const delta = newPrice - price;
+  const hasFacets = Boolean(variants?.sizes || variants?.heights || variants?.colors || variants?.seating);
 
   return (
     <div className="mattress-variant-step">
@@ -60,7 +80,7 @@ export default function MattressVariantStep({ order, price, onContinue }) {
         </div>
       </div>
 
-      {mattressModels.length > 1 && (
+      {modelOptions.length > 1 && (
         <section className="mattress-variant-step__section">
           <p className="mattress-variant-step__heading">Model</p>
           <select
@@ -68,7 +88,7 @@ export default function MattressVariantStep({ order, price, onContinue }) {
             value={model}
             onChange={(e) => handleModelChange(e.target.value)}
           >
-            {mattressModels.map((m) => (
+            {modelOptions.map((m) => (
               <option key={m} value={m}>
                 {m}
               </option>
@@ -146,7 +166,9 @@ export default function MattressVariantStep({ order, price, onContinue }) {
       )}
 
       {unchanged ? (
-        <p className="mattress-variant-step__hint">Choose a different model, size or height to replace with.</p>
+        <p className="mattress-variant-step__hint">
+          {hasFacets ? 'Choose a different model, size or height to replace with.' : 'Choose a different model to replace with.'}
+        </p>
       ) : (
         <>
           <p className="mattress-variant-step__hint">New: {modelChanged ? `${model} — ${newSpec}` : newSpec}</p>

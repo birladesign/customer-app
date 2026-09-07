@@ -27,7 +27,7 @@ export default function RequestDetail({ params }) {
   const { goBack } = useNavigation();
   const kase = params.caseId ? getCaseById(params.caseId) : getOpenCaseForOrder(params.orderId);
   const [reply, setReply] = useState('');
-  const [photo, setPhoto] = useState(null);
+  const [photo, setPhoto] = useState([]);
   const [photoKey, setPhotoKey] = useState(0);
   const [messages, setMessages] = useState(() => kase?.messages ?? []);
 
@@ -62,13 +62,13 @@ export default function RequestDetail({ params }) {
 
   function handleSend() {
     const text = reply.trim();
-    if (!text && !photo) return;
-    const photoUrl = photo ? URL.createObjectURL(photo) : null;
-    const next = [...messages, { id: messages.length + 1, from: 'user', text, photoUrl }];
+    if (!text && !photo.length) return;
+    const photoUrls = photo.map((file) => URL.createObjectURL(file));
+    const next = [...messages, { id: messages.length + 1, from: 'user', text, photoUrls }];
     setMessages(next);
     updateCaseMessages(kase.id, next);
     setReply('');
-    setPhoto(null);
+    setPhoto([]);
     setPhotoKey((k) => k + 1);
   }
 
@@ -262,6 +262,9 @@ export default function RequestDetail({ params }) {
                     {msg.photoUrl && (
                       <img className="request-detail__activity-photo" src={msg.photoUrl} alt="Attachment" />
                     )}
+                    {msg.photoUrls?.map((url) => (
+                      <img className="request-detail__activity-photo" src={url} key={url} alt="Attachment" />
+                    ))}
                   </div>
                 </div>
               ))}
@@ -287,7 +290,7 @@ export default function RequestDetail({ params }) {
               ))}
             </div>
             <PhotoUploadTile key={photoKey} onChange={setPhoto} />
-            <button className="request-detail__send" disabled={!reply.trim() && !photo} onClick={handleSend}>
+            <button className="request-detail__send" disabled={!reply.trim() && !photo.length} onClick={handleSend}>
               Send Reply
             </button>
           </section>

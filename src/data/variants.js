@@ -28,6 +28,32 @@ function mattressEntry({ sizes, heights }) {
   return { type: 'mattress', sizes, heights };
 }
 
+// Pillows have no Size/Height/Color facet in this catalog — the only
+// meaningful "different variant" a customer can ask for is a different
+// model outright (e.g. Cervical → Ortho Relief), so this is just a flat
+// list of sibling models and their own price, no chip rows at all.
+function pillowEntry(models) {
+  return { type: 'pillow', models };
+}
+
+// Shared across every pillow order in the catalog (thesleepcompany.in's own
+// Luxury/Specialty/Plush pillow ranges) — a replacement isn't limited to
+// swapping within whichever one range the original happened to be in.
+const PILLOW_MODELS = [
+  { label: 'Smart Hybrid Pillow', price: 2499 },
+  { label: 'Revlax Reversible Pillow', price: 2999 },
+  { label: 'Smart Ortho Relief Pillow', price: 1999 },
+  { label: 'Smart ErgoRelief Pillow', price: 2299 },
+  { label: 'Smart Thin Pillow', price: 1499 },
+  { label: 'Smart Neck Comfort Pillow', price: 1799 },
+  { label: 'Smart Cervical Pillow', price: 2199 },
+  { label: 'Smart Neck Massager Pillow', price: 3499 },
+  { label: 'Smart Pregnancy Pillow', price: 2799 },
+  { label: 'Travel Neck Pillow', price: 999 },
+  { label: 'Smart Adjustable Plush Pillow', price: 3999 },
+  { label: 'SnowTec Adjustable Plush Pillow', price: 4299 },
+];
+
 const STANDARD_HEIGHTS = [
   { label: '6 in', delta: -1500 },
   { label: '8 in', delta: 0 },
@@ -82,6 +108,10 @@ export const VARIANTS = {
   'Elite Premium Office Chair': { type: 'chair', colors: CHAIR_COLORS },
   'Stylux Ergonomic Office Chair': { type: 'chair', colors: CHAIR_COLORS },
 
+  'Smart Hybrid Pillow': pillowEntry(PILLOW_MODELS),
+  'Smart Pregnancy Pillow': pillowEntry(PILLOW_MODELS),
+  'Smart Cervical Pillow': pillowEntry(PILLOW_MODELS),
+
   'Luxe Grande Recliner Sofa': {
     type: 'sofa',
     seating: [
@@ -97,11 +127,12 @@ export function getVariants(productName) {
   return VARIANTS[productName] ?? null;
 }
 
-// Every catalog mattress model, for the replacement journey's Model
-// dropdown — switching models (not just size/height within the same one)
-// is itself a valid replacement outcome.
-export function getMattressModels() {
-  return Object.keys(VARIANTS).filter((name) => VARIANTS[name].type === 'mattress');
+// Every catalog product name of a given type (mattress, pillow, ...), for
+// the replacement journey's Model dropdown — switching models outright
+// (not just a size/height/etc. within the same one) is itself a valid
+// replacement outcome wherever the catalog defines more than one.
+export function getModelsOfType(type) {
+  return Object.keys(VARIANTS).filter((name) => VARIANTS[name].type === type);
 }
 
 // A variant selection's own natural first-load state, derived from the

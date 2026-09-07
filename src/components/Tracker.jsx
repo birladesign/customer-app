@@ -22,7 +22,18 @@ export default function Tracker({ steps, currentIndex, stepIcons }) {
       {visibleSteps.map((step, i) => {
         const label = typeof step === 'string' ? step : step.label;
         const date = typeof step === 'string' ? null : step.date;
-        const state = i < visibleCurrentIndex ? 'done' : i === visibleCurrentIndex ? 'current' : 'upcoming';
+        // Reaching the journey's actual final stage (not just the last one
+        // visible after trimming) means there's nothing left pending — it
+        // reads as done (checkmark, same green as every earlier stage)
+        // rather than "current", which implies something's still in
+        // progress at that step.
+        const isFinalStep = i === visibleSteps.length - 1;
+        const state =
+          i < visibleCurrentIndex || (i === visibleCurrentIndex && isFinalStep)
+            ? 'done'
+            : i === visibleCurrentIndex
+            ? 'current'
+            : 'upcoming';
         // Split the connecting line into a left/right half around the dot,
         // rather than one full-width line after it — a dot centered on
         // [left half][dot][right half] lands at the column's midpoint, the

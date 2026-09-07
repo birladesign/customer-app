@@ -642,10 +642,7 @@ export default function OrderDetails({ params }) {
                   })
                 }
               >
-                <span className="order-details__lever-card-icon">
-                  <EditIcon width="18" height="18" />
-                </span>
-                <span>Replace</span>
+                Replace
               </button>
               <button
                 className="order-details__lever-card"
@@ -657,10 +654,7 @@ export default function OrderDetails({ params }) {
                   })
                 }
               >
-                <span className="order-details__lever-card-icon">
-                  <PackageIcon width="18" height="18" />
-                </span>
-                <span>Return</span>
+                Return
               </button>
             </div>
           )}

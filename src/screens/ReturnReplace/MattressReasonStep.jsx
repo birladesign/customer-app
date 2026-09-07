@@ -29,7 +29,7 @@ function formatRupees(amount) {
 export default function MattressReasonStep({ order, price, savings, reason, onSelectReason, photo, onPhotoChange, onContinue }) {
   const [note, setNote] = useState('');
   const { name, spec } = splitProductSpec(order.product);
-  const canContinue = Boolean(reason && photo);
+  const canContinue = Boolean(reason && photo?.length);
 
   return (
     <div className="evidence-step">
@@ -91,7 +91,7 @@ export default function MattressReasonStep({ order, price, savings, reason, onSe
       {!reason ? (
         <p className="evidence-step__hint">Choose a reason to proceed.</p>
       ) : (
-        !photo && <p className="evidence-step__hint">A photo is required to proceed.</p>
+        !photo?.length && <p className="evidence-step__hint">A photo is required to proceed.</p>
       )}
     </div>
   );

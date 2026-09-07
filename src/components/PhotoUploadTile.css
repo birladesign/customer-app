@@ -1,3 +1,9 @@
+.photo-upload-tile__grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
 .photo-upload-tile {
   width: 96px;
   height: 96px;
