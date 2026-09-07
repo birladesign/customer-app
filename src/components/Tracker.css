@@ -44,7 +44,7 @@
    space, which is what keeps the dot centered on the column instead of
    flush against the tracker's outer edge. */
 .tracker__line--hidden {
-  background: transparent;
+  visibility: hidden;
 }
 
 .tracker__line--done {
