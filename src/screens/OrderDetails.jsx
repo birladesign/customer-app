@@ -811,8 +811,9 @@ export default function OrderDetails({ params }) {
               {/* PRD §8.4 — a real delivery-issues entry point (DL-01),
                   order-level only (same scope note as RTO). Only makes sense
                   once something has actually shipped and hasn't been closed
-                  out already. */}
-              {postDispatch && !isClosedOrder && !scopedItem && (
+                  out already. For delivered items, this moves down to replace
+                  the Edit Details button entirely. */}
+              {postDispatch && !isDeliveredStatus && !isClosedOrder && !scopedItem && (
                 <button
                   className="order-details__progress-track-btn"
                   onClick={() => navigate('deliveryIssue', { orderId: order.id })}
@@ -830,18 +831,29 @@ export default function OrderDetails({ params }) {
               instead. Still-in-transit orders keep the disabled+reason
               treatment, since editing there is temporarily, not
               permanently, unavailable. */}
-          {!isClosedOrder && !isDeliveredStatus && (
-            <div className="order-details__edit-cta-wrap">
-              <button
-                className="order-details__edit-cta"
-                disabled={!editIntent.enabled}
-                onClick={editIntent.enabled ? handleEditOrder : undefined}
-              >
-                <EditIcon width="15" height="15" />
-                <span>Edit Details</span>
-              </button>
-              {!editIntent.enabled && <p className="order-details__edit-cta-reason">{editIntent.reason}</p>}
-            </div>
+          {!isClosedOrder && (
+            isDeliveredStatus && !scopedItem ? (
+              <div className="order-details__edit-cta-wrap">
+                <button
+                  className="order-details__report-issue-cta"
+                  onClick={() => navigate('deliveryIssue', { orderId: order.id })}
+                >
+                  Report a Delivery Issue
+                </button>
+              </div>
+            ) : !isDeliveredStatus && (
+              <div className="order-details__edit-cta-wrap">
+                <button
+                  className="order-details__edit-cta"
+                  disabled={!editIntent.enabled}
+                  onClick={editIntent.enabled ? handleEditOrder : undefined}
+                >
+                  <EditIcon width="15" height="15" />
+                  <span>Edit Details</span>
+                </button>
+                {!editIntent.enabled && <p className="order-details__edit-cta-reason">{editIntent.reason}</p>}
+              </div>
+            )
           )}
 
           {technician && (

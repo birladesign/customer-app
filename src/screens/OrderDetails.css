@@ -1304,3 +1304,27 @@
     transform: none;
   }
 }
+
+.order-details__report-issue-cta {
+  background: none;
+  border: none;
+  color: var(--color-navy-900);
+  font-family: inherit;
+  font-size: var(--text-product-size);
+  font-weight: 600;
+  padding: var(--space-3) 0;
+  text-align: center;
+  width: 100%;
+  cursor: pointer;
+  transition: opacity 0.15s var(--ease-standard);
+}
+
+.order-details__report-issue-cta:active {
+  opacity: 0.7;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .order-details__report-issue-cta {
+    transition: none;
+  }
+}
