@@ -676,8 +676,7 @@ export default function ReturnReplaceFlow({ params }) {
         <BottomSheet open={returnNudgeOpen} onClose={() => setReturnNudgeOpen(false)}>
           <p className="return-replace__nudge-title">Try a replacement instead?</p>
           <p className="return-replace__nudge-body">
-            Replacing this item is free and doesn't need you to wait for a refund — we'll get the exchange moving
-            right away instead of sending your money back.
+            Replacements are free and faster than waiting for a refund. We'll get your exchange moving right away.
           </p>
           <button className="return-replace__nudge-primary" onClick={handleNudgeReplaceInstead}>
             Replace Instead
