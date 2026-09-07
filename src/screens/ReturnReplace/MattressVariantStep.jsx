@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { splitProductSpec } from '../../data/orders.js';
 import { getVariants, getModelsOfType, selectionFromSpec, specForSelection, priceForSelection } from '../../data/variants.js';
+import ConfirmSheet from '../../components/ConfirmSheet.jsx';
 import './MattressVariantStep.css';
 
 function chipClass(active) {
@@ -45,6 +46,7 @@ export default function MattressVariantStep({ order, price, onContinue }) {
   const [selection, setSelection] = useState(() =>
     originalVariants && !isPillow ? selectionFromSpec(originalVariants, currentSpec) : {}
   );
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   // Switching models resets Size/Height to that model's own defaults —
   // whatever was picked for the old model (e.g. a King the new model
@@ -184,10 +186,22 @@ export default function MattressVariantStep({ order, price, onContinue }) {
       <button
         className="mattress-variant-step__continue"
         disabled={unchanged}
-        onClick={() => onContinue({ model: modelChanged ? model : null, spec: newSpec, delta })}
+        onClick={() => setConfirmOpen(true)}
       >
         Confirm Replacement
       </button>
+
+      <ConfirmSheet
+        open={confirmOpen}
+        title="Confirm replacement?"
+        body={`We'll process your request for the new ${modelChanged ? model : name} (${newSpec}).`}
+        confirmLabel="Submit Request"
+        onConfirm={() => {
+          setConfirmOpen(false);
+          onContinue({ model: modelChanged ? model : null, spec: newSpec, delta });
+        }}
+        onClose={() => setConfirmOpen(false)}
+      />
     </div>
   );
 }
