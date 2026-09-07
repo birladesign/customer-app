@@ -222,11 +222,10 @@ export default function DeliveryIssueFlow({ params }) {
               <p className="delivery-issue__empty">No proof-of-delivery record found for this order.</p>
             )}
             <p className="execution-step__confirm-body delivery-issue__spaced">
-              If this doesn't match what happened, we'll open an investigation with the courier — most are resolved
-              within 24–48 hours.
+              Doesn't look right? We'll investigate with the courier. Most cases are resolved within 48 hours.
             </p>
             <button className="execution-step__done" onClick={handleReportFakeDelivery}>
-              This Doesn't Match — Open Investigation
+              Open Investigation
             </button>
           </div>
         )}
