@@ -599,6 +599,34 @@
   overflow-y: auto;
 }
 
+.order-details__pod-card {
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-secondary);
+}
+
+.order-details__pod-heading {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-label-size);
+  font-weight: 700;
+  letter-spacing: var(--text-label-tracking);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+}
+
+.order-details__pod-row {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-1) 0;
+  font-size: var(--text-body-size);
+  color: var(--color-text-primary);
+}
+
+.order-details__pod-row span:first-child {
+  color: var(--color-text-muted);
+}
+
 .order-details__disclosure-wrap {
   overflow: hidden;
 }

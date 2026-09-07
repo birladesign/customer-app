@@ -11,6 +11,7 @@ import {
 } from '../data/orders.js';
 import { getOrderIntents, getEditEligibility, getShipmentEditEligibility, getItemIntents, isPostDispatch } from '../data/intents.js';
 import { getOpenCaseForOrder, createCase, CASE_PREFIX } from '../data/support.js';
+import { getProofOfDelivery } from '../data/deliveryIssues.js';
 import { CURRENT_USER } from '../data/profile.js';
 import { useNavigation } from '../navigation/NavigationContext.jsx';
 import { SPRING_STANDARD, DURATION_REDUCED } from '../motion.js';
@@ -63,6 +64,12 @@ const CANCEL_REASONS = [
 // EDD + Expedite/Hold) before cancellation is even discussed — every other
 // reason goes straight to the plain Hold-or-cancel sheet below.
 const DELAY_REASON = 'Delivery taking too long';
+// CX-02's other two reason-specific deflections. "Found cheaper" routes to
+// price-match instead of a plain hold offer; "ordered by mistake" routes to
+// whichever of Edit / RTO-replace is actually reachable at this order's
+// stage instead of asking the customer to re-explain what they meant.
+const PRICE_REASON = 'Found a better price';
+const MISTAKE_REASON = 'Ordered by mistake';
 
 function formatRupees(amount) {
   return `₹${amount.toLocaleString('en-IN')}`;
@@ -105,7 +112,7 @@ export default function OrderDetails({ params }) {
   // and only reach the final irreversible confirm after declining that.
   // cancelStep drives the reason/alternative sheet; confirmingCancel is the
   // separate, final ConfirmSheet reached only after "No, Cancel My Order."
-  const [cancelStep, setCancelStep] = useState(null); // null | 'reason' | 'alternative' | 'delayed'
+  const [cancelStep, setCancelStep] = useState(null); // null | 'reason' | 'alternative' | 'delayed' | 'mistake'
   const [cancelReason, setCancelReason] = useState(null);
   const [confirmingCancel, setConfirmingCancel] = useState(false);
   // The honest "not guaranteed" RTO-intercept warning (PRD CX-04) — its own
@@ -226,6 +233,8 @@ export default function OrderDetails({ params }) {
   // records "offered vs chosen" (§13) rather than just the end state.
   const retentionOffered = [
     ...(cancelReason === DELAY_REASON ? ['expedite'] : []),
+    ...(cancelReason === PRICE_REASON ? ['priceMatch'] : []),
+    ...(cancelReason === MISTAKE_REASON ? ['edit'] : []),
     ...(postDispatch ? [] : ['hold']),
     'cancel',
   ];
@@ -255,7 +264,37 @@ export default function OrderDetails({ params }) {
   }
 
   function continueToAlternative() {
-    setCancelStep(cancelReason === DELAY_REASON ? 'delayed' : 'alternative');
+    if (cancelReason === DELAY_REASON) {
+      setCancelStep('delayed');
+      return;
+    }
+    if (cancelReason === PRICE_REASON) {
+      // FN-02 — the price-match flow files its own case on completion (like
+      // RTO's replacement branch does), so the cancel sheet just hands off.
+      closeCancelFlow();
+      navigate('priceMatch', { orderId: order.id });
+      return;
+    }
+    if (cancelReason === MISTAKE_REASON) {
+      setCancelStep('mistake');
+      return;
+    }
+    setCancelStep('alternative');
+  }
+
+  // "Ordered by mistake" -> Edit if this order can still be edited here,
+  // else the RTO-Replacement sub-flow's replacement branch (§8.11 RT-02) —
+  // whichever is actually reachable at this order's stage, rather than
+  // routing everyone to the same dead end.
+  function handleMistakeEditOffer() {
+    recordCancellationOutcome({
+      description: `Edit offered instead of cancelling — ${cancelReason}`,
+      chosen: 'edit',
+      outcome: 'retained_edit',
+    });
+    closeCancelFlow();
+    if (editIntent.enabled) handleEditOrder();
+    else navigate('rtoReplace', { orderId: order.id, origin: 'edit' });
   }
 
   // PRD CX-02's retention offer for "taking too long" — expediting is
@@ -295,7 +334,7 @@ export default function OrderDetails({ params }) {
     });
     setShowRtoIntercept(false);
     setCancelReason(null);
-    navigate('rtoReplace', { orderId: order.id });
+    navigate('rtoReplace', { orderId: order.id, origin: 'cancel' });
   }
 
   // Offered instead of an outright cancel — "Hold or cancel" is the real
@@ -768,6 +807,20 @@ export default function OrderDetails({ params }) {
                 <span>Tracking Updates</span>
                 <ChevronRightIcon width="14" height="14" aria-hidden="true" />
               </button>
+
+              {/* PRD §8.4 — a real delivery-issues entry point (DL-01),
+                  order-level only (same scope note as RTO). Only makes sense
+                  once something has actually shipped and hasn't been closed
+                  out already. */}
+              {postDispatch && !isClosedOrder && !scopedItem && (
+                <button
+                  className="order-details__progress-track-btn"
+                  onClick={() => navigate('deliveryIssue', { orderId: order.id })}
+                >
+                  <span>Report a Delivery Issue</span>
+                  <ChevronRightIcon width="14" height="14" aria-hidden="true" />
+                </button>
+              )}
             </div>
           )}
 
@@ -1238,6 +1291,23 @@ export default function OrderDetails({ params }) {
         </div>
       </BottomSheet>
 
+      <BottomSheet open={cancelStep === 'mistake'} onClose={closeCancelFlow}>
+        <h2 className="confirm-sheet__title">Before you cancel</h2>
+        <p className="confirm-sheet__body">
+          {editIntent.enabled
+            ? 'You can change the size, model or address on this order instead of starting over.'
+            : "This has already shipped, so we can't edit it directly — but we can bring it back and send the right one instead."}
+        </p>
+        <div className="confirm-sheet__footer confirm-sheet__footer--stacked">
+          <button className="confirm-sheet__confirm" onClick={handleMistakeEditOffer}>
+            {editIntent.enabled ? 'Edit Your Order' : 'Replace With the Right One'}
+          </button>
+          <button className="confirm-sheet__cancel" onClick={proceedToFinalCancel}>
+            No, Cancel My Order
+          </button>
+        </div>
+      </BottomSheet>
+
       <BottomSheet open={cancelStep === 'delayed'} onClose={closeCancelFlow}>
         <h2 className="confirm-sheet__title">Your order is on its way</h2>
         <p className="confirm-sheet__body">
@@ -1298,6 +1368,34 @@ export default function OrderDetails({ params }) {
           <div className="order-details__tracking-sheet-body">
             <DetailedTracking steps={trackingTarget.steps} currentIndex={trackingTarget.currentIndex} />
           </div>
+          {/* OT-07 — proof of delivery, shown honestly (signed-by, address,
+              timestamp) rather than just a green "Delivered" dot. */}
+          {(() => {
+            const pod = getProofOfDelivery(
+              { steps: trackingTarget.steps, currentIndex: trackingTarget.currentIndex },
+              { address: order.address }
+            );
+            if (!pod) return null;
+            return (
+              <div className="order-details__pod-card">
+                <p className="order-details__pod-heading">Proof of Delivery</p>
+                <div className="order-details__pod-row">
+                  <span>Delivered</span>
+                  <span>{pod.timestamp}</span>
+                </div>
+                <div className="order-details__pod-row">
+                  <span>Confirmed by</span>
+                  <span>{pod.signedBy}</span>
+                </div>
+                {pod.address && (
+                  <div className="order-details__pod-row">
+                    <span>Address</span>
+                    <span>{pod.address}</span>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </BottomSheet>
       )}
     </div>

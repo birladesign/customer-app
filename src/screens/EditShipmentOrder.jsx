@@ -228,6 +228,18 @@ export default function EditShipmentOrder({ params }) {
           <img className="edit-order__locked-image" src={units[0].image} alt={units[0].product} />
           <p className="edit-order__locked-title">{eligibility.reason}</p>
           <p className="edit-order__locked-body">This shipment can no longer be edited here.</p>
+          {/* Same RTO-Replacement escape hatch as the single-order Edit
+              screen (OM-07/RT-01). A shipment's units always ship together,
+              so — same as the eligibility check itself — one unit stands in
+              for the whole parcel rather than looping the flow per unit. */}
+          {eligibility.offerRto && (
+            <button
+              className="edit-order__locked-rto"
+              onClick={() => navigate('rtoReplace', { orderId: units[0].id, origin: 'edit' })}
+            >
+              Change it via return-to-origin instead
+            </button>
+          )}
         </div>
       </div>
     );

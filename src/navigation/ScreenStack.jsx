@@ -21,6 +21,8 @@ import InstallationSchedule from '../screens/InstallationSchedule.jsx';
 import ReturnReplaceFlow from '../screens/ReturnReplace/ReturnReplaceFlow.jsx';
 import RtoReplaceFlow from '../screens/RtoReplace/RtoReplaceFlow.jsx';
 import DeliverySchedule from '../screens/DeliverySchedule.jsx';
+import DeliveryIssueFlow from '../screens/DeliveryIssue/DeliveryIssueFlow.jsx';
+import PriceMatchFlow from '../screens/PriceMatch/PriceMatchFlow.jsx';
 import './ScreenStack.css';
 
 const SCREENS = {
@@ -43,6 +45,8 @@ const SCREENS = {
   returnReplace: ReturnReplaceFlow,
   rtoReplace: RtoReplaceFlow,
   deliverySchedule: DeliverySchedule,
+  deliveryIssue: DeliveryIssueFlow,
+  priceMatch: PriceMatchFlow,
 };
 
 // Spatial consistency: a pushed screen slides in from the right while the one

@@ -110,6 +110,17 @@ export default function EditOrder({ params }) {
           <p className="edit-order__locked-body">
             {withSpec(baseName, currentSpec)} can no longer be edited here.
           </p>
+          {/* PRD OM-07 — a post-dispatch edit isn't a dead end, it routes into
+              the same RTO-Replacement sub-flow a post-dispatch cancel uses
+              (§8.11 RT-01), just with the replacement branch on offer. */}
+          {eligibility.offerRto && (
+            <button
+              className="edit-order__locked-rto"
+              onClick={() => navigate('rtoReplace', { orderId: order.id, origin: 'edit' })}
+            >
+              Change it via return-to-origin instead
+            </button>
+          )}
         </div>
       </div>
     );

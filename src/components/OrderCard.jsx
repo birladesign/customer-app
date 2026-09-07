@@ -123,7 +123,10 @@ export default function OrderCard({ order }) {
       return () => navigate('installationSchedule', { orderId: order.id });
     }
     if (label === 'Report an Issue') {
-      return () => switchTab('support', { openChat: true, orderId: order.id });
+      // PRD §8.4 — routes into the delivery-issues flow rather than a
+      // generic chat handoff, so the reason list is phase-filtered and a
+      // qualifying issue opens a real, trackable case.
+      return () => navigate('deliveryIssue', { orderId: order.id });
     }
     if (label === 'Manage Return') {
       return () => {

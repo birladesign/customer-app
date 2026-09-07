@@ -3,6 +3,7 @@
 // in-memory array, not a rules engine or a real case-management backend.
 import { ORDERS, parseOrderDate, getOrderStatus } from './orders.js';
 import { getOrderIntents } from './intents.js';
+import { today } from './clock.js';
 import imgSofaLuxeGrande from '../assets/sofa-luxe-grande.png';
 
 // Real contact details, pulled from thesleepcompany.in — not invented.
@@ -229,7 +230,11 @@ export function createCase({
     status,
     classification,
     slaLabel,
-    createdAt: new Date().toISOString(),
+    // The app clock, not the real one — a case's own timestamp has to agree
+    // with the day-window math everything else in the app runs on (clock.js),
+    // or a countdown built on top of it (DL-05's investigation timer) drifts
+    // the moment real time and the demo's pinned 'today' diverge.
+    createdAt: today().toISOString(),
     messages: messages ?? [],
     // §7.5 decision trail — what the engine saw and what it offered.
     intent,
