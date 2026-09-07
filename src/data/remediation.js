@@ -5,6 +5,9 @@
 // cheapest-outcome-first, and "Return for Refund" is always last, matching the
 // PRD's "Cancel and Return are never first-class, always last resort" rule.
 
+import { splitProductSpec } from './orders.js';
+import { getVariants } from './variants.js';
+
 export const RETURN_REASONS = [
   'Damaged',
   'Defective / Not working',
@@ -12,6 +15,18 @@ export const RETURN_REASONS = [
   'Missing parts',
   'Discomfort / Not as expected',
 ];
+
+// §7.9 — accessories (pillows in this catalog) are single-piece items with
+// no assembly, so there's nothing that can go missing the way a bed frame's
+// hardware or a sofa's cushions can. "Missing parts" is a furniture-only
+// reason.
+function isAccessoryProduct(product) {
+  return getVariants(splitProductSpec(product).name)?.type === 'pillow';
+}
+
+export function getReturnReasons(product) {
+  return isAccessoryProduct(product) ? RETURN_REASONS.filter((r) => r !== 'Missing parts') : RETURN_REASONS;
+}
 
 const LEVER_LABELS = {
   sendPart: 'Send Missing Part',

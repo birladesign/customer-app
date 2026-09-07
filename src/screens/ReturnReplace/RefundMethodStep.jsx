@@ -10,7 +10,13 @@ function formatRupees(amount) {
 // don't move money, so there's no refund or pickup to confirm. Refunds only
 // ever go to the original payment method — no wallet — so this is a plain
 // confirmation, not a choice between options.
-export default function RefundMethodStep({ order, refundAmount, onSubmit }) {
+export default function RefundMethodStep({ order, refundAmount, priceBreakup, onSubmit }) {
+  // A line item inside a multi-SKU order has no discount/shipping/tax
+  // breakdown of its own (see ReturnReplaceFlow's itemSavings comment) — it
+  // only ever shows as one flat line rather than a fabricated itemization.
+  const hasBreakup =
+    priceBreakup && (priceBreakup.discount > 0 || priceBreakup.shipping > 0 || priceBreakup.tax > 0);
+
   return (
     <div className="refund-method-step">
       <div className="refund-method-step__scroll">
@@ -29,6 +35,37 @@ export default function RefundMethodStep({ order, refundAmount, onSubmit }) {
                 days after the quality check is passed.
               </span>
             </span>
+          </div>
+        </div>
+
+        <h2 className="refund-method-step__heading">Refund Calculation</h2>
+        <div className="refund-method-step__breakup-card">
+          <div className="refund-method-step__breakup-row">
+            <span>Item Price</span>
+            <span>{formatRupees(priceBreakup?.itemPrice ?? refundAmount)}</span>
+          </div>
+          {hasBreakup && priceBreakup.discount > 0 && (
+            <div className="refund-method-step__breakup-row refund-method-step__breakup-row--deduction">
+              <span>Discount</span>
+              <span>−{formatRupees(priceBreakup.discount)}</span>
+            </div>
+          )}
+          {hasBreakup && priceBreakup.shipping > 0 && (
+            <div className="refund-method-step__breakup-row">
+              <span>Shipping</span>
+              <span>+{formatRupees(priceBreakup.shipping)}</span>
+            </div>
+          )}
+          {hasBreakup && priceBreakup.tax > 0 && (
+            <div className="refund-method-step__breakup-row">
+              <span>Tax</span>
+              <span>+{formatRupees(priceBreakup.tax)}</span>
+            </div>
+          )}
+          <div className="refund-method-step__breakup-divider" />
+          <div className="refund-method-step__breakup-row refund-method-step__breakup-row--total">
+            <span>Total Refund Amount</span>
+            <span>{formatRupees(refundAmount)}</span>
           </div>
         </div>
 

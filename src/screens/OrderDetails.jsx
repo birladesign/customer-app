@@ -189,6 +189,18 @@ export default function OrderDetails({ params }) {
   // already has it (Hold no longer makes sense) and the real ETA to show
   // instead of a generic "we'll speed this up".
   const postDispatch = isPostDispatch(order);
+  // The delivery-issue CTA asks about the parcel this view is actually showing:
+  // on a multi-item order the items carry their own timelines and the order
+  // itself has none, so the order-level check reads pre-dispatch forever and
+  // would hide the entry point on every one of its shipped items.
+  const scopedPostDispatch = isPostDispatch(scopedItem ?? order);
+  // "Report a Delivery Issue" only makes sense while there isn't already an
+  // open outcome for this order — a booked replace/return (returnIntent's own
+  // override reason, e.g. "A replacement is already in progress") or an
+  // already-filed delivery-issue investigation (set by DeliveryIssueFlow once
+  // a case exists). Without this, the CTA kept inviting a second report on an
+  // order that had already been resolved or was already mid-investigation.
+  const deliveryIssueBlockedReason = order.intentOverrides?.deliveryIssue ?? order.intentOverrides?.returnReplace;
   const expectedDelivery = getExpectedDelivery(order);
   const itemIntents = scopedItem ? getItemIntents(scopedItem) : null;
   const effectiveWarrantyIntent = scopedItem ? itemIntents.warranty : warrantyIntent;
@@ -808,15 +820,23 @@ export default function OrderDetails({ params }) {
                 <ChevronRightIcon width="14" height="14" aria-hidden="true" />
               </button>
 
-              {/* PRD §8.4 — a real delivery-issues entry point (DL-01),
-                  order-level only (same scope note as RTO). Only makes sense
-                  once something has actually shipped and hasn't been closed
-                  out already. For delivered items, this moves down to replace
-                  the Edit Details button entirely. */}
-              {postDispatch && !isDeliveredStatus && !isClosedOrder && !scopedItem && (
+              {/* PRD §8.4 — a real delivery-issues entry point (DL-01). Only
+                  makes sense once something has actually shipped and hasn't
+                  been closed out already, and only while there isn't already
+                  an open outcome (see deliveryIssueBlockedReason above) — a
+                  second report/investigation on top of one already running or
+                  already resolved isn't a real option. On a multi-item order
+                  this view is the only way in, so the item it's scoped to
+                  rides along: the flow opens on its own scope question (this
+                  item, or the whole order) rather than assuming either. For
+                  delivered items, this moves down to replace the Edit Details
+                  button entirely. */}
+              {scopedPostDispatch && !isDeliveredStatus && !isClosedOrder && !deliveryIssueBlockedReason && (
                 <button
                   className="order-details__progress-track-btn"
-                  onClick={() => navigate('deliveryIssue', { orderId: order.id })}
+                  onClick={() =>
+                    navigate('deliveryIssue', { orderId: order.id, ...(scopedItem ? { sku: scopedItem.sku } : {}) })
+                  }
                 >
                   <span>Report a Delivery Issue</span>
                   <ChevronRightIcon width="14" height="14" aria-hidden="true" />
@@ -833,14 +853,16 @@ export default function OrderDetails({ params }) {
               permanently, unavailable. */}
           {!isClosedOrder && (
             isDeliveredStatus && !scopedItem ? (
-              <div className="order-details__edit-cta-wrap">
-                <button
-                  className="order-details__report-issue-cta"
-                  onClick={() => navigate('deliveryIssue', { orderId: order.id })}
-                >
-                  Report a Delivery Issue
-                </button>
-              </div>
+              !deliveryIssueBlockedReason && (
+                <div className="order-details__edit-cta-wrap">
+                  <button
+                    className="order-details__report-issue-cta"
+                    onClick={() => navigate('deliveryIssue', { orderId: order.id })}
+                  >
+                    Report a Delivery Issue
+                  </button>
+                </div>
+              )
             ) : !isDeliveredStatus && (
               <div className="order-details__edit-cta-wrap">
                 <button

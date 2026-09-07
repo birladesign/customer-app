@@ -70,6 +70,39 @@
   color: var(--color-text-muted);
 }
 
+.refund-method-step__breakup-card {
+  background: var(--color-bg-primary);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3);
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.refund-method-step__breakup-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: var(--text-body-size);
+  color: var(--color-text-secondary);
+}
+
+.refund-method-step__breakup-row--deduction {
+  color: var(--color-action-red);
+}
+
+.refund-method-step__breakup-divider {
+  height: 1px;
+  background: var(--color-border);
+}
+
+.refund-method-step__breakup-row--total {
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
 .refund-method-step__address-card {
   background: var(--color-bg-primary);
   border: 1px solid var(--color-border);
