@@ -39,6 +39,77 @@ export const MATTRESS_REASONS = [
   { key: 'smell', label: 'Odor / Smell' },
 ];
 
+// M5's ladder opens with a topper, which is the right first move for most
+// discomfort but not all of it — and the ladder has no way to tell which,
+// because it asks "firm or soft?" as a preference rather than asking what
+// is actually wrong. These are the answers that change the route:
+//
+//   topper  — a topper genuinely fixes it; `topper` says which one
+//   none    — no topper helps, so don't offer one; go to the swap
+//   inspect — not a comfort problem at all; leave the ladder
+//
+// The last two matter most. Sending a foam layer to somebody who sleeps hot
+// makes their bed hotter, and offering a free topper against what may be a
+// manufacturing fault is the retention-as-dark-pattern the PRD warns about
+// (§15). Both are cases where the honest answer is to stop selling the
+// cheap fix.
+export const DISCOMFORT_DIAGNOSES = [
+  {
+    key: 'tooFirm',
+    label: 'It feels too hard',
+    fix: 'topper',
+    topper: 'soft',
+    education:
+      'New support foam is at its firmest in the first few weeks and softens measurably as it breaks in — plenty of people who find a mattress hard on night three no longer do by week four. A soft topper is the usual fix if it persists.',
+  },
+  {
+    key: 'tooSoft',
+    label: 'I sink in too much',
+    fix: 'topper',
+    topper: 'firm',
+    education:
+      'Excess sinking is often the base rather than the mattress — slats spaced wider than about 7cm, or a sagging old frame, let it dip in the middle whatever is on top. Worth a look before we change the mattress itself.',
+  },
+  {
+    key: 'pain',
+    label: 'I’m waking up with back or neck pain',
+    fix: 'topper',
+    topper: 'firm',
+    education:
+      'Neck and upper-back pain usually traces to pillow height rather than the mattress: on a newer, firmer surface you sink less, so a pillow that used to sit right now pushes your neck out of line. Try one height lower for a week. For lower-back pain a firmer surface generally helps.',
+  },
+  {
+    key: 'hot',
+    label: 'I sleep too hot',
+    // Deliberately no topper — an extra foam layer traps more heat, so
+    // offering one here would be selling a fix that makes it worse.
+    fix: 'none',
+    education:
+      'Heat is usually bedding rather than the mattress, and a waterproof protector is the most common culprit — it seals heat in almost completely. Swap to a breathable cotton protector and cotton sheets first. We would rather not send a topper here: another foam layer traps more heat, not less.',
+  },
+  {
+    key: 'partner',
+    label: 'I feel my partner moving',
+    // Motion isolation is a property of the construction; no surface layer
+    // changes it.
+    fix: 'none',
+    education:
+      'How much movement travels across a mattress comes down to what is inside it — pocketed springs isolate motion far better than a connected spring unit. A topper cannot change that, so if this is the problem, moving to a different construction is the honest fix.',
+  },
+  {
+    key: 'uneven',
+    label: 'It dips or feels uneven',
+    // Not a preference. This is M6 territory and belongs with a technician.
+    fix: 'inspect',
+    education:
+      'A visible dip or an uneven surface is not a comfort preference — it is a possible manufacturing fault, and we are not going to talk you into a topper for it. A technician should measure it, and if it is sagging beyond tolerance your warranty covers it.',
+  },
+];
+
+export function getDiscomfortDiagnosis(key) {
+  return DISCOMFORT_DIAGNOSES.find((d) => d.key === key) ?? null;
+}
+
 // Linear 10%/yr depreciation, provisional per the PRD pending Finance
 // sign-off — floored at 20% residual so a very old claim isn't quoted ₹0.
 export function proRataRefund(originalPrice, deliveredDateStr) {

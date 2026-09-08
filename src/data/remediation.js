@@ -28,6 +28,49 @@ export function getReturnReasons(product) {
   return isAccessoryProduct(product) ? RETURN_REASONS.filter((r) => r !== 'Missing parts') : RETURN_REASONS;
 }
 
+// §7.10 evidence matrix. A photograph proves damage; it cannot prove
+// discomfort, and it cannot prove an absence. Gating every reason on one
+// (which is what the step did before this existed) strands anybody whose
+// complaint has nothing to point a camera at — "the chair is uncomfortable"
+// could not be submitted at all.
+//
+// `level` is what the Continue button enforces:
+//   required — the photo IS the verdict's evidence, so submitting without
+//              one would just stall the claim later
+//   optional — welcome if there's something visible, never blocking
+//   none     — not asked for at all, and the tile isn't rendered
+export function getEvidenceRequirement(product, reason) {
+  // §7.9 invariant: accessories never involve images (nor pickup).
+  if (isAccessoryProduct(product)) {
+    return { level: 'none', prompt: null };
+  }
+
+  // N6/N7 — comfort is subjective and unphotographable.
+  if (reason === 'Discomfort / Not as expected') {
+    return {
+      level: 'optional',
+      prompt: 'Add a photo if something is visible — otherwise just tell us below.',
+    };
+  }
+
+  // You can photograph what did arrive, but not what didn't. Useful when the
+  // customer wants to show the packaging or the part list, never a blocker.
+  if (reason === 'Missing parts') {
+    return {
+      level: 'optional',
+      prompt: 'A photo of what did arrive helps us work out what’s missing, but it’s not required.',
+    };
+  }
+
+  // N1/N3/N4 — damage, defects and wrong items are adjudicated from the
+  // image, so this is the one case where blocking is doing the customer a
+  // favour rather than obstructing them.
+  return {
+    level: 'required',
+    prompt: 'A clear photo of the problem is what the assessment runs on, so we do need one here.',
+  };
+}
+
 const LEVER_LABELS = {
   sendPart: 'Send Missing Part',
   replace: 'Replace Item',

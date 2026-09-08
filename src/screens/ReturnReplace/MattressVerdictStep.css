@@ -168,3 +168,38 @@
     transform: none;
   }
 }
+
+/* The diagnosis question. A vertical list rather than the pill row the
+   topper choice uses — these are full sentences, and pills wrap raggedly
+   at this length. Same borrowed weight and border as the chips so the two
+   screens still read as one flow. */
+.mattress-verdict__diagnosis-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.mattress-verdict__diagnosis {
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3) var(--space-4);
+  font-family: inherit;
+  font-size: var(--text-body-size);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  background: var(--color-bg-primary);
+  cursor: pointer;
+  transition: transform 0.1s ease-out;
+}
+
+.mattress-verdict__diagnosis:active {
+  transform: scale(0.99);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mattress-verdict__diagnosis:active {
+    transform: none;
+  }
+}
