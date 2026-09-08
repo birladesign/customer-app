@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { splitProductSpec } from '../../data/orders.js';
-import { getReturnReasons } from '../../data/remediation.js';
+import { getReturnReasons, getEvidenceRequirement } from '../../data/remediation.js';
 import PhotoUploadTile from '../../components/PhotoUploadTile.jsx';
 import { PackageIcon } from '../../components/icons.jsx';
 import { REASON_ICONS } from './reasonIcons.jsx';
@@ -40,6 +40,9 @@ export default function EvidenceStep({
   const [note, setNote] = useState('');
   const { name, spec } = splitProductSpec(order.product);
   const faultAnswered = !needsFault || Boolean(faultAttribution);
+  // §7.10 — only the reasons a photo actually adjudicates can block on one.
+  const evidence = getEvidenceRequirement(order.product, reason);
+  const photoSatisfied = evidence.level !== 'required' || Boolean(photo?.length);
 
   return (
     <div className="evidence-step">
@@ -103,14 +106,15 @@ export default function EvidenceStep({
         </>
       )}
 
-      <p className="evidence-step__prompt">
-        A quick photo of <strong>{name}</strong> helps us confirm the issue faster.
-      </p>
-
-      <PhotoUploadTile onChange={onPhotoChange} />
+      {evidence.level !== 'none' && (
+        <>
+          <p className="evidence-step__prompt">{evidence.prompt}</p>
+          <PhotoUploadTile onChange={onPhotoChange} />
+        </>
+      )}
 
       <label className="evidence-step__note-label" htmlFor="evidence-note">
-        Anything else we should know? (optional)
+        {evidence.level === 'none' ? 'Tell us what happened' : 'Anything else we should know? (optional)'}
       </label>
       <textarea
         id="evidence-note"
@@ -124,7 +128,7 @@ export default function EvidenceStep({
       <div className="evidence-step__footer">
         <button
           className="evidence-step__continue"
-          disabled={!reason || !faultAnswered || !photo?.length}
+          disabled={!reason || !faultAnswered || !photoSatisfied}
           onClick={onContinue}
         >
           Continue
@@ -134,7 +138,7 @@ export default function EvidenceStep({
         ) : !faultAnswered ? (
           <p className="evidence-step__hint">Tell us what happened to continue.</p>
         ) : (
-          !photo?.length && <p className="evidence-step__hint">A photo is required to proceed.</p>
+          !photoSatisfied && <p className="evidence-step__hint">A photo is required for this kind of claim.</p>
         )}
       </div>
     </div>
